@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out repository source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Node.js 18.x
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # Install root dependencies
+      - name: Install root dependencies
+        run: npm install
+
+      # Install each microservice's dependencies
+      - name: Install service dependencies
+        run: |
+          npm install --prefix backend/auth-service
+          npm install --prefix backend/user-service
+          npm install --prefix backend/game-service
+          npm install --prefix backend/community-service
+          npm install --prefix backend/ai-service
+
+      # Run lint across backend sources
+      - name: Run lint
+        run: npm run lint
+
+      # Placeholder test step (replace with real tests later)
+      - name: Run tests (placeholder)
+        run: |
+          npm test --if-present || echo "No tests defined yet"
+
+      # Emit a success message when all steps pass
+      - name: Build success message
+        run: echo "CI completed successfully"

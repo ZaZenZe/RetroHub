@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # Pull the code used by the successful CI run
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Placeholder: replace with real frontend deploy action
+      - name: Deploy frontend (placeholder)
+        run: echo "Deploy frontend to Netlify/Vercel"
+
+      # Placeholder: replace with real backend deploy action
+      - name: Deploy backend services (placeholder)
+        run: echo "Deploy backend services to Railway/Heroku"
+
+      # Placeholder: run DB migrations when needed
+      - name: Run database migrations (placeholder)
+        run: echo "Run database migrations if needed"
+
+      # Placeholder: send deployment notifications
+      - name: Send deployment notification (placeholder)
+        run: echo "Notify team of deployment"
