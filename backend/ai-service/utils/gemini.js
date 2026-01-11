@@ -19,7 +19,7 @@ async function callGemini(prompt) {
   const upstream = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }]}] })
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
   });
 
   const data = await upstream.json();

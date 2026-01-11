@@ -2,53 +2,56 @@
 
 const { Schema, model, Types } = require('mongoose');
 
-const postSchema = new Schema({
-  userId: {
-    type: Types.ObjectId,
-    ref: 'User',
-    required: true,
+const postSchema = new Schema(
+  {
+    userId: {
+      type: Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    gameId: {
+      type: Types.ObjectId,
+      ref: 'Game',
+      required: true,
+    },
+    content: {
+      type: String,
+      required: true,
+      maxlength: 2000,
+      trim: true,
+    },
+    upvotes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    downvotes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+    isSpoiler: {
+      type: Boolean,
+      default: false,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    editedAt: {
+      type: Date,
+      default: null,
+    },
   },
-  gameId: {
-    type: Types.ObjectId,
-    ref: 'Game',
-    required: true,
-  },
-  content: {
-    type: String,
-    required: true,
-    maxlength: 2000,
-    trim: true,
-  },
-  upvotes: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-  downvotes: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-  isPinned: {
-    type: Boolean,
-    default: false,
-  },
-  isSpoiler: {
-    type: Boolean,
-    default: false,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  editedAt: {
-    type: Date,
-    default: null,
-  },
-}, {
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true },
-});
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
 
 postSchema.index({ gameId: 1 });
 postSchema.index({ userId: 1 });

@@ -52,7 +52,11 @@ achievementSchema.statics.findByUser = function findByUser(userId) {
   return this.find({ userId });
 };
 
-achievementSchema.statics.unlockForUser = function unlockForUser(userId, achievementName, doc = {}) {
+achievementSchema.statics.unlockForUser = function unlockForUser(
+  userId,
+  achievementName,
+  doc = {}
+) {
   const payload = {
     userId,
     name: achievementName,

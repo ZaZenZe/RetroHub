@@ -67,7 +67,10 @@ router.get('/posts/:postId/replies', async (req, res, next) => {
     if (!Types.ObjectId.isValid(postId)) {
       return res.status(400).json({ error: 'Invalid post id' });
     }
-    const replies = await Reply.findByPost(postId).populate('userId', 'username avatarUrl').sort({ createdAt: 1 }).lean();
+    const replies = await Reply.findByPost(postId)
+      .populate('userId', 'username avatarUrl')
+      .sort({ createdAt: 1 })
+      .lean();
     res.json({ replies });
   } catch (err) {
     next(err);

@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Elements
-  const $ = (sel) => document.querySelector(sel);
+  const $ = sel => document.querySelector(sel);
   const app = $('#app');
   const homeView = $('#home-view');
   const gameView = $('#game-view');
@@ -55,12 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let headerGifImg = null;
   let lastGifIndex = -1;
 
-  function ensureHeaderGifHost(){
-    if(!headerEl) return null;
-    if(!headerGifHost){
+  function ensureHeaderGifHost() {
+    if (!headerEl) return null;
+    if (!headerGifHost) {
       headerGifHost = document.createElement('div');
       headerGifHost.id = 'header-gif';
-      headerGifHost.setAttribute('aria-hidden','true');
+      headerGifHost.setAttribute('aria-hidden', 'true');
       headerGifImg = document.createElement('img');
       headerGifImg.alt = '';
       headerGifImg.loading = 'lazy';
@@ -70,22 +70,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return headerGifHost;
   }
-  function pickNewGifIndex(){
-    if(pixelGifs.length === 0) return -1;
+  function pickNewGifIndex() {
+    if (pixelGifs.length === 0) return -1;
     let idx = Math.floor(Math.random() * pixelGifs.length);
-    if(pixelGifs.length > 1 && idx === lastGifIndex){
+    if (pixelGifs.length > 1 && idx === lastGifIndex) {
       idx = (idx + 1) % pixelGifs.length;
     }
     lastGifIndex = idx;
     return idx;
   }
-  function setHeaderGifVisible(visible){
+  function setHeaderGifVisible(visible) {
     const host = ensureHeaderGifHost();
-    if(!host) return;
-    if(!visible){ host.style.display = 'none'; return; }
+    if (!host) return;
+    if (!visible) {
+      host.style.display = 'none';
+      return;
+    }
     host.style.display = '';
     const idx = pickNewGifIndex();
-    if(idx >= 0){ headerGifImg.src = pixelGifs[idx]; }
+    if (idx >= 0) {
+      headerGifImg.src = pixelGifs[idx];
+    }
   }
 
   // Gemini API config (nothing yet)
@@ -98,12 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Demo auth state (token + user)
   let authToken = localStorage.getItem('authToken') || '';
   let authUser = null;
-  try { authUser = JSON.parse(localStorage.getItem('authUser') || 'null'); } catch { authUser = null; }
+  try {
+    authUser = JSON.parse(localStorage.getItem('authUser') || 'null');
+  } catch {
+    authUser = null;
+  }
 
-  function setAuth(user, token){
+  function setAuth(user, token) {
     authUser = user || null;
     authToken = token || '';
-    if(authUser && authToken){
+    if (authUser && authToken) {
       localStorage.setItem('authUser', JSON.stringify(authUser));
       localStorage.setItem('authToken', authToken);
     } else {
@@ -113,17 +122,25 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAuthUI();
   }
 
-  function updateAuthUI(){
-    if(!authBtn) return;
+  function updateAuthUI() {
+    if (!authBtn) return;
     authBtn.textContent = authUser ? 'Sign out' : 'Sign in';
-    if(authChip){
-      if(authUser){ authChip.textContent = `Hey, ${authUser.name || authUser.email}`; authChip.style.display = ''; }
-      else { authChip.style.display = 'none'; }
+    if (authChip) {
+      if (authUser) {
+        authChip.textContent = `Hey, ${authUser.name || authUser.email}`;
+        authChip.style.display = '';
+      } else {
+        authChip.style.display = 'none';
+      }
     }
   }
 
-  function openAuthModal(){ if(authModal) authModal.setAttribute('aria-hidden','false'); }
-  function closeAuthModal(){ if(authModal) authModal.setAttribute('aria-hidden','true'); }
+  function openAuthModal() {
+    if (authModal) authModal.setAttribute('aria-hidden', 'false');
+  }
+  function closeAuthModal() {
+    if (authModal) authModal.setAttribute('aria-hidden', 'true');
+  }
 
   // App State
   const games = [
@@ -135,15 +152,22 @@ document.addEventListener('DOMContentLoaded', () => {
       version: 'Time-Travel Saga',
       art: '',
       banner: '',
-      description: 'Time-hopping RPG with multiple endings, dual techs, and side quests that reshape the finale.',
+      description:
+        'Time-hopping RPG with multiple endings, dual techs, and side quests that reshape the finale.',
       tips: [
         'Use dual/triple techs for efficient boss damage.',
         'Stock Shelters for quick heals at save points.',
         'Do optional era quests before the final fight to unlock better endings.',
       ],
       faq: [
-        { q: 'How to recruit Magus?', a: 'During the North Cape confrontation, spare him and he will later join your party.' },
-        { q: 'Best place to grind mid-game?', a: 'Use the Hunting Range (Prehistory) for Tech Points and the Black Omen for late-game EXP.' },
+        {
+          q: 'How to recruit Magus?',
+          a: 'During the North Cape confrontation, spare him and he will later join your party.',
+        },
+        {
+          q: 'Best place to grind mid-game?',
+          a: 'Use the Hunting Range (Prehistory) for Tech Points and the Black Omen for late-game EXP.',
+        },
       ],
       kb: [
         ['magus|recruit', 'Spare Magus at North Cape; he joins later with strong shadow techs.'],
@@ -158,19 +182,32 @@ document.addEventListener('DOMContentLoaded', () => {
       version: 'Zebes',
       art: '',
       banner: '',
-      description: 'Classic exploratory platformer with sequence breaks, upgrades, and atmospheric boss fights.',
+      description:
+        'Classic exploratory platformer with sequence breaks, upgrades, and atmospheric boss fights.',
       tips: [
         'Grab the early Charge Beam to conserve ammo.',
         'Use wall jumps and mockball to access items early.',
         'Save before major bosses like Phantoon and Ridley.',
       ],
       faq: [
-        { q: 'Where is the Gravity Suit?', a: 'Clear the Wrecked Ship (Phantoon), then reach the suit in the flooded shaft of the ship.' },
-        { q: 'How to break glass tube in Maridia?', a: 'Use a Power Bomb inside the tube to shatter it and open the route.' },
+        {
+          q: 'Where is the Gravity Suit?',
+          a: 'Clear the Wrecked Ship (Phantoon), then reach the suit in the flooded shaft of the ship.',
+        },
+        {
+          q: 'How to break glass tube in Maridia?',
+          a: 'Use a Power Bomb inside the tube to shatter it and open the route.',
+        },
       ],
       kb: [
-        ['gravity suit|wrecked ship', 'Defeat Phantoon, power the ship, then drop to the flooded shaft for the Gravity Suit.'],
-        ['glass tube|maridia|power bomb', 'Detonate a Power Bomb inside the glass tube to enter Maridia.'],
+        [
+          'gravity suit|wrecked ship',
+          'Defeat Phantoon, power the ship, then drop to the flooded shaft for the Gravity Suit.',
+        ],
+        [
+          'glass tube|maridia|power bomb',
+          'Detonate a Power Bomb inside the glass tube to enter Maridia.',
+        ],
       ],
     },
     {
@@ -181,19 +218,32 @@ document.addEventListener('DOMContentLoaded', () => {
       version: 'Hyrule',
       art: '',
       banner: '',
-      description: 'Top-down adventure with parallel Light/Dark Worlds, dungeons, and key item-driven progression.',
+      description:
+        'Top-down adventure with parallel Light/Dark Worlds, dungeons, and key item-driven progression.',
       tips: [
         'Grab the Bottle and Bug Net early for fairies.',
         'Use the Pegasus Boots to break weak walls and reach chests.',
         'Clear Dark World dungeons in flexible order once you have key items.',
       ],
       faq: [
-        { q: 'Where to get the Flute?', a: 'In the Light World Haunted Grove; play it to free the bird for fast travel.' },
-        { q: 'How to enter Misery Mire?', a: 'Equip the Ether Medallion and use it on the Misery Mire tablet to unlock the dungeon.' },
+        {
+          q: 'Where to get the Flute?',
+          a: 'In the Light World Haunted Grove; play it to free the bird for fast travel.',
+        },
+        {
+          q: 'How to enter Misery Mire?',
+          a: 'Equip the Ether Medallion and use it on the Misery Mire tablet to unlock the dungeon.',
+        },
       ],
       kb: [
-        ['flute|fast travel|bird', 'Find the Flute in the Haunted Grove; the bird enables map travel once freed.'],
-        ['ether medallion|misery mire', 'Use Ether at the Misery Mire entrance to reveal the dungeon doorway.'],
+        [
+          'flute|fast travel|bird',
+          'Find the Flute in the Haunted Grove; the bird enables map travel once freed.',
+        ],
+        [
+          'ether medallion|misery mire',
+          'Use Ether at the Misery Mire entrance to reveal the dungeon doorway.',
+        ],
       ],
     },
     {
@@ -211,12 +261,24 @@ document.addEventListener('DOMContentLoaded', () => {
         'Super Sonic drains rings—activate when you can keep pace.',
       ],
       faq: [
-        { q: 'How to get all Chaos Emeralds?', a: 'Enter Special Stages via checkpoints with 50 rings; memorize layouts and prioritize ring paths.' },
-        { q: 'Best place to farm lives?', a: 'Casino Night Zone has plentiful rings and slot machines—play safely to stock up.' },
+        {
+          q: 'How to get all Chaos Emeralds?',
+          a: 'Enter Special Stages via checkpoints with 50 rings; memorize layouts and prioritize ring paths.',
+        },
+        {
+          q: 'Best place to farm lives?',
+          a: 'Casino Night Zone has plentiful rings and slot machines—play safely to stock up.',
+        },
       ],
       kb: [
-        ['chaos emeralds|special stage', 'Hit checkpoints with 50 rings to access half-pipe Special Stages; learn ring patterns.'],
-        ['super sonic|rings drain', 'Transformation costs 50 rings and drains 1 per second—toggle when stages are open and fast.'],
+        [
+          'chaos emeralds|special stage',
+          'Hit checkpoints with 50 rings to access half-pipe Special Stages; learn ring patterns.',
+        ],
+        [
+          'super sonic|rings drain',
+          'Transformation costs 50 rings and drains 1 per second—toggle when stages are open and fast.',
+        ],
       ],
     },
     {
@@ -227,19 +289,32 @@ document.addEventListener('DOMContentLoaded', () => {
       version: 'Maverick Hunter',
       art: '',
       banner: '',
-      description: 'Action-platformer with dash mobility, armor upgrades, and boss weapon weaknesses.',
+      description:
+        'Action-platformer with dash mobility, armor upgrades, and boss weapon weaknesses.',
       tips: [
         'Get the Dash Boots in Chill Penguin’s stage first.',
         'Use Storm Tornado against Launch Octopus and Sting Chameleon.',
         'Heart Tanks and Sub-Tanks massively boost survivability.',
       ],
       faq: [
-        { q: 'Where is the Hadouken capsule?', a: 'After all upgrades, revisit Armored Armadillo and take the final cart jump with full health multiple times until the capsule appears.' },
-        { q: 'Easy weakness order?', a: 'Chill Penguin → Spark Mandrill → Armored Armadillo → Launch Octopus → Boomer Kuwanger → Sting Chameleon → Storm Eagle → Flame Mammoth.' },
+        {
+          q: 'Where is the Hadouken capsule?',
+          a: 'After all upgrades, revisit Armored Armadillo and take the final cart jump with full health multiple times until the capsule appears.',
+        },
+        {
+          q: 'Easy weakness order?',
+          a: 'Chill Penguin → Spark Mandrill → Armored Armadillo → Launch Octopus → Boomer Kuwanger → Sting Chameleon → Storm Eagle → Flame Mammoth.',
+        },
       ],
       kb: [
-        ['dash boots|chill penguin', 'Find the boots in Chill Penguin’s stage to unlock dashing and wall kicks.'],
-        ['hadouken|armored armadillo', 'Full upgrades and repeated final jump in Armored Armadillo reveal the Hadouken capsule.'],
+        [
+          'dash boots|chill penguin',
+          'Find the boots in Chill Penguin’s stage to unlock dashing and wall kicks.',
+        ],
+        [
+          'hadouken|armored armadillo',
+          'Full upgrades and repeated final jump in Armored Armadillo reveal the Hadouken capsule.',
+        ],
       ],
     },
     {
@@ -247,73 +322,86 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Castlevania: Symphony of the Night',
       platform: 'PlayStation',
       year: '1997',
-      version: 'Dracula\'s Castle',
+      version: "Dracula's Castle",
       art: '',
       banner: '',
-      description: 'Exploratory action RPG with relics, inverted castle, and a wide arsenal of spells and weapons.',
+      description:
+        'Exploratory action RPG with relics, inverted castle, and a wide arsenal of spells and weapons.',
       tips: [
         'Buy the Jewel of Open early to access more areas.',
         'Use the Shield Rod + Alucard Shield combo for survivability.',
         'Explore thoroughly to reveal the inverted castle trigger (Silver/Gold Rings).',
       ],
       faq: [
-        { q: 'How to reach the inverted castle?', a: 'Equip the Silver and Gold Rings, visit the clock room, then defeat Richter with the Holy Glasses equipped.' },
-        { q: 'Good early weapon?', a: 'The Short Sword upgrade Rapier and the Stopwatch sub-weapon carry early zones; get Jewel Knuckles in the Alchemy Lab.' },
+        {
+          q: 'How to reach the inverted castle?',
+          a: 'Equip the Silver and Gold Rings, visit the clock room, then defeat Richter with the Holy Glasses equipped.',
+        },
+        {
+          q: 'Good early weapon?',
+          a: 'The Short Sword upgrade Rapier and the Stopwatch sub-weapon carry early zones; get Jewel Knuckles in the Alchemy Lab.',
+        },
       ],
       kb: [
-        ['inverted castle|richter|holy glasses', 'Wear the Silver/Gold Rings to reveal the clock room path, then keep Richter alive using Holy Glasses.'],
-        ['shield rod|alucard shield', 'Equip together for a powerful defensive buff that trivializes many fights.'],
+        [
+          'inverted castle|richter|holy glasses',
+          'Wear the Silver/Gold Rings to reveal the clock room path, then keep Richter alive using Holy Glasses.',
+        ],
+        [
+          'shield rod|alucard shield',
+          'Equip together for a powerful defensive buff that trivializes many fights.',
+        ],
       ],
     },
   ];
 
   let currentGameId = null;
-  
+
   // Per-game randomized welcome messages
   const welcomePool = {
     generic: [
-      "Hi there! Select a game to get tailored help.",
-      "Welcome to RetroHub! Pick a game and ask for tips or a walkthrough.",
-      "Need guidance? Choose a title and start asking questions!",
+      'Hi there! Select a game to get tailored help.',
+      'Welcome to RetroHub! Pick a game and ask for tips or a walkthrough.',
+      'Need guidance? Choose a title and start asking questions!',
     ],
     'chrono-trigger': [
-      "Crono and friends are ready—ask about techs, endings, or era routes.",
-      "Want guidance on Magus, Black Omen, or side quests?",
-      "Need a route for multiple endings or fast TP?",
+      'Crono and friends are ready—ask about techs, endings, or era routes.',
+      'Want guidance on Magus, Black Omen, or side quests?',
+      'Need a route for multiple endings or fast TP?',
     ],
     'super-metroid': [
-      "Zebes awaits—ask about suits, bosses, or sequence breaks.",
-      "Need help with wall jumps, mockball, or item routes?",
-      "Stuck in Wrecked Ship or Maridia? I can guide you.",
+      'Zebes awaits—ask about suits, bosses, or sequence breaks.',
+      'Need help with wall jumps, mockball, or item routes?',
+      'Stuck in Wrecked Ship or Maridia? I can guide you.',
     ],
     'link-to-the-past': [
-      "Hyrule help—dungeon order, key items, or Dark World routes.",
-      "Need Flute, medallions, or heart piece tips?",
-      "Ask about bosses, fast travel, or secret caves.",
+      'Hyrule help—dungeon order, key items, or Dark World routes.',
+      'Need Flute, medallions, or heart piece tips?',
+      'Ask about bosses, fast travel, or secret caves.',
     ],
     'sonic-2': [
-      "Speedrun or casual? Ask about Chaos Emeralds or ring routes.",
-      "Need Special Stage help or boss tips?",
-      "Looking to unlock Super Sonic efficiently?",
+      'Speedrun or casual? Ask about Chaos Emeralds or ring routes.',
+      'Need Special Stage help or boss tips?',
+      'Looking to unlock Super Sonic efficiently?',
     ],
     'mega-man-x': [
-      "Maverick order, Heart Tanks, or armor pieces—ask away.",
-      "Need weaknesses or Hadouken capsule steps?",
-      "Want a fast route to dash boots and upgrades?",
+      'Maverick order, Heart Tanks, or armor pieces—ask away.',
+      'Need weaknesses or Hadouken capsule steps?',
+      'Want a fast route to dash boots and upgrades?',
     ],
-    'sotn': [
-      "Castle tips—relics, rings, and inverted path questions welcome.",
-      "Need a good farm spot or weapon suggestion?",
-      "Ask about Richter, Holy Glasses, or map completion.",
+    sotn: [
+      'Castle tips—relics, rings, and inverted path questions welcome.',
+      'Need a good farm spot or weapon suggestion?',
+      'Ask about Richter, Holy Glasses, or map completion.',
     ],
   };
 
-  function randomWelcome(id){
+  function randomWelcome(id) {
     const arr = welcomePool[id] || welcomePool.generic;
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  function resetChatWithWelcome(gameId){
+  function resetChatWithWelcome(gameId) {
     chatbox.innerHTML = '';
     const greeting = randomWelcome(gameId);
     const li = document.createElement('li');
@@ -325,19 +413,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Utility: localStorage helpers
-  const storageKey = (gameId) => `forum:${gameId}`;
-  const loadPosts = (gameId) => {
-    try{ return JSON.parse(localStorage.getItem(storageKey(gameId)) || '[]'); }catch{ return []; }
+  const storageKey = gameId => `forum:${gameId}`;
+  const loadPosts = gameId => {
+    try {
+      return JSON.parse(localStorage.getItem(storageKey(gameId)) || '[]');
+    } catch {
+      return [];
+    }
   };
   const savePosts = (gameId, posts) => {
     localStorage.setItem(storageKey(gameId), JSON.stringify(posts.slice(0, 200))); // cap
   };
 
   // Ensure we start at the top after each route change
-  function resetScrollTop(){
+  function resetScrollTop() {
     // Do it on next frame to allow layout to settle
     requestAnimationFrame(() => {
-      try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch { window.scrollTo(0, 0); }
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      } catch {
+        window.scrollTo(0, 0);
+      }
       document.body.scrollTop = 0; // Safari/iOS fallback
       document.documentElement.scrollTop = 0; // Cross-browser
     });
@@ -350,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'link-to-the-past': '',
     'sonic-2': '',
     'mega-man-x': '',
-    'sotn': '',
+    sotn: '',
   };
 
   // New: gameplay GIFs for the hero area (inside pages)
@@ -360,11 +456,11 @@ document.addEventListener('DOMContentLoaded', () => {
     'link-to-the-past': '',
     'sonic-2': '',
     'mega-man-x': '',
-    'sotn': '',
+    sotn: '',
   };
 
   // Render Home Grid
-  function renderHome(){
+  function renderHome() {
     grid.innerHTML = '';
     // Theme: Home (light red/white)
     document.body.className = document.body.className
@@ -372,17 +468,20 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter(c => !c.startsWith('theme-'))
       .join(' ');
     document.body.classList.add('theme-home');
-  // Reset chatbot with generic welcome on Home
-  resetChatWithWelcome(null);
+    // Reset chatbot with generic welcome on Home
+    resetChatWithWelcome(null);
     games.forEach(g => {
       const card = document.createElement('article');
       card.className = 'card';
-      card.setAttribute('role','listitem');
+      card.setAttribute('role', 'listitem');
       const thumbStyle = g.art ? `style="background-image:url('${g.art}')"` : '';
-      const platformClass = (g.platform || '').toLowerCase().includes('3ds') ? 'threeds'
-        : (g.platform || '').toLowerCase().includes('gba') ? 'gba'
-        : (g.platform || '').toLowerCase().includes('ds') ? 'ds'
-        : '';
+      const platformClass = (g.platform || '').toLowerCase().includes('3ds')
+        ? 'threeds'
+        : (g.platform || '').toLowerCase().includes('gba')
+          ? 'gba'
+          : (g.platform || '').toLowerCase().includes('ds')
+            ? 'ds'
+            : '';
       card.innerHTML = `
         <div class="thumb" ${thumbStyle}></div>
         <div class="body">
@@ -397,16 +496,22 @@ document.addEventListener('DOMContentLoaded', () => {
       // Hover GIF preview per game (Home only)
       const thumb = card.querySelector('.thumb');
       const originalUrl = g.art || '';
-  const gifUrl = gameGifMap[g.id] || '';
+      const gifUrl = gameGifMap[g.id] || '';
       let hoverToken = 0;
-      const applyBg = (url) => { thumb.style.backgroundImage = url ? `url('${url}')` : ''; };
+      const applyBg = url => {
+        thumb.style.backgroundImage = url ? `url('${url}')` : '';
+      };
       card.addEventListener('pointerenter', () => {
         hoverToken += 1;
         const token = hoverToken;
-        if(!gifUrl) return;
+        if (!gifUrl) return;
         const img = new Image();
-        img.onload = () => { if(token === hoverToken) applyBg(gifUrl); };
-        img.onerror = () => { /* keep original if missing */ };
+        img.onload = () => {
+          if (token === hoverToken) applyBg(gifUrl);
+        };
+        img.onerror = () => {
+          /* keep original if missing */
+        };
         img.src = gifUrl;
       });
       card.addEventListener('pointerleave', () => {
@@ -415,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       // Keyboard accessibility: focus shows preview; blur restores
       card.addEventListener('focusin', () => {
-        if(!gifUrl) return;
+        if (!gifUrl) return;
         const img = new Image();
         img.onload = () => applyBg(gifUrl);
         img.src = gifUrl;
@@ -427,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Render Game Detail
-  function renderGame(game){
+  function renderGame(game) {
     currentGameId = game.id;
     // Apply per-game theme
     const themeMap = {
@@ -436,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'link-to-the-past': 'theme-heart-gold',
       'sonic-2': 'theme-platinum',
       'mega-man-x': 'theme-black-2',
-      'sotn': 'theme-y',
+      sotn: 'theme-y',
     };
     document.body.className = document.body.className
       .split(' ')
@@ -444,29 +549,29 @@ document.addEventListener('DOMContentLoaded', () => {
       .join(' ');
     document.body.classList.add(themeMap[game.id] || 'theme-home');
     gameTitle.textContent = game.title;
-      // Use gameplay GIF in the hero art
-      const heroUrl = gameplayGifMap[game.id] || '';
-      if (heroUrl) {
-        gameArt.classList.remove('no-image');
-        gameArt.style.backgroundImage = `url('${heroUrl}')`;
-      } else {
-        gameArt.style.backgroundImage = '';
-        gameArt.classList.add('no-image');
-      }
+    // Use gameplay GIF in the hero art
+    const heroUrl = gameplayGifMap[game.id] || '';
+    if (heroUrl) {
+      gameArt.classList.remove('no-image');
+      gameArt.style.backgroundImage = `url('${heroUrl}')`;
+    } else {
+      gameArt.style.backgroundImage = '';
+      gameArt.classList.add('no-image');
+    }
     gamePlatform.textContent = game.platform;
     gameYear.textContent = game.year;
     gameVersion.textContent = game.version;
     gameDescription.textContent = game.description;
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
-  // Reset chatbot with a per-game randomized welcome
-  resetChatWithWelcome(game.id);
+    // Reset chatbot with a per-game randomized welcome
+    resetChatWithWelcome(game.id);
 
     // Region Map panel (uses existing banner URL if provided)
     const mapPanel = document.getElementById('map-panel');
     const mapImg = document.getElementById('map-image');
     const mapLink = document.getElementById('map-link');
     const mapUrl = game.banner || '';
-    if(mapUrl){
+    if (mapUrl) {
       mapPanel.style.display = '';
       mapImg.src = mapUrl;
       mapImg.alt = `${game.title} — Region map`;
@@ -475,8 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const modal = document.getElementById('map-modal');
       const modalImg = document.getElementById('map-modal-image');
       const modalDownload = document.getElementById('map-download');
-      const setHidden = (hidden) => modal.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-      const openMap = (e) => {
+      const setHidden = hidden => modal.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+      const openMap = e => {
         e.preventDefault();
         modalImg.src = mapUrl;
         modalDownload.href = mapUrl;
@@ -484,8 +589,14 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const closeMap = () => setHidden(true);
       mapLink.onclick = openMap;
-      modal.querySelectorAll('[data-close-map]').forEach(el => el.onclick = closeMap);
-      window.addEventListener('keydown', (ev) => { if(ev.key === 'Escape') closeMap(); }, { once: true });
+      modal.querySelectorAll('[data-close-map]').forEach(el => (el.onclick = closeMap));
+      window.addEventListener(
+        'keydown',
+        ev => {
+          if (ev.key === 'Escape') closeMap();
+        },
+        { once: true }
+      );
     } else {
       mapPanel.style.display = 'none';
       mapImg.removeAttribute('src');
@@ -502,10 +613,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // FAQ
     faqList.innerHTML = '';
-    game.faq.forEach(({q,a}) => {
+    game.faq.forEach(({ q, a }) => {
       const d = document.createElement('details');
-      const s = document.createElement('summary'); s.textContent = q; d.appendChild(s);
-      const p = document.createElement('p'); p.textContent = a; d.appendChild(p);
+      const s = document.createElement('summary');
+      s.textContent = q;
+      d.appendChild(s);
+      const p = document.createElement('p');
+      p.textContent = a;
+      d.appendChild(p);
       faqList.appendChild(d);
     });
 
@@ -513,13 +628,14 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPosts();
   }
 
-  function renderPosts(){
+  function renderPosts() {
     postsEl.innerHTML = '';
     const posts = loadPosts(currentGameId);
-    if(!posts.length){
+    if (!posts.length) {
       const empty = document.createElement('li');
       empty.className = 'post';
-      empty.innerHTML = '<div class="bubble"><div class="text">No posts yet. Be the first to share a tip or ask a question!</div></div>';
+      empty.innerHTML =
+        '<div class="bubble"><div class="text">No posts yet. Be the first to share a tip or ask a question!</div></div>';
       postsEl.appendChild(empty);
       return;
     }
@@ -536,10 +652,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Forum submit
-  postForm.addEventListener('submit', (e) => {
+  postForm.addEventListener('submit', e => {
     e.preventDefault();
     const text = postText.value.trim();
-    if(!text || !currentGameId) return;
+    if (!text || !currentGameId) return;
     const posts = loadPosts(currentGameId);
     posts.unshift({ name: postName.value.trim(), text, ts: Date.now() });
     savePosts(currentGameId, posts);
@@ -548,24 +664,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Simple Router
-  function navigateTo(hash){
+  function navigateTo(hash) {
     window.location.hash = hash;
   }
-  function onRoute(){
+  function onRoute() {
     const hash = window.location.hash || '#/';
     const parts = hash.slice(2).split('/').filter(Boolean);
     // Update active nav link state
-    const markActive = (route) => {
+    const markActive = route => {
       document.querySelectorAll('.nav-link').forEach(a => {
         const href = a.getAttribute('href');
-        if((route === 'home' && href === '#/') || (route === 'about' && href === '#/about')){
+        if ((route === 'home' && href === '#/') || (route === 'about' && href === '#/about')) {
           a.classList.add('active');
         } else {
           a.classList.remove('active');
         }
       });
     };
-    if(parts.length === 0){
+    if (parts.length === 0) {
       aboutView.classList.remove('active');
       homeView.classList.add('active');
       gameView.classList.remove('active');
@@ -577,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const id = parts[0];
       // About route: dedicated minimal page showing only the Meowth City GIF
-      if(id === 'about'){
+      if (id === 'about') {
         homeView.classList.remove('active');
         gameView.classList.remove('active');
         aboutView.classList.add('active');
@@ -595,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       const game = games.find(g => g.id === id);
-      if(game){
+      if (game) {
         aboutView.classList.remove('active');
         homeView.classList.remove('active');
         gameView.classList.add('active');
@@ -616,7 +732,9 @@ document.addEventListener('DOMContentLoaded', () => {
   backBtn.addEventListener('click', () => navigateTo('#/'));
   openChat.addEventListener('click', () => {
     document.body.classList.add('show-chatbot');
-    if(!authToken && !authPromptShown){ promptSignInWithRetroBot(); }
+    if (!authToken && !authPromptShown) {
+      promptSignInWithRetroBot();
+    }
     chatInput.focus();
   });
   scrollForum.addEventListener('click', () => {
@@ -631,14 +749,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const createChatLi = (message, className) => {
     const chatLi = document.createElement('li');
     chatLi.classList.add('chat', className);
-    chatLi.innerHTML = className === 'outgoing'
-      ? `<p>${message}</p>`
-      : `<img src="${RETROBOT_AVATAR}" alt="RetroBot" class="chat-avatar" /><p>${message}</p>`;
+    chatLi.innerHTML =
+      className === 'outgoing'
+        ? `<p>${message}</p>`
+        : `<img src="${RETROBOT_AVATAR}" alt="RetroBot" class="chat-avatar" /><p>${message}</p>`;
     return chatLi;
   };
 
   // Randomized RetroBot persona messages to prompt sign-in
-  function getRetroBotSignInMessage(){
+  function getRetroBotSignInMessage() {
     const options = [
       'Sign in to save your posts and sync across devices.',
       'Sign in to keep your chat context and forum posts.',
@@ -648,12 +767,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Show a RetroBot-styled sign-in prompt and open the login modal
-  function promptSignInWithRetroBot(replaceEl){
+  function promptSignInWithRetroBot(replaceEl) {
     const msg = getRetroBotSignInMessage();
-    if(replaceEl){
+    if (replaceEl) {
       const p = replaceEl.querySelector('p');
-      if(p) p.textContent = msg;
-    } else if(!authPromptShown){
+      if (p) p.textContent = msg;
+    } else if (!authPromptShown) {
       const incoming = createChatLi(msg, 'incoming');
       chatbox.appendChild(incoming);
       chatbox.scrollTo(0, chatbox.scrollHeight);
@@ -664,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Build a strong domain-constrained prompt with per-game context
-  function buildPrompt(userText){
+  function buildPrompt(userText) {
     const game = games.find(g => g.id === currentGameId);
     const title = game?.title || 'Retro game';
     const platform = game?.platform || 'Various';
@@ -699,7 +818,7 @@ Constraints:
 `.trim();
   }
 
-  const generateResponse = async (chatElement) => {
+  const generateResponse = async chatElement => {
     const messageElement = chatElement.querySelector('p');
     const requestOptions = {
       method: 'POST',
@@ -712,34 +831,41 @@ Constraints:
 
     try {
       const response = await fetch(API_URL, requestOptions);
-      if(response.status === 401){
+      if (response.status === 401) {
         promptSignInWithRetroBot(chatElement);
         return;
       }
       const data = await response.json();
-      if(!response.ok){
+      if (!response.ok) {
         const msg = data?.error?.message || response.statusText || 'Request failed';
         throw new Error(msg);
       }
       const text = (data?.text || '').replace(/\*\*(.*?)\*\*/g, '$1');
       messageElement.textContent = text || 'No response received. Try again.';
       // After rendering the answer, go to the TOP of this message (not the bottom)
-      try { chatElement.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      catch { chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8); }
+      try {
+        chatElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8);
+      }
     } catch (error) {
       messageElement.classList.add('error');
-      const hint = 'If you are running locally, ensure the server is started and GEMINI_API_KEY is set in .env';
+      const hint =
+        'If you are running locally, ensure the server is started and GEMINI_API_KEY is set in .env';
       messageElement.textContent = (error.message || 'Error contacting Gemini API') + '\n' + hint;
       // Ensure the user sees the start of the error message
-      try { chatElement.scrollIntoView({ behavior: 'auto', block: 'start' }); }
-      catch { chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8); }
+      try {
+        chatElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+      } catch {
+        chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8);
+      }
     }
   };
 
-  function handleChat(){
+  function handleChat() {
     userMessage = chatInput.value.trim();
-    if(!userMessage) return;
-    if(!authToken){
+    if (!userMessage) return;
+    if (!authToken) {
       // Append the user's message, then have RetroBot respond with a sign-in prompt
       chatInput.value = '';
       chatInput.style.height = `${inputInitHeight}px`;
@@ -768,13 +894,13 @@ Constraints:
   chatInput.addEventListener('input', () => {
     chatInput.style.height = `${inputInitHeight}px`;
     chatInput.style.height = `${chatInput.scrollHeight}px`;
-    if(!authToken && chatInput.value.trim() && !authPromptShown){
+    if (!authToken && chatInput.value.trim() && !authPromptShown) {
       document.body.classList.add('show-chatbot');
       promptSignInWithRetroBot();
     }
   });
-  chatInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.shiftKey && window.innerWidth > 800){
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 800) {
       e.preventDefault();
       handleChat();
     }
@@ -783,7 +909,7 @@ Constraints:
   closeBtn.addEventListener('click', () => document.body.classList.remove('show-chatbot'));
   chatbotToggler.addEventListener('click', () => {
     document.body.classList.toggle('show-chatbot');
-    if(document.body.classList.contains('show-chatbot') && !authToken && !authPromptShown){
+    if (document.body.classList.contains('show-chatbot') && !authToken && !authPromptShown) {
       promptSignInWithRetroBot();
     }
   });
@@ -791,30 +917,35 @@ Constraints:
   // --- Auth UI wiring ---
   updateAuthUI();
   authBtn?.addEventListener('click', () => {
-    if(authUser){
+    if (authUser) {
       setAuth(null, '');
     } else {
       openAuthModal();
       setTimeout(() => authEmail?.focus(), 50);
     }
   });
-  authModal?.querySelectorAll('[data-auth-close]')?.forEach(el => el.addEventListener('click', closeAuthModal));
-  authForm?.addEventListener('submit', async (e) => {
+  authModal
+    ?.querySelectorAll('[data-auth-close]')
+    ?.forEach(el => el.addEventListener('click', closeAuthModal));
+  authForm?.addEventListener('submit', async e => {
     e.preventDefault();
     const email = (authEmail?.value || '').trim();
     const password = (authPass?.value || '').trim();
-    if(!email || !password) return;
-    try{
+    if (!email || !password) return;
+    try {
       const resp = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
       const payload = await resp.json();
-      if(!resp.ok){ throw new Error(payload?.error || 'Login failed'); }
-  setAuth(payload.user, payload.token);
-  authPromptShown = false;
+      if (!resp.ok) {
+        throw new Error(payload?.error || 'Login failed');
+      }
+      setAuth(payload.user, payload.token);
+      authPromptShown = false;
       closeAuthModal();
-    } catch(err){
+    } catch (err) {
       alert((err && err.message) || 'Login failed');
     }
   });
@@ -823,11 +954,15 @@ Constraints:
   renderHome();
   onRoute();
   // Try to hydrate auth chip from server token if present (optional)
-  if(authToken && !authUser){
+  if (authToken && !authUser) {
     try {
-      fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${authToken}` } })
+      fetch('/api/auth/me', { headers: { Authorization: `Bearer ${authToken}` } })
         .then(r => r.json())
-        .then(data => { if(data?.user){ setAuth(data.user, authToken); } });
+        .then(data => {
+          if (data?.user) {
+            setAuth(data.user, authToken);
+          }
+        });
     } catch {}
   }
 });
