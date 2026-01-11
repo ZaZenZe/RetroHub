@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "lint": "eslint backend/**/*.js frontend/**/*.js server.js",
+    "lint": "eslint backend/**/*.js",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "prepare": "husky",
     "start:auth": "node backend/auth-service/server.js",
@@ -16,17 +16,19 @@
     "start:ai": "node backend/ai-service/server.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "http-proxy-middleware": "^3.0.0"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
+    "eslint": "^9.39.2",
     "husky": "^9.1.4",
-    "lint-staged": "^15.2.10",
-    "prettier": "^3.2.5"
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.2.5",
+    "globals": "^17.0.0"
   },
   "lint-staged": {
+    "*.js": "eslint",
     "*.{js,json,md}": "prettier --write"
   }
 }

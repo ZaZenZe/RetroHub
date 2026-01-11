@@ -38,6 +38,12 @@ Retro gaming companion with AI assistance and a community hub for sharing tips, 
 
 ## Install & Run
 
+### Tooling scripts
+
+- Lint (ESLint v9 flat config): `npm run lint`
+- Format (Prettier): `npm run format`
+- Gateway dev server (Express 5): `npm run dev` (proxies to services on ports 3001-3005)
+
 ### Frontend (static prototype)
 
 - Location: frontend/

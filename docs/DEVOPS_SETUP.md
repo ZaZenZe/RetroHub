@@ -14,7 +14,8 @@ npm install --save-dev eslint prettier husky lint-staged
 
 ## ESLint
 
-- Config: .eslintrc.json (extends eslint:recommended, Node env, ES2022)
+- Config: eslint.config.js (flat config for ESLint v9; Node globals, ES2022, recommended-equivalent rules)
+- Editor note: ensure your editor picks up `eslint.config.js` (ESLint v9 no longer reads .eslintrc by default).
 - Run manually:
 
 ```bash
@@ -56,8 +57,8 @@ npx lint-staged
 ## Expected package.json entries
 
 - Scripts:
-  - "lint": "eslint backend/**/\*.js frontend/**/\*.js server.js"
-  - "format": "prettier --write \"\*_/_.{js,json,md}\""
+  - "lint": "eslint backend/\*_/_.js"
+  - "format": "prettier --write "\*_/_.{js,json,md}""
 - Dev dependencies: eslint, prettier, husky, lint-staged
 - lint-staged block: see above
 
