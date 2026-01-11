@@ -2,18 +2,18 @@
   "name": "retrohub",
   "version": "1.0.0",
   "private": true,
-  "description": "Static retro gaming hub with local forum and chatbot (Gemini via server proxy)",
+  "description": "Retro gaming app with AI assistant and community features",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
+    "dev": "concurrently \"npm:start:*\"",
     "lint": "eslint backend/**/*.js",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "prepare": "husky",
-    "start:auth": "node backend/auth-service/server.js",
-    "start:user": "node backend/user-service/server.js",
-    "start:game": "node backend/game-service/server.js",
-    "start:community": "node backend/community-service/server.js",
-    "start:ai": "node backend/ai-service/server.js"
+    "start:auth": "cd backend/auth-service && npm start",
+    "start:user": "cd backend/user-service && npm start",
+    "start:game": "cd backend/game-service && npm start",
+    "start:community": "cd backend/community-service && npm start",
+    "start:ai": "cd backend/ai-service && npm start"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
@@ -21,12 +21,26 @@
     "http-proxy-middleware": "^3.0.0"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "eslint": "^9.39.2",
     "husky": "^9.1.4",
     "lint-staged": "^16.2.7",
     "prettier": "^3.2.5",
     "globals": "^17.0.0"
   },
+  "keywords": [
+    "retro gaming",
+    "AI",
+    "community",
+    "Node.js",
+    "Express",
+    "MongoDB"
+  ],
+  "authors": [
+    "Mark",
+    "Sayan"
+  ],
+  "license": "MIT",
   "lint-staged": {
     "*.js": "eslint",
     "*.{js,json,md}": "prettier --write"
