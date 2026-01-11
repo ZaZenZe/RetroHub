@@ -5,7 +5,12 @@
   "description": "Static retro gaming hub with local forum and chatbot (Gemini via server proxy)",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "start:auth": "node backend/auth-service/server.js",
+    "start:user": "node backend/user-service/server.js",
+    "start:game": "node backend/game-service/server.js",
+    "start:community": "node backend/community-service/server.js",
+    "start:ai": "node backend/ai-service/server.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
