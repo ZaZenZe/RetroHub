@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
+const ALLOW_OFFLINE = (process.env.ALLOW_OFFLINE_DB || 'true').toLowerCase() === 'true';
 
 /**
  * Delay helper.
@@ -26,18 +27,31 @@ function wait(ms) {
  * @returns {Promise<MongooseConnection>}
  */
 async function connectWithRetry(uri = process.env.MONGODB_URI, attempt = 1) {
+  const resolvedUri = uri || 'mongodb://localhost:27017/retrohub';
+
   if (!uri) {
-    throw new Error('MONGODB_URI is not set');
+    if (ALLOW_OFFLINE) {
+      console.warn('[db] MONGODB_URI not set; offline mode enabled, skipping DB connection');
+      return null;
+    }
+    console.warn(
+      '[db] MONGODB_URI not set; falling back to local mongodb://localhost:27017/retrohub'
+    );
   }
 
   try {
-    await mongoose.connect(uri, {
+    await mongoose.connect(resolvedUri, {
       serverSelectionTimeoutMS: 5000,
     });
     console.log(`[db] Connected to MongoDB on attempt ${attempt}`);
     return mongoose.connection;
   } catch (error) {
     console.error(`[db] Connection error (attempt ${attempt}/${MAX_RETRIES}): ${error.message}`);
+
+    if (ALLOW_OFFLINE) {
+      console.warn('[db] Offline mode enabled; continuing without DB connection.');
+      return null;
+    }
 
     if (attempt >= MAX_RETRIES) {
       console.error('[db] Max connection attempts reached. Giving up.');

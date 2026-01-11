@@ -2,6 +2,11 @@
   "name": "retrohub",
   "version": "1.0.0",
   "private": true,
+  "workspaces": {
+    "packages": [
+      "backend/*-service"
+    ]
+  },
   "description": "Retro gaming app with AI assistant and community features",
   "scripts": {
     "start": "node server.js",
@@ -9,6 +14,8 @@
     "lint": "eslint backend/**/*.js",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "prepare": "husky",
+    "health-check": "node scripts/health-check.js",
+    "seed:db": "node scripts/seed-database.js",
     "start:auth": "cd backend/auth-service && npm start",
     "start:user": "cd backend/user-service && npm start",
     "start:game": "cd backend/game-service && npm start",
@@ -18,10 +25,14 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "http-proxy-middleware": "^3.0.0"
+    "http-proxy-middleware": "^3.0.0",
+    "mongoose": "^9.1.2",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "husky": "^9.1.4",
     "lint-staged": "^16.2.7",

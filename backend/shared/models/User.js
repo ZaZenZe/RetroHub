@@ -1,6 +1,6 @@
 'use strict';
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { Schema, model } = require('mongoose');
 
 const SALT_ROUNDS = 10;
@@ -51,10 +51,6 @@ const userSchema = new Schema({
     default: null,
   },
 });
-
-// Indexes
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ username: 1 }, { unique: true });
 
 // Hash password when changed
 userSchema.pre('save', async function hashPassword(next) {

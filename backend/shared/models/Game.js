@@ -39,8 +39,6 @@ const gameSchema = new Schema({
   },
 });
 
-gameSchema.index({ title: 1 }, { unique: true });
-
 gameSchema.statics.findByPlatform = function findByPlatform(platform) {
   return this.find({ platform });
 };
