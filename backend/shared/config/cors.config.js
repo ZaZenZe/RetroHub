@@ -1,9 +1,10 @@
 'use strict';
 
-const allowedOrigin = process.env.CORS_ORIGIN || '*';
+const envOrigin = process.env.CORS_ORIGIN;
+const isDev = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
-  origin: allowedOrigin,
+  origin: envOrigin || (isDev ? '*' : false),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
