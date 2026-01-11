@@ -1,0 +1,32 @@
+version: '3.9'
+services:
+  mongodb:
+    image: mongo:6
+    container_name: retrohub-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-retrohub}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-retrohub}
+      MONGO_INITDB_DATABASE: retrohub
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+
+  mongo-express:
+    image: mongo-express:1.0.0-alpha.4
+    container_name: retrohub-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-retrohub}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-retrohub}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin}
+    ports:
+      - '8081:8081'
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:

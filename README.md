@@ -30,6 +30,7 @@ Retro gaming companion with AI assistance and a community hub for sharing tips, 
 2) Clone the repository.
 3) Copy .env.example to .env at the root (service-specific .env files are also scaffolded).
 4) Install dependencies per service (commands below).
+5) (Optional) Start MongoDB locally with Docker Compose; see the section below.
 
 ## Install & Run
 ### Frontend (static prototype)
@@ -50,6 +51,15 @@ Each service has placeholders; install dependencies as they are added.
 Example per service (replace <service>):
 - Install: `cd backend/<service>-service && npm install`
 - Run: `npm start`
+
+### MongoDB with Docker Compose (optional)
+- Ensure Docker is running.
+- From the repository root:
+	- Start: `docker compose up -d`
+	- Stop: `docker compose down`
+- Services:
+	- MongoDB at localhost:27017
+	- Mongo Express UI at http://localhost:8081
 
 ## Team
 - Mark
