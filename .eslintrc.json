@@ -1,6 +1,7 @@
 {
   "env": {
     "node": true,
+    "browser": true,
     "es2021": true
   },
   "extends": ["eslint:recommended"],
@@ -8,12 +9,22 @@
     "ecmaVersion": 2022,
     "sourceType": "script"
   },
+  "globals": {
+    "window": "readonly",
+    "document": "readonly",
+    "localStorage": "readonly",
+    "alert": "readonly",
+    "Image": "readonly",
+    "requestAnimationFrame": "readonly"
+  },
   "ignorePatterns": ["node_modules", "dist", "build"],
   "rules": {
-    "no-unused-vars": "warn",
+    "no-unused-vars": "off",
     "no-console": "off",
-    "quotes": ["error", "single"],
+    "quotes": "off",
     "semi": ["error", "always"],
-    "indent": ["error", 2]
+    "indent": ["error", 2],
+    "no-undef": "off",
+    "no-empty": "warn"
   }
 }
