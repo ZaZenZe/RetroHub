@@ -8,6 +8,9 @@ Retro gaming companion with AI assistance and a community hub for sharing tips, 
 ![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-Frontend-f7df1e?logo=javascript&logoColor=000)
 ![Capacitor](https://img.shields.io/badge/Capacitor-Mobile-119eff?logo=capacitor&logoColor=white)
 
+## Roadmap
+<img width="2548" height="1435" alt="Roadmap" src="https://github.com/user-attachments/assets/4c6a2ae7-a435-4883-9492-2f8607b45217" />
+
 ## Features
 
 - Authentication and profiles
