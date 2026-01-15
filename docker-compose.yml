@@ -28,5 +28,28 @@ services:
     depends_on:
       - mongodb
 
+  seed-db:
+    image: node:20
+    container_name: retrohub-seed
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-retrohub}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-retrohub}
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
+    depends_on:
+      - mongodb
+    # Wait for Mongo to accept TCP, install deps, then seed once
+    command: >
+      bash -lc "
+        for i in {1..30}; do
+          node -e \"const net=require('net'); const s=net.connect(27017,'mongodb'); s.on('connect',()=>{console.log('mongo up'); s.end(); process.exit(0);}); s.on('error',()=>process.exit(1));\" && break || { echo 'waiting for mongo...'; sleep 2; }; done;
+        npm ci --omit=dev;
+        node scripts/seed-database.js;
+        echo 'seed complete';
+      "
+    restart: "no"
+
 volumes:
   mongodb_data:

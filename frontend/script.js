@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Elements
   const $ = sel => document.querySelector(sel);
-  const app = $('#app');
   const homeView = $('#home-view');
   const gameView = $('#game-view');
   const aboutView = $('#about-view');
@@ -22,6 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const postForm = $('#post-form');
   const postName = $('#post-name');
   const postText = $('#post-text');
+  // Screenshots panel
+  const shotsPanel = document.getElementById('shots-panel');
+  const shotsStrip = document.getElementById('shots-strip');
+  const shotModal = document.getElementById('shot-modal');
+  const shotModalImg = document.getElementById('shot-modal-image');
+  const shotDownload = document.getElementById('shot-download');
 
   // Chatbot elements
   const chatbotToggler = document.querySelector('.chatbot-toggler');
@@ -96,10 +101,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Gemini API config (nothing yet)
   // Gemini API via local server proxy; no API key in client
   const API_URL = '/api/chat';
-  // Chat avatar asset (RetroBot)
-  const RETROBOT_AVATAR = 'assets/pixel/6Vww.gif';
-  // Persona toggle: when true, the bot speaks in a retro helper voice
-  const RETROBOT_PERSONA = false;
+  const API_BASE = '/api';
+  // Chat avatar asset (Professor Oak)
+  const OAK_AVATAR = 'assets/PikPng.com_professor-oak-png_1480585.png';
+  // Persona toggle: when true, the bot speaks as Prof. Oak
+  const OAK_PERSONA = true;
+  const NO_INFO_LINE = "It's dangerous to go alone! No info yet.";
+  const textOrFallback = (value, fallback = NO_INFO_LINE) => {
+    const str = (value ?? '').toString().trim();
+    return str ? str : fallback;
+  };
   // Demo auth state (token + user)
   let authToken = localStorage.getItem('authToken') || '';
   let authUser = null;
@@ -143,217 +154,268 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // App State
-  const games = [
+  let games = [
     {
-      id: 'chrono-trigger',
-      title: 'Chrono Trigger',
-      platform: 'SNES',
-      year: '1995',
-      version: 'Time-Travel Saga',
-      art: '',
-      banner: '',
+      id: 'fire-red',
+      title: 'Pokémon Fire Red',
+      platform: 'GBA',
+      year: '2004',
+      version: 'Kanto',
+      art: 'assets/box art/640px-FireRed_EN_boxart.png',
+      banner: 'assets/map/red.png',
       description:
-        'Time-hopping RPG with multiple endings, dual techs, and side quests that reshape the finale.',
+        'Return to Kanto in this remake of the original adventure. Catch, train, and battle across iconic towns and routes.',
       tips: [
-        'Use dual/triple techs for efficient boss damage.',
-        'Stock Shelters for quick heals at save points.',
-        'Do optional era quests before the final fight to unlock better endings.',
+        'Pick Bulbasaur for an easier early-game vs. Brock and Misty.',
+        'Catch a Flying-type early for utility (e.g., Pidgey).',
+        'Use the Vs. Seeker to level efficiently on known trainers.',
       ],
       faq: [
         {
-          q: 'How to recruit Magus?',
-          a: 'During the North Cape confrontation, spare him and he will later join your party.',
+          q: 'Where to get the VS Seeker?',
+          a: 'Route 24/25 area: Receive it from the aide after leaving the Underground Path house near Vermilion City (after getting the Bike Voucher).',
         },
         {
-          q: 'Best place to grind mid-game?',
-          a: 'Use the Hunting Range (Prehistory) for Tech Points and the Black Omen for late-game EXP.',
-        },
-      ],
-      kb: [
-        ['magus|recruit', 'Spare Magus at North Cape; he joins later with strong shadow techs.'],
-        ['black omen|exp|tp', 'Run the Black Omen for high EXP/TP and rare drops before Lavos.'],
-      ],
-    },
-    {
-      id: 'super-metroid',
-      title: 'Super Metroid',
-      platform: 'SNES',
-      year: '1994',
-      version: 'Zebes',
-      art: '',
-      banner: '',
-      description:
-        'Classic exploratory platformer with sequence breaks, upgrades, and atmospheric boss fights.',
-      tips: [
-        'Grab the early Charge Beam to conserve ammo.',
-        'Use wall jumps and mockball to access items early.',
-        'Save before major bosses like Phantoon and Ridley.',
-      ],
-      faq: [
-        {
-          q: 'Where is the Gravity Suit?',
-          a: 'Clear the Wrecked Ship (Phantoon), then reach the suit in the flooded shaft of the ship.',
-        },
-        {
-          q: 'How to break glass tube in Maridia?',
-          a: 'Use a Power Bomb inside the tube to shatter it and open the route.',
+          q: 'How to get Flash for Rock Tunnel?',
+          a: 'Catch at least 10 Pokémon and visit Professor Oak’s aide on Route 2 (south of Pewter via Diglett’s Cave) to receive HM05 Flash.',
         },
       ],
       kb: [
         [
-          'gravity suit|wrecked ship',
-          'Defeat Phantoon, power the ship, then drop to the flooded shaft for the Gravity Suit.',
+          'starter|best|begin',
+          'Bulbasaur makes the first two gyms easier; Charmander is harder early but great late-game.',
         ],
         [
-          'glass tube|maridia|power bomb',
-          'Detonate a Power Bomb inside the glass tube to enter Maridia.',
+          'vs seeker|level|grind',
+          'Use the Vs. Seeker on routes with easy rematches; heal between cycles for fast EXP.',
+        ],
+        [
+          'flash|hm05|rock tunnel',
+          'Get HM05 Flash from Oak’s aide on Route 2 after catching 10 Pokémon.',
         ],
       ],
     },
     {
-      id: 'link-to-the-past',
-      title: 'The Legend of Zelda: A Link to the Past',
-      platform: 'SNES',
-      year: '1991',
-      version: 'Hyrule',
-      art: '',
-      banner: '',
-      description:
-        'Top-down adventure with parallel Light/Dark Worlds, dungeons, and key item-driven progression.',
+      id: 'emerald',
+      title: 'Pokémon Emerald',
+      platform: 'GBA',
+      year: '2005',
+      version: 'Hoenn',
+      art: 'assets/box art/emerald.jpg',
+      banner: 'assets/map/emerald.png',
+      description: 'The definitive Hoenn experience with Battle Frontier and more double battles.',
       tips: [
-        'Grab the Bottle and Bug Net early for fairies.',
-        'Use the Pegasus Boots to break weak walls and reach chests.',
-        'Clear Dark World dungeons in flexible order once you have key items.',
+        'Mudkip eases early gyms; Treecko is fast but fragile.',
+        'Prepare for lots of double battles—balance your team roles.',
+        'Try the Battle Frontier post-game for advanced challenges.',
       ],
       faq: [
         {
-          q: 'Where to get the Flute?',
-          a: 'In the Light World Haunted Grove; play it to free the bird for fast travel.',
+          q: 'How to access Battle Frontier?',
+          a: 'Beat the Champion and complete the main story; then travel to the Battle Frontier via the ferry from Slateport or Lilycove.',
         },
         {
-          q: 'How to enter Misery Mire?',
-          a: 'Equip the Ether Medallion and use it on the Misery Mire tablet to unlock the dungeon.',
+          q: 'Good EXP spots before Elite Four?',
+          a: 'Victory Road trainers and Elite Four rematches; also use Exp. Share on lower-level team members.',
         },
       ],
       kb: [
         [
-          'flute|fast travel|bird',
-          'Find the Flute in the Haunted Grove; the bird enables map travel once freed.',
+          'battle frontier|symbols|facilities',
+          'The Battle Frontier has multiple facilities; plan sets specifically for each (e.g., Speed control for Battle Tower).',
         ],
         [
-          'ether medallion|misery mire',
-          'Use Ether at the Misery Mire entrance to reveal the dungeon doorway.',
+          'surf|hm|progress',
+          'HM Surf is obtained from Wally’s uncle in Petalburg after beating the Petalburg Gym.',
         ],
       ],
     },
     {
-      id: 'sonic-2',
-      title: 'Sonic the Hedgehog 2',
-      platform: 'Sega Genesis',
-      year: '1992',
-      version: 'Emerald Hill',
-      art: '',
-      banner: '',
-      description: 'High-speed platformer with split-screen races, Super Sonic, and iconic zones.',
+      id: 'heart-gold',
+      title: 'Pokémon Heart Gold',
+      platform: 'DS',
+      year: '2009',
+      version: 'Johto + Kanto',
+      art: 'assets/box art/1200px-HeartGold_EN_boxart.jpg',
+      banner: 'assets/map/gold.jpg',
+      description: 'Remake of Gold with Pokéwalker support and a full Kanto post-game.',
       tips: [
-        'Use spin dash starts to keep momentum through loops.',
-        'Collect 50 rings before checkpoints to enter Special Stages.',
-        'Super Sonic drains rings—activate when you can keep pace.',
+        'Train a diverse team for Whitney’s Miltank (use status or Fighting).',
+        'Use Headbutt trees for early captures like Heracross.',
       ],
       faq: [
         {
-          q: 'How to get all Chaos Emeralds?',
-          a: 'Enter Special Stages via checkpoints with 50 rings; memorize layouts and prioritize ring paths.',
+          q: 'How to beat Whitney?',
+          a: 'Use a Fighting-type or apply status (Sleep/Paralysis). Disable Rollout with Ghost-types or Attract immunity (female Pokémon).',
         },
         {
-          q: 'Best place to farm lives?',
-          a: 'Casino Night Zone has plentiful rings and slot machines—play safely to stock up.',
+          q: 'Where to get Exp. Share?',
+          a: 'Mr. Pokémon on Route 30 after getting the Red Scale from the shiny Gyarados.',
         },
       ],
       kb: [
         [
-          'chaos emeralds|special stage',
-          'Hit checkpoints with 50 rings to access half-pipe Special Stages; learn ring patterns.',
+          'whitney|miltank|rollout',
+          'Counter with Fighting moves, status, or a Ghost-type to block Stomp/Attract synergies.',
         ],
         [
-          'super sonic|rings drain',
-          'Transformation costs 50 rings and drains 1 per second—toggle when stages are open and fast.',
+          'red scale|exp share|mr. pokemon',
+          'Trade Red Scale to Mr. Pokémon on Route 30 to receive Exp. Share.',
         ],
       ],
     },
     {
-      id: 'mega-man-x',
-      title: 'Mega Man X',
-      platform: 'SNES',
-      year: '1993',
-      version: 'Maverick Hunter',
-      art: '',
-      banner: '',
-      description:
-        'Action-platformer with dash mobility, armor upgrades, and boss weapon weaknesses.',
+      id: 'platinum',
+      title: 'Pokémon Platinum',
+      platform: 'DS',
+      year: '2008',
+      version: 'Sinnoh',
+      art: 'assets/box art/Platinum_EN_boxart.png',
+      banner: 'assets/map/platinum.png',
+      description: 'Enhanced Sinnoh adventure with Distortion World and better dex variety.',
       tips: [
-        'Get the Dash Boots in Chill Penguin’s stage first.',
-        'Use Storm Tornado against Launch Octopus and Sting Chameleon.',
-        'Heart Tanks and Sub-Tanks massively boost survivability.',
+        'Chimchar helps with early gyms; consider a Water/Ground like Gastrodon later.',
+        'Use the Vs. Seeker and Amity Square for happiness evolutions.',
       ],
       faq: [
         {
-          q: 'Where is the Hadouken capsule?',
-          a: 'After all upgrades, revisit Armored Armadillo and take the final cart jump with full health multiple times until the capsule appears.',
+          q: 'How to reach Distortion World?',
+          a: 'Progress through the story until Spear Pillar, then follow Cynthia; the plot will lead you there.',
         },
         {
-          q: 'Easy weakness order?',
-          a: 'Chill Penguin → Spark Mandrill → Armored Armadillo → Launch Octopus → Boomer Kuwanger → Sting Chameleon → Storm Eagle → Flame Mammoth.',
+          q: 'Good team balance idea?',
+          a: 'Fire/Fighting (Infernape), Water/Ground (Gastrodon), Electric (Luxray), Flying (Staraptor), Psychic (Alakazam), Ice (Weavile) as a sample.',
         },
       ],
       kb: [
         [
-          'dash boots|chill penguin',
-          'Find the boots in Chill Penguin’s stage to unlock dashing and wall kicks.',
+          'distortion world|giratina',
+          'Triggered via story after Spear Pillar events; complete puzzles with rotating platforms.',
         ],
         [
-          'hadouken|armored armadillo',
-          'Full upgrades and repeated final jump in Armored Armadillo reveal the Hadouken capsule.',
+          'amity square|happiness|evolve',
+          'Walk with certain Pokémon to boost happiness; also use Soothe Bell.',
         ],
       ],
     },
     {
-      id: 'sotn',
-      title: 'Castlevania: Symphony of the Night',
-      platform: 'PlayStation',
-      year: '1997',
-      version: "Dracula's Castle",
-      art: '',
-      banner: '',
-      description:
-        'Exploratory action RPG with relics, inverted castle, and a wide arsenal of spells and weapons.',
+      id: 'black-2',
+      title: 'Pokémon Black 2',
+      platform: 'DS',
+      year: '2012',
+      version: 'Unova',
+      art: 'assets/box art/pokemon-black-2---button-1558054992410.jpg',
+      banner: 'assets/map/Unova_B2W2_alt.png',
+      description: 'Sequel in Unova with new areas, Join Avenue, and challenge modes.',
       tips: [
-        'Buy the Jewel of Open early to access more areas.',
-        'Use the Shield Rod + Alucard Shield combo for survivability.',
-        'Explore thoroughly to reveal the inverted castle trigger (Silver/Gold Rings).',
+        'Use the Habitat List to track encounters and complete the Pokédex.',
+        'Join Avenue boosts shops and services—visit often to level it up.',
       ],
       faq: [
         {
-          q: 'How to reach the inverted castle?',
-          a: 'Equip the Silver and Gold Rings, visit the clock room, then defeat Richter with the Holy Glasses equipped.',
+          q: 'Where to get Shiny Charm?',
+          a: 'Complete the National Pokédex and then talk to Professor Juniper to receive it.',
         },
         {
-          q: 'Good early weapon?',
-          a: 'The Short Sword upgrade Rapier and the Stopwatch sub-weapon carry early zones; get Jewel Knuckles in the Alchemy Lab.',
+          q: 'Good EXP spots?',
+          a: 'Audino shaking grass and repeated trainer battles with Lucky Egg help significantly.',
         },
       ],
       kb: [
         [
-          'inverted castle|richter|holy glasses',
-          'Wear the Silver/Gold Rings to reveal the clock room path, then keep Richter alive using Holy Glasses.',
+          'join avenue|shops|level',
+          'Interact with visitors to level Join Avenue and unlock better services.',
+        ],
+        ['lucky egg|exp|audino', 'Use Lucky Egg and fight Audino in shaking grass for fast EXP.'],
+      ],
+    },
+    {
+      id: 'y',
+      title: 'Pokémon Y',
+      platform: '3DS',
+      year: '2013',
+      version: 'Kalos',
+      art: 'assets/box art/Pokemon-Y.avif',
+      banner: 'assets/map/pokemon-x-y.jpg',
+      description: 'First 3D mainline Pokémon with Mega Evolution and a stylish Kalos region.',
+      tips: [
+        'Use Exp. Share to keep your team even; game pacing assumes it.',
+        'Try Mega Evolutions mid-game for big power spikes.',
+      ],
+      faq: [
+        {
+          q: 'How to get Mega Ring?',
+          a: 'Progress the story to earn the Mega Ring in Shalour City after the Tower of Mastery events.',
+        },
+        {
+          q: 'Good early team idea?',
+          a: 'Starter (Froakie or Fennekin), Fletchling, Bunnelby (Pickup), and an Electric like Pikachu or Helioptile.',
+        },
+      ],
+      kb: [
+        [
+          'mega ring|mega evolve',
+          'You obtain the Mega Ring in Shalour City after the Tower of Mastery, enabling Mega Evolutions in battle.',
         ],
         [
-          'shield rod|alucard shield',
-          'Equip together for a powerful defensive buff that trivializes many fights.',
+          'exp share|level|balance',
+          'Kalos balances around Exp. Share being ON; toggle off if you want more challenge.',
         ],
       ],
     },
   ];
+
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  }
+
+  function mapApiGame(g) {
+    if (!g) return null;
+    return {
+      id: g.slug || g.id || g._id,
+      slug: g.slug || g.id || g._id,
+      title: g.title,
+      platform: g.platform,
+      year: g.releaseYear || g.year,
+      version: g.versionLabel || g.region || 'Retro',
+      art: g.coverImageUrl,
+      banner: g.heroImageUrl || g.coverImageUrl,
+      hover: g.hoverImageUrl || g.coverImageUrl,
+      description: g.description,
+      screenshots: Array.isArray(g.screenshots) ? g.screenshots : [],
+      theme: g.theme,
+    };
+  }
+
+  async function loadGamesFromApi() {
+    try {
+      const data = await fetchJson(`${API_BASE}/games`);
+      const mapped = (data?.games || []).map(mapApiGame).filter(Boolean);
+      if (mapped.length) {
+        games = mapped;
+      }
+    } catch {
+      console.warn('Using fallback games; API unavailable');
+    }
+  }
+
+  async function fetchGameFull(id) {
+    try {
+      const data = await fetchJson(`${API_BASE}/games/${encodeURIComponent(id)}/full`);
+      const g = mapApiGame(data?.game);
+      const tips = (data?.tips || []).map(t => t.content || t).filter(Boolean);
+      const faqs = (data?.faqs || []).map(f => ({ q: f.question, a: f.answer })).filter(Boolean);
+      if (g) {
+        if (tips.length) g.tips = tips;
+        if (faqs.length) g.faq = faqs;
+      }
+      return g;
+    } catch {
+      return null;
+    }
+  }
 
   let currentGameId = null;
 
@@ -361,38 +423,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const welcomePool = {
     generic: [
       'Hi there! Select a game to get tailored help.',
-      'Welcome to RetroHub! Pick a game and ask for tips or a walkthrough.',
-      'Need guidance? Choose a title and start asking questions!',
+      'Welcome! Pick a game and ask for tips or a walkthrough.',
+      'Need guidance? Choose a game and start asking questions!',
     ],
-    'chrono-trigger': [
-      'Crono and friends are ready—ask about techs, endings, or era routes.',
-      'Want guidance on Magus, Black Omen, or side quests?',
-      'Need a route for multiple endings or fast TP?',
+    'fire-red': [
+      'Welcome to Kanto! Ask about gyms, routes, or items like the VS Seeker.',
+      'Fire Red tips ready—starters, Brock & Misty strats, or where to find Flash.',
+      'Got questions for Kanto? Teams, badges, or leveling—ask away!',
     ],
-    'super-metroid': [
-      'Zebes awaits—ask about suits, bosses, or sequence breaks.',
-      'Need help with wall jumps, mockball, or item routes?',
-      'Stuck in Wrecked Ship or Maridia? I can guide you.',
+    emerald: [
+      'Hoenn time! Ask about gyms, Team Aqua/Magma, or the Battle Frontier.',
+      'Emerald tips: double battles, good early team picks, or EXP spots.',
+      'Want Battle Frontier pointers or story progression help?',
     ],
-    'link-to-the-past': [
-      'Hyrule help—dungeon order, key items, or Dark World routes.',
-      'Need Flute, medallions, or heart piece tips?',
-      'Ask about bosses, fast travel, or secret caves.',
+    'heart-gold': [
+      'Johto awaits! Ask about Whitney’s Miltank or where to get Exp. Share.',
+      'Need help with Johto gyms or Kanto post-game?',
+      'Heart Gold tips—routes, items, and gym strategies.',
     ],
-    'sonic-2': [
-      'Speedrun or casual? Ask about Chaos Emeralds or ring routes.',
-      'Need Special Stage help or boss tips?',
-      'Looking to unlock Super Sonic efficiently?',
+    platinum: [
+      'Sinnoh tips here! Distortion World, team ideas, or leveling routes.',
+      'Platinum help: gym counters, Giratina path, or dex variety.',
+      'Ask about Sinnoh travel, items, or story beats.',
     ],
-    'mega-man-x': [
-      'Maverick order, Heart Tanks, or armor pieces—ask away.',
-      'Need weaknesses or Hadouken capsule steps?',
-      'Want a fast route to dash boots and upgrades?',
+    'black-2': [
+      'Unova guidance: Join Avenue, EXP farming, or story routes.',
+      'Black 2 tips—Habitat List, Lucky Egg, or team balance.',
+      'Need help with challenge modes or gym plans?',
     ],
-    sotn: [
-      'Castle tips—relics, rings, and inverted path questions welcome.',
-      'Need a good farm spot or weapon suggestion?',
-      'Ask about Richter, Holy Glasses, or map completion.',
+    y: [
+      'Kalos help ready! Mega Ring, team comps, or gym counters.',
+      'Pokémon Y tips—Exp. Share pacing, Megas, or early-game teams.',
+      'Ask about routes, items, or where to go next in Kalos.',
     ],
   };
 
@@ -406,8 +468,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const greeting = randomWelcome(gameId);
     const li = document.createElement('li');
     li.className = 'chat incoming';
-    const opening = 'Welcome to RetroHub! Ask anything about your chosen game.\n\n';
-    li.innerHTML = `<img src="${RETROBOT_AVATAR}" alt="RetroBot" class="chat-avatar" /><p>${opening}${greeting}</p>`;
+    const opening = 'Hello there! Welcome to the world of Pokémon!\n\n';
+    li.innerHTML = `<img src="${OAK_AVATAR}" alt="Professor Oak" class="chat-avatar" /><p>${opening}${greeting}</p>`;
     chatbox.appendChild(li);
     chatbox.scrollTo(0, chatbox.scrollHeight);
   }
@@ -441,27 +503,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Map gameId -> correct GIF path based on actual assets folder structure
   const gameGifMap = {
-    'chrono-trigger': '',
-    'super-metroid': '',
-    'link-to-the-past': '',
-    'sonic-2': '',
-    'mega-man-x': '',
-    sotn: '',
+    'fire-red': 'assets/game/fire-red.gif',
+    emerald: 'assets/game/pokemon-emerald.gif',
+    'heart-gold': 'assets/game/heart-gold.gif',
+    platinum: 'assets/game/platinum.gif',
+    'black-2': 'assets/game/black2.gif',
+    y: 'assets/game/y.gif',
   };
 
   // New: gameplay GIFs for the hero area (inside pages)
   const gameplayGifMap = {
-    'chrono-trigger': '',
-    'super-metroid': '',
-    'link-to-the-past': '',
-    'sonic-2': '',
-    'mega-man-x': '',
-    sotn: '',
+    'fire-red': 'assets/gameplay/pokemon-fire-red.gif',
+    emerald: 'assets/gameplay/emerald.gif',
+    'heart-gold': 'assets/gameplay/heartgold.gif',
+    platinum: 'assets/gameplay/platinum.gif',
+    'black-2': 'assets/gameplay/black2.gif',
+    y: 'assets/gameplay/y.gif',
   };
 
   // Render Home Grid
-  function renderHome() {
+  async function renderHome() {
     grid.innerHTML = '';
+    if (!games.length) {
+      await loadGamesFromApi();
+    }
     // Theme: Home (light red/white)
     document.body.className = document.body.className
       .split(' ')
@@ -488,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="title">${g.title}</div>
           <div class="chips">
             <span class="chip chip-platform ${platformClass}">${g.platform}</span>
-            <span class="chip">${g.year}</span>
+            <span class="chip">${g.year || 'TBA'}</span>
           </div>
           <button class="cta" data-open="${g.id}">Open</button>
         </div>
@@ -496,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Hover GIF preview per game (Home only)
       const thumb = card.querySelector('.thumb');
       const originalUrl = g.art || '';
-      const gifUrl = gameGifMap[g.id] || '';
+      const gifUrl = g.hover || gameGifMap[g.id] || '';
       let hoverToken = 0;
       const applyBg = url => {
         thumb.style.backgroundImage = url ? `url('${url}')` : '';
@@ -536,12 +601,12 @@ document.addEventListener('DOMContentLoaded', () => {
     currentGameId = game.id;
     // Apply per-game theme
     const themeMap = {
-      'chrono-trigger': 'theme-fire-red',
-      'super-metroid': 'theme-emerald',
-      'link-to-the-past': 'theme-heart-gold',
-      'sonic-2': 'theme-platinum',
-      'mega-man-x': 'theme-black-2',
-      sotn: 'theme-y',
+      'fire-red': 'theme-fire-red',
+      emerald: 'theme-emerald',
+      'heart-gold': 'theme-heart-gold',
+      platinum: 'theme-platinum',
+      'black-2': 'theme-black-2',
+      y: 'theme-y',
     };
     document.body.className = document.body.className
       .split(' ')
@@ -549,8 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .join(' ');
     document.body.classList.add(themeMap[game.id] || 'theme-home');
     gameTitle.textContent = game.title;
-    // Use gameplay GIF in the hero art
-    const heroUrl = gameplayGifMap[game.id] || '';
+    // Use backend hero/banner if available; fallback to gameplay GIFs
+    const heroUrl = game.banner || gameplayGifMap[game.id] || game.art || '';
     if (heroUrl) {
       gameArt.classList.remove('no-image');
       gameArt.style.backgroundImage = `url('${heroUrl}')`;
@@ -558,71 +623,92 @@ document.addEventListener('DOMContentLoaded', () => {
       gameArt.style.backgroundImage = '';
       gameArt.classList.add('no-image');
     }
-    gamePlatform.textContent = game.platform;
-    gameYear.textContent = game.year;
-    gameVersion.textContent = game.version;
-    gameDescription.textContent = game.description;
+    gamePlatform.textContent = textOrFallback(game.platform, 'Platform TBA');
+    gameYear.textContent = textOrFallback(game.year, 'Year TBA');
+    gameVersion.textContent = textOrFallback(game.version, 'Version TBA');
+    gameDescription.textContent = textOrFallback(game.description);
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
     resetChatWithWelcome(game.id);
 
-    // Region Map panel (uses existing banner URL if provided)
-    const mapPanel = document.getElementById('map-panel');
-    const mapImg = document.getElementById('map-image');
-    const mapLink = document.getElementById('map-link');
-    const mapUrl = game.banner || '';
-    if (mapUrl) {
-      mapPanel.style.display = '';
-      mapImg.src = mapUrl;
-      mapImg.alt = `${game.title} — Region map`;
-      mapLink.href = mapUrl;
-      // Map modal: open on click instead of navigating away
-      const modal = document.getElementById('map-modal');
-      const modalImg = document.getElementById('map-modal-image');
-      const modalDownload = document.getElementById('map-download');
-      const setHidden = hidden => modal.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-      const openMap = e => {
-        e.preventDefault();
-        modalImg.src = mapUrl;
-        modalDownload.href = mapUrl;
-        setHidden(false);
-      };
-      const closeMap = () => setHidden(true);
-      mapLink.onclick = openMap;
-      modal.querySelectorAll('[data-close-map]').forEach(el => (el.onclick = closeMap));
-      window.addEventListener(
-        'keydown',
-        ev => {
-          if (ev.key === 'Escape') closeMap();
-        },
-        { once: true }
-      );
-    } else {
-      mapPanel.style.display = 'none';
-      mapImg.removeAttribute('src');
-      mapLink.removeAttribute('href');
+    // Additional Screenshots (temporary: reuse region map image until backend provides real screenshots)
+    const screenshots = (() => {
+      const fromGame = Array.isArray(game.screenshots)
+        ? game.screenshots
+            .map(s => (typeof s === 'string' ? { url: s, alt: `${game.title} screenshot` } : s))
+            .filter(s => s && s.url)
+        : [];
+      if (fromGame.length) return fromGame;
+      if (game.banner) return [{ url: game.banner, alt: `${game.title} map` }];
+      return [];
+    })();
+    if (shotsPanel && shotsStrip) {
+      shotsStrip.innerHTML = '';
+      if (!screenshots.length) {
+        shotsPanel.style.display = 'none';
+      } else {
+        shotsPanel.style.display = '';
+        screenshots.forEach((shot, idx) => {
+          const item = document.createElement('button');
+          item.className = 'shot-thumb';
+          item.type = 'button';
+          item.setAttribute('role', 'listitem');
+          item.setAttribute('aria-label', shot.alt || `${game.title} screenshot ${idx + 1}`);
+          item.innerHTML = `<img src="${shot.url}" alt="${shot.alt || `${game.title} screenshot ${idx + 1}`}" loading="lazy" />`;
+          item.addEventListener('click', () => openShotModal(shot.url));
+          shotsStrip.appendChild(item);
+        });
+      }
     }
+
+    function openShotModal(url) {
+      if (!shotModal) return;
+      shotModalImg.src = url;
+      if (shotDownload) shotDownload.href = url;
+      shotModal.setAttribute('aria-hidden', 'false');
+    }
+    function closeShotModal() {
+      if (!shotModal) return;
+      shotModal.setAttribute('aria-hidden', 'true');
+    }
+    shotModal?.querySelectorAll('[data-close-shot]')?.forEach(el => (el.onclick = closeShotModal));
+    window.addEventListener(
+      'keydown',
+      ev => {
+        if (ev.key === 'Escape') closeShotModal();
+      },
+      { once: true }
+    );
 
     // Tips
     tipsList.innerHTML = '';
-    game.tips.forEach(t => {
+    const tips = Array.isArray(game.tips) && game.tips.length ? game.tips : [NO_INFO_LINE];
+    tips.forEach(t => {
       const li = document.createElement('li');
-      li.textContent = t;
+      li.textContent = textOrFallback(t);
       tipsList.appendChild(li);
     });
 
     // FAQ
     faqList.innerHTML = '';
-    game.faq.forEach(({ q, a }) => {
-      const d = document.createElement('details');
-      const s = document.createElement('summary');
-      s.textContent = q;
-      d.appendChild(s);
-      const p = document.createElement('p');
-      p.textContent = a;
-      d.appendChild(p);
-      faqList.appendChild(d);
-    });
+    const faqs = Array.isArray(game.faq) && game.faq.length ? game.faq : null;
+    if (!faqs) {
+      const empty = document.createElement('div');
+      empty.className = 'map-hint';
+      empty.textContent = NO_INFO_LINE;
+      faqList.appendChild(empty);
+    } else {
+      faqs.forEach(({ q, a }) => {
+        const d = document.createElement('details');
+        const s = document.createElement('summary');
+        s.textContent = textOrFallback(q, 'Question TBD');
+        d.appendChild(s);
+        const p = document.createElement('p');
+        p.textContent = textOrFallback(a);
+        d.appendChild(p);
+        faqList.appendChild(d);
+      });
+    }
 
     // Forum posts
     renderPosts();
@@ -710,20 +796,39 @@ document.addEventListener('DOMContentLoaded', () => {
         resetScrollTop();
         return;
       }
-      const game = games.find(g => g.id === id);
-      if (game) {
-        aboutView.classList.remove('active');
-        homeView.classList.remove('active');
-        gameView.classList.add('active');
-        renderGame(game);
-        markActive('');
-        // Show a random header gif on Game pages
-        setHeaderGifVisible(true);
-        resetScrollTop();
-      } else {
-        // fallback to home
-        navigateTo('#/');
-      }
+      const proceed = async () => {
+        let game = games.find(g => g.id === id || g.slug === id);
+        if (!game) {
+          await loadGamesFromApi();
+          game = games.find(g => g.id === id || g.slug === id);
+        }
+        if (!game) {
+          const fetched = await fetchGameFull(id);
+          if (fetched) {
+            games.push(fetched);
+            game = fetched;
+          }
+        }
+        if (game) {
+          aboutView.classList.remove('active');
+          homeView.classList.remove('active');
+          gameView.classList.add('active');
+          renderGame(game);
+          // Hydrate richer data if available
+          fetchGameFull(game.id).then(full => {
+            if (full) {
+              Object.assign(game, full);
+              renderGame(game);
+            }
+          });
+          markActive('');
+          setHeaderGifVisible(true);
+          resetScrollTop();
+        } else {
+          navigateTo('#/');
+        }
+      };
+      proceed();
     }
   }
   window.addEventListener('hashchange', onRoute);
@@ -733,7 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
   openChat.addEventListener('click', () => {
     document.body.classList.add('show-chatbot');
     if (!authToken && !authPromptShown) {
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
     }
     chatInput.focus();
   });
@@ -752,23 +857,26 @@ document.addEventListener('DOMContentLoaded', () => {
     chatLi.innerHTML =
       className === 'outgoing'
         ? `<p>${message}</p>`
-        : `<img src="${RETROBOT_AVATAR}" alt="RetroBot" class="chat-avatar" /><p>${message}</p>`;
+        : `<img src="${OAK_AVATAR}" alt="Professor Oak" class="chat-avatar" /><p>${message}</p>`;
     return chatLi;
   };
 
-  // Randomized RetroBot persona messages to prompt sign-in
-  function getRetroBotSignInMessage() {
+  // Randomized Oak persona messages to prompt sign-in
+  function getOakSignInMessage() {
     const options = [
-      'Sign in to save your posts and sync across devices.',
-      'Sign in to keep your chat context and forum posts.',
-      'Create an account to sync tips and bookmarks.',
+      "Ah! You'll need to sign in at my lab before we can chat.",
+      'Hold on, Trainer! Please sign in so I can assist you properly.',
+      "Hm! Access denied—sign in first, then I'll help you out.",
+      "Aha! I recognize keen curiosity—sign in, and let's begin.",
+      'Patience! Sign in to sync your Trainer Card, then ask away.',
+      'Safety first! Please sign in so I can share proper guidance.',
     ];
     return options[Math.floor(Math.random() * options.length)];
   }
 
-  // Show a RetroBot-styled sign-in prompt and open the login modal
-  function promptSignInWithRetroBot(replaceEl) {
-    const msg = getRetroBotSignInMessage();
+  // Show an Oak-styled sign-in prompt and open the login modal
+  function promptSignInWithOak(replaceEl) {
+    const msg = getOakSignInMessage();
     if (replaceEl) {
       const p = replaceEl.querySelector('p');
       if (p) p.textContent = msg;
@@ -785,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Build a strong domain-constrained prompt with per-game context
   function buildPrompt(userText) {
     const game = games.find(g => g.id === currentGameId);
-    const title = game?.title || 'Retro game';
+    const title = game?.title || 'Pokémon (series)';
     const platform = game?.platform || 'Various';
     const year = game?.year || '';
     const version = game?.version || '';
@@ -793,12 +901,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const tips = (game?.tips || []).map(t => `- ${t}`).join('\n');
     const faqs = (game?.faq || []).map(f => `- Q: ${f.q}\n  A: ${f.a}`).join('\n');
 
-    const persona = RETROBOT_PERSONA
-      ? 'You are RetroBot, a concise retro gaming assistant. Keep tone friendly, skip roleplay, focus on clear, actionable answers.'
-      : 'You are a concise retro gaming helper.';
-
+    const persona = OAK_PERSONA
+      ? 'You are Professor Oak speaking to the player. Keep a warm, mentor-like tone. Use first-person briefly when helpful ("I"/"my lab"), but stay concise and practical. Do not roleplay long monologues.'
+      : 'You are Pokémon Helper Bot.';
     return `
-${persona} Answer only with gameplay help for the selected classic title. If the user asks about unrelated topics, politely steer back to the game. Prefer short steps or bullets. If unsure, say so briefly and suggest a likely direction in-game.
+${persona} Your purpose is to answer ONLY Pokémon game questions. If the user asks about anything non-Pokémon (news, politics, code, math, etc.), refuse briefly and steer them back to Pokémon gameplay, tips, items, routes, gyms, or strategies.
+
+When the user opens a specific game, you MUST tailor your answers strictly to that title. Keep responses concise and actionable. Prefer steps or bullet points. Include route/town names, items, or NPCs when useful. If you don't know, say so briefly and suggest an in-game direction.
 
 Game context:
 - Title: ${title}
@@ -813,7 +922,8 @@ User question:
 ${userText}
 
 Constraints:
-- Stay on retro gaming help for the listed title.
+- Stay Pokémon-only. Politely refuse unrelated topics.
+- Be specific to ${title}. If the question is about another game, ask the user to open that game from Home.
 - Be brief; use bullets or short steps when appropriate.
 `.trim();
   }
@@ -822,17 +932,16 @@ Constraints:
     const messageElement = chatElement.querySelector('p');
     const requestOptions = {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      },
-      body: JSON.stringify({ message: userMessage, prompt: buildPrompt(userMessage) }),
+      headers: Object.assign(
+        { 'Content-Type': 'application/json' },
+        authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      ),
+      body: JSON.stringify({ prompt: buildPrompt(userMessage) }),
     };
-
     try {
       const response = await fetch(API_URL, requestOptions);
       if (response.status === 401) {
-        promptSignInWithRetroBot(chatElement);
+        promptSignInWithOak(chatElement);
         return;
       }
       const data = await response.json();
@@ -859,6 +968,8 @@ Constraints:
       } catch {
         chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8);
       }
+    } finally {
+      // Do not auto-jump to the very bottom; keep view at the top of the new message
     }
   };
 
@@ -866,12 +977,12 @@ Constraints:
     userMessage = chatInput.value.trim();
     if (!userMessage) return;
     if (!authToken) {
-      // Append the user's message, then have RetroBot respond with a sign-in prompt
+      // Append the user's message, then have Oak respond with a sign-in prompt
       chatInput.value = '';
       chatInput.style.height = `${inputInitHeight}px`;
       chatbox.appendChild(createChatLi(userMessage, 'outgoing'));
       chatbox.scrollTo(0, chatbox.scrollHeight);
-      const incoming = createChatLi(getRetroBotSignInMessage(), 'incoming');
+      const incoming = createChatLi(getOakSignInMessage(), 'incoming');
       chatbox.appendChild(incoming);
       chatbox.scrollTo(0, chatbox.scrollHeight);
       openAuthModal();
@@ -896,7 +1007,7 @@ Constraints:
     chatInput.style.height = `${chatInput.scrollHeight}px`;
     if (!authToken && chatInput.value.trim() && !authPromptShown) {
       document.body.classList.add('show-chatbot');
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
     }
   });
   chatInput.addEventListener('keydown', e => {
@@ -910,7 +1021,7 @@ Constraints:
   chatbotToggler.addEventListener('click', () => {
     document.body.classList.toggle('show-chatbot');
     if (document.body.classList.contains('show-chatbot') && !authToken && !authPromptShown) {
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
     }
   });
 
@@ -945,8 +1056,8 @@ Constraints:
       setAuth(payload.user, payload.token);
       authPromptShown = false;
       closeAuthModal();
-    } catch (err) {
-      alert((err && err.message) || 'Login failed');
+    } catch {
+      alert('Login failed');
     }
   });
 

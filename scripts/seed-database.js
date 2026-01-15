@@ -1,7 +1,6 @@
 'use strict';
 
 require('dotenv').config();
-const path = require('path');
 const { connectWithRetry, mongoose } = require('../backend/shared/db');
 const Game = require('../backend/shared/models/Game');
 const Tip = require('../backend/shared/models/Tip');
@@ -11,50 +10,68 @@ const FORCE_CLEAR = process.argv.includes('--force');
 
 const gamesToAdd = [
   {
+    slug: 'pokemon-fire-red',
     title: 'Pokemon Fire Red',
     platform: 'GBA',
     releaseYear: 2004,
     coverImageUrl: 'https://static.retrohub.local/pokemon-fire-red.jpg',
+    heroImageUrl: 'https://static.retrohub.local/pokemon-fire-red-hero.jpg',
+    hoverImageUrl: 'https://static.retrohub.local/pokemon-fire-red-hero.jpg',
     description: 'Return to Kanto in this enhanced remake with wireless trading and Sevii Islands.',
     region: 'Global',
   },
   {
+    slug: 'pokemon-emerald',
     title: 'Pokemon Emerald',
     platform: 'GBA',
     releaseYear: 2005,
     coverImageUrl: 'https://static.retrohub.local/pokemon-emerald.jpg',
+    heroImageUrl: 'https://static.retrohub.local/pokemon-emerald-hero.jpg',
+    hoverImageUrl: 'https://static.retrohub.local/pokemon-emerald-hero.jpg',
     description: 'Hoenn adventure featuring both Team Magma and Aqua and the Battle Frontier.',
     region: 'Global',
   },
   {
+    slug: 'pokemon-heart-gold',
     title: 'Pokemon Heart Gold',
     platform: 'DS',
     releaseYear: 2009,
     coverImageUrl: 'https://static.retrohub.local/pokemon-heart-gold.jpg',
+    heroImageUrl: 'https://static.retrohub.local/pokemon-heart-gold-hero.jpg',
+    hoverImageUrl: 'https://static.retrohub.local/pokemon-heart-gold-hero.jpg',
     description: 'Johto remake with updated mechanics, follower Pokemon, and Pokewalker support.',
     region: 'Global',
   },
   {
+    slug: 'pokemon-platinum',
     title: 'Pokemon Platinum',
     platform: 'DS',
     releaseYear: 2008,
     coverImageUrl: 'https://static.retrohub.local/pokemon-platinum.jpg',
+    heroImageUrl: 'https://static.retrohub.local/pokemon-platinum-hero.jpg',
+    hoverImageUrl: 'https://static.retrohub.local/pokemon-platinum-hero.jpg',
     description: 'Enhanced Sinnoh journey featuring the Distortion World and expanded roster.',
     region: 'Global',
   },
   {
+    slug: 'pokemon-black-2',
     title: 'Pokemon Black 2',
     platform: 'DS',
     releaseYear: 2012,
     coverImageUrl: 'https://static.retrohub.local/pokemon-black-2.jpg',
+    heroImageUrl: 'https://static.retrohub.local/pokemon-black-2-hero.jpg',
+    hoverImageUrl: 'https://static.retrohub.local/pokemon-black-2-hero.jpg',
     description: 'Direct sequel in Unova with new locations, Kyurem forms, and key system updates.',
     region: 'Global',
   },
   {
+    slug: 'pokemon-y',
     title: 'Pokemon Y',
     platform: '3DS',
     releaseYear: 2013,
     coverImageUrl: 'https://static.retrohub.local/pokemon-y.jpg',
+    heroImageUrl: 'https://static.retrohub.local/pokemon-y-hero.jpg',
+    hoverImageUrl: 'https://static.retrohub.local/pokemon-y-hero.jpg',
     description: 'Kalos region adventure introducing Mega Evolution and full 3D battles.',
     region: 'Global',
   },
