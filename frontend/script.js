@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const homeView = $('#home-view');
   const gameView = $('#game-view');
   const aboutView = $('#about-view');
+  const mainNav = document.querySelector('.main-nav');
+  const navBackdrop = document.querySelector('.nav-backdrop');
+  const menuToggle = document.querySelector('.menu-toggle');
   const grid = $('#game-grid');
   const backBtn = $('#back-btn');
   const gameTitle = $('#game-title');
@@ -21,12 +24,119 @@ document.addEventListener('DOMContentLoaded', () => {
   const postForm = $('#post-form');
   const postName = $('#post-name');
   const postText = $('#post-text');
+  // Tabs
+  const tabsHost = document.getElementById('game-tabs');
+  const tabButtons = tabsHost ? Array.from(tabsHost.querySelectorAll('[data-tab]')) : [];
+  const tabPanels = tabsHost ? Array.from(tabsHost.querySelectorAll('[data-panel]')) : [];
   // Screenshots panel
-  const shotsPanel = document.getElementById('shots-panel');
   const shotsStrip = document.getElementById('shots-strip');
   const shotModal = document.getElementById('shot-modal');
   const shotModalImg = document.getElementById('shot-modal-image');
   const shotDownload = document.getElementById('shot-download');
+  const shotPrev = document.getElementById('shot-prev');
+  const shotNext = document.getElementById('shot-next');
+  const shotModalContent = shotModal ? shotModal.querySelector('.map-modal-content') : null;
+  let shotItems = [];
+  let shotIndex = 0;
+  const SWIPE_THRESHOLD = 40;
+
+  const isShotModalOpen = () => shotModal?.getAttribute('aria-hidden') === 'false';
+
+  function updateShotNavState() {
+    const disabled = shotItems.length <= 1;
+    if (shotPrev) shotPrev.disabled = disabled;
+    if (shotNext) shotNext.disabled = disabled;
+  }
+
+  function showShot(index) {
+    if (!shotModalImg || !shotItems.length) return;
+    shotIndex = (index + shotItems.length) % shotItems.length;
+    const shot = shotItems[shotIndex];
+    const alt = shot.alt || 'Screenshot full view';
+    shotModalImg.src = shot.url;
+    shotModalImg.alt = alt;
+    if (shotDownload) shotDownload.href = shot.url;
+    updateShotNavState();
+  }
+
+  function openShotModalAt(index = 0) {
+    if (!shotModal || !shotItems.length) return;
+    showShot(index);
+    shotModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeShotModal() {
+    if (!shotModal) return;
+    shotModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function changeShot(delta) {
+    if (!shotItems.length) return;
+    showShot(shotIndex + delta);
+  }
+
+  shotPrev?.addEventListener('click', () => changeShot(-1));
+  shotNext?.addEventListener('click', () => changeShot(1));
+  shotModal
+    ?.querySelectorAll('[data-close-shot]')
+    ?.forEach(el => el.addEventListener('click', closeShotModal));
+  window.addEventListener('keydown', ev => {
+    if (!isShotModalOpen()) {
+      if (ev.key === 'Escape') closeShotModal();
+      return;
+    }
+    if (ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      changeShot(1);
+    } else if (ev.key === 'ArrowLeft') {
+      ev.preventDefault();
+      changeShot(-1);
+    } else if (ev.key === 'Escape') {
+      closeShotModal();
+    }
+  });
+
+  let swipeStartX = null;
+  shotModalContent?.addEventListener('pointerdown', e => {
+    swipeStartX = e.clientX;
+  });
+  shotModalContent?.addEventListener('pointerup', e => {
+    if (swipeStartX === null) return;
+    const deltaX = e.clientX - swipeStartX;
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      changeShot(deltaX < 0 ? 1 : -1);
+    }
+    swipeStartX = null;
+  });
+  shotModalContent?.addEventListener('pointercancel', () => {
+    swipeStartX = null;
+  });
+  // Home filters and states
+  const filterPlatform = document.getElementById('filter-platform');
+  const filterYear = document.getElementById('filter-year');
+  const filterSearch = document.getElementById('filter-search');
+  const filterReset = document.getElementById('filter-reset');
+  const homeEmpty = document.getElementById('home-empty');
+  const homeLoading = document.getElementById('home-loading');
+
+  // Profile + Settings
+  const profileView = document.getElementById('profile-view');
+  const profileAvatar = document.getElementById('profile-avatar');
+  const profileTagline = document.getElementById('profile-tagline');
+  const profileTags = document.getElementById('profile-tags');
+  const profileStats = document.getElementById('profile-stats');
+  const collectionGrid = document.getElementById('collection-grid');
+  const collectionFilter = document.getElementById('collection-filter');
+  const achievementsGrid = document.getElementById('achievements-grid');
+
+  const settingsView = document.getElementById('settings-view');
+  const settingsName = document.getElementById('settings-name');
+  const settingsEmail = document.getElementById('settings-email');
+  const settingsPassOld = document.getElementById('settings-pass-old');
+  const settingsPassNew = document.getElementById('settings-pass-new');
+  const prefChat = document.getElementById('pref-chat');
+  const prefBadge = document.getElementById('pref-badge');
+  const prefAnalytics = document.getElementById('pref-analytics');
 
   // Chatbot elements
   const chatbotToggler = document.querySelector('.chatbot-toggler');
@@ -39,11 +149,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const authBtn = document.getElementById('auth-btn');
   const authChip = document.getElementById('auth-chip');
   const authModal = document.getElementById('auth-modal');
-  const authForm = document.getElementById('auth-form');
+  const authTabs = authModal ? Array.from(authModal.querySelectorAll('[data-auth-tab]')) : [];
+  const authForms = {
+    login: document.getElementById('auth-form-login'),
+    register: document.getElementById('auth-form-register'),
+  };
   const authEmail = document.getElementById('auth-email');
   const authPass = document.getElementById('auth-pass');
+  const authNameReg = document.getElementById('auth-name');
+  const authEmailReg = document.getElementById('auth-email-register');
+  const authPassReg = document.getElementById('auth-pass-register');
   // Header GIF slot configuration (random pixel GIF on the right side)
   const headerEl = document.querySelector('.app-header');
+  const logoHome = document.querySelector('.logo-home');
+  const logoInner = document.querySelector('.logo-inner');
   const pixelGifs = [
     'assets/pixel/12c6a260613c6e51b16af016dd38c44e182fcd68_hq.gif',
     'assets/pixel/36541a1369a2eec1894ebff1b9e4a948a78cea80_hq.gif',
@@ -59,20 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let headerGifHost = null;
   let headerGifImg = null;
   let lastGifIndex = -1;
+  const DEFAULT_LOGO = 'assets/pokeball.png';
 
   function ensureHeaderGifHost() {
-    if (!headerEl) return null;
-    if (!headerGifHost) {
-      headerGifHost = document.createElement('div');
-      headerGifHost.id = 'header-gif';
-      headerGifHost.setAttribute('aria-hidden', 'true');
-      headerGifImg = document.createElement('img');
-      headerGifImg.alt = '';
-      headerGifImg.loading = 'lazy';
-      headerGifImg.decoding = 'async';
-      headerGifHost.appendChild(headerGifImg);
-      headerEl.appendChild(headerGifHost);
-    }
+    if (!logoHome) return null;
+    headerGifHost = logoHome;
+    headerGifImg = logoHome;
     return headerGifHost;
   }
   function pickNewGifIndex() {
@@ -88,13 +199,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const host = ensureHeaderGifHost();
     if (!host) return;
     if (!visible) {
-      host.style.display = 'none';
+      host.src = DEFAULT_LOGO;
+      if (logoInner) logoInner.src = DEFAULT_LOGO;
       return;
     }
-    host.style.display = '';
     const idx = pickNewGifIndex();
     if (idx >= 0) {
-      headerGifImg.src = pixelGifs[idx];
+      const src = pixelGifs[idx];
+      headerGifImg.src = src;
+      if (logoInner) logoInner.src = src;
     }
   }
 
@@ -146,8 +259,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function setAuthTab(tab) {
+    authTabs.forEach(btn => {
+      const active = btn.dataset.authTab === tab;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    Object.entries(authForms).forEach(([key, form]) => {
+      if (!form) return;
+      const active = key === tab;
+      form.style.display = active ? 'grid' : 'none';
+      form.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+  }
+
   function openAuthModal() {
     if (authModal) authModal.setAttribute('aria-hidden', 'false');
+    setAuthTab('login');
   }
   function closeAuthModal() {
     if (authModal) authModal.setAttribute('aria-hidden', 'true');
@@ -364,6 +492,26 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
     },
   ];
+  let gamesLoadedFromApi = false;
+
+  // Profile mock data (local only)
+  const profileData = {
+    name: 'Trainer Oak Jr.',
+    tagline: 'Retro collector and walkthrough writer.',
+    avatar: 'assets/pixel/6Vww.gif',
+    tags: ['Collector', 'Guide writer', 'Kanto native'],
+    stats: [
+      { label: 'Games cleared', value: 42 },
+      { label: 'Badges earned', value: 48 },
+      { label: 'Tips shared', value: 128 },
+    ],
+    achievements: [
+      { title: 'Kanto Veteran', desc: 'Completed all Gym Leader rematches', tier: 'gold' },
+      { title: 'Frontier Brain', desc: 'Won 50 Battle Frontier streak', tier: 'platinum' },
+      { title: 'Dex Scholar', desc: 'Filled regional dex without trades', tier: 'silver' },
+      { title: 'Speedrunner', desc: 'Beat Elite Four in under 3 hours', tier: 'bronze' },
+    ],
+  };
 
   async function fetchJson(url) {
     const res = await fetch(url);
@@ -395,9 +543,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const mapped = (data?.games || []).map(mapApiGame).filter(Boolean);
       if (mapped.length) {
         games = mapped;
+        gamesLoadedFromApi = true;
       }
     } catch {
       console.warn('Using fallback games; API unavailable');
+    } finally {
+      gamesLoadedFromApi = true;
     }
   }
 
@@ -511,6 +662,20 @@ document.addEventListener('DOMContentLoaded', () => {
     y: 'assets/game/y.gif',
   };
 
+  function activateTab(id) {
+    tabButtons.forEach(btn => {
+      const active = btn.dataset.tab === id;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      btn.tabIndex = active ? 0 : -1;
+    });
+    tabPanels.forEach(panel => {
+      const active = panel.dataset.panel === id;
+      panel.classList.toggle('active', active);
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+  }
+
   // New: gameplay GIFs for the hero area (inside pages)
   const gameplayGifMap = {
     'fire-red': 'assets/gameplay/pokemon-fire-red.gif',
@@ -521,21 +686,62 @@ document.addEventListener('DOMContentLoaded', () => {
     y: 'assets/gameplay/y.gif',
   };
 
-  // Render Home Grid
-  async function renderHome() {
-    grid.innerHTML = '';
-    if (!games.length) {
-      await loadGamesFromApi();
-    }
-    // Theme: Home (light red/white)
+  function setHomeLoading(isLoading) {
+    if (!homeLoading) return;
+    homeLoading.style.display = isLoading ? 'grid' : 'none';
+    homeLoading.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+  }
+
+  const clearThemes = () => {
     document.body.className = document.body.className
       .split(' ')
       .filter(c => !c.startsWith('theme-'))
       .join(' ');
+  };
+  function openNav() {
+    document.body.classList.add('nav-open');
+  }
+  function closeNav() {
+    document.body.classList.remove('nav-open');
+  }
+  function toggleNav() {
+    if (document.body.classList.contains('nav-open')) closeNav();
+    else openNav();
+  }
+
+  function filterGameList(list) {
+    const platform = (filterPlatform?.value || '').toLowerCase();
+    const year = filterYear?.value || '';
+    const term = (filterSearch?.value || '').toLowerCase().trim();
+    return list.filter(g => {
+      const platformMatch = platform ? (g.platform || '').toLowerCase().includes(platform) : true;
+      const yearMatch = year ? (g.year || '').toString() === year : true;
+      const text = `${g.title || ''} ${g.platform || ''} ${g.version || ''}`.toLowerCase();
+      const searchMatch = term ? text.includes(term) : true;
+      return platformMatch && yearMatch && searchMatch;
+    });
+  }
+
+  // Render Home Grid
+  async function renderHome() {
+    if (homeEmpty) homeEmpty.hidden = true;
+    grid.innerHTML = '';
+    setHomeLoading(true);
+    if (!gamesLoadedFromApi) {
+      await loadGamesFromApi();
+    }
+    setHomeLoading(false);
+    // Theme: Home (light red/white)
+    clearThemes();
     document.body.classList.add('theme-home');
     // Reset chatbot with generic welcome on Home
     resetChatWithWelcome(null);
-    games.forEach(g => {
+    const filtered = filterGameList(games);
+    if (!filtered.length) {
+      if (homeEmpty) homeEmpty.hidden = false;
+      return;
+    }
+    filtered.forEach(g => {
       const card = document.createElement('article');
       card.className = 'card';
       card.setAttribute('role', 'listitem');
@@ -608,14 +814,11 @@ document.addEventListener('DOMContentLoaded', () => {
       'black-2': 'theme-black-2',
       y: 'theme-y',
     };
-    document.body.className = document.body.className
-      .split(' ')
-      .filter(c => !c.startsWith('theme-'))
-      .join(' ');
+    clearThemes();
     document.body.classList.add(themeMap[game.id] || 'theme-home');
     gameTitle.textContent = game.title;
-    // Use backend hero/banner if available; fallback to gameplay GIFs
-    const heroUrl = game.banner || gameplayGifMap[game.id] || game.art || '';
+    // Prefer gameplay GIF if available, then banner, then art
+    const heroUrl = gameplayGifMap[game.id] || game.banner || game.art || '';
     if (heroUrl) {
       gameArt.classList.remove('no-image');
       gameArt.style.backgroundImage = `url('${heroUrl}')`;
@@ -639,15 +842,22 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(s => s && s.url)
         : [];
       if (fromGame.length) return fromGame;
-      if (game.banner) return [{ url: game.banner, alt: `${game.title} map` }];
-      return [];
+      const fallbacks = [];
+      if (game.banner) fallbacks.push({ url: game.banner, alt: `${game.title} map` });
+      if (game.art) fallbacks.push({ url: game.art, alt: `${game.title} cover` });
+      return fallbacks;
     })();
-    if (shotsPanel && shotsStrip) {
+    shotItems = screenshots;
+    shotIndex = 0;
+    updateShotNavState();
+    if (shotsStrip) {
       shotsStrip.innerHTML = '';
+      const shotsPanelHost = shotsStrip.closest('.panel');
       if (!screenshots.length) {
-        shotsPanel.style.display = 'none';
+        if (shotsPanelHost) shotsPanelHost.style.display = 'none';
+        closeShotModal();
       } else {
-        shotsPanel.style.display = '';
+        if (shotsPanelHost) shotsPanelHost.style.display = '';
         screenshots.forEach((shot, idx) => {
           const item = document.createElement('button');
           item.className = 'shot-thumb';
@@ -655,30 +865,11 @@ document.addEventListener('DOMContentLoaded', () => {
           item.setAttribute('role', 'listitem');
           item.setAttribute('aria-label', shot.alt || `${game.title} screenshot ${idx + 1}`);
           item.innerHTML = `<img src="${shot.url}" alt="${shot.alt || `${game.title} screenshot ${idx + 1}`}" loading="lazy" />`;
-          item.addEventListener('click', () => openShotModal(shot.url));
+          item.addEventListener('click', () => openShotModalAt(idx));
           shotsStrip.appendChild(item);
         });
       }
     }
-
-    function openShotModal(url) {
-      if (!shotModal) return;
-      shotModalImg.src = url;
-      if (shotDownload) shotDownload.href = url;
-      shotModal.setAttribute('aria-hidden', 'false');
-    }
-    function closeShotModal() {
-      if (!shotModal) return;
-      shotModal.setAttribute('aria-hidden', 'true');
-    }
-    shotModal?.querySelectorAll('[data-close-shot]')?.forEach(el => (el.onclick = closeShotModal));
-    window.addEventListener(
-      'keydown',
-      ev => {
-        if (ev.key === 'Escape') closeShotModal();
-      },
-      { once: true }
-    );
 
     // Tips
     tipsList.innerHTML = '';
@@ -709,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
         faqList.appendChild(d);
       });
     }
+    activateTab('tips');
 
     // Forum posts
     renderPosts();
@@ -737,6 +929,105 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function buildCollection() {
+    return games.map((g, idx) => ({
+      ...g,
+      status: ['Completed', 'In progress', 'Wishlist'][idx % 3],
+      progress: 42 + ((idx * 13) % 55),
+    }));
+  }
+
+  function renderCollectionGrid() {
+    if (!collectionGrid) return;
+    collectionGrid.innerHTML = '';
+    const platform = (collectionFilter?.value || '').toLowerCase();
+    const list = buildCollection().filter(item =>
+      platform ? (item.platform || '').toLowerCase().includes(platform) : true
+    );
+    if (!list.length) {
+      const empty = document.createElement('p');
+      empty.className = 'map-hint';
+      empty.textContent = 'No games in this filter yet.';
+      collectionGrid.appendChild(empty);
+      return;
+    }
+    list.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'collection-card';
+      card.innerHTML = `
+        <div class="thumb" style="background-image:url('${item.art || ''}')"></div>
+        <div class="meta">
+          <div class="title">${item.title}</div>
+          <div class="chips">
+            <span class="chip">${item.platform || 'TBA'}</span>
+            <span class="chip">${item.status}</span>
+          </div>
+          <div class="progress" aria-label="${item.progress}% complete"><span style="width:${item.progress}%"></span></div>
+        </div>
+      `;
+      collectionGrid.appendChild(card);
+    });
+  }
+
+  function renderAchievements() {
+    if (!achievementsGrid) return;
+    achievementsGrid.innerHTML = '';
+    profileData.achievements.forEach(a => {
+      const card = document.createElement('div');
+      card.className = `achievement tier-${a.tier}`;
+      card.innerHTML = `<h4>${a.title}</h4><p>${a.desc}</p>`;
+      achievementsGrid.appendChild(card);
+    });
+  }
+
+  function renderProfile() {
+    if (!profileView) return;
+    profileAvatar.src = profileData.avatar;
+    profileTagline.textContent = profileData.tagline;
+    profileTags.innerHTML = '';
+    profileData.tags.forEach(t => {
+      const c = document.createElement('span');
+      c.className = 'chip';
+      c.textContent = t;
+      profileTags.appendChild(c);
+    });
+    profileStats.innerHTML = '';
+    profileData.stats.forEach(stat => {
+      const s = document.createElement('div');
+      s.className = 'stat';
+      s.innerHTML = `<div class="label">${stat.label}</div><div class="value">${stat.value}</div>`;
+      profileStats.appendChild(s);
+    });
+    renderCollectionGrid();
+    renderAchievements();
+  }
+
+  const SETTINGS_KEY = 'retrohub-settings';
+  function hydrateSettings() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (settingsName) settingsName.value = stored.name || authUser?.name || 'Trainer';
+      if (settingsEmail)
+        settingsEmail.value = stored.email || authUser?.email || 'trainer@example.com';
+      if (prefChat) prefChat.checked = stored.prefChat ?? true;
+      if (prefBadge) prefBadge.checked = stored.prefBadge ?? true;
+      if (prefAnalytics) prefAnalytics.checked = stored.prefAnalytics ?? false;
+    } catch {
+      /* ignore */
+    }
+  }
+  function persistSettings() {
+    const payload = {
+      name: settingsName?.value || 'Trainer',
+      email: settingsEmail?.value || 'trainer@example.com',
+      prefChat: !!prefChat?.checked,
+      prefBadge: !!prefBadge?.checked,
+      prefAnalytics: !!prefAnalytics?.checked,
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+    alert('Settings saved');
+  }
+
   // Forum submit
   postForm.addEventListener('submit', e => {
     e.preventDefault();
@@ -753,6 +1044,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function navigateTo(hash) {
     window.location.hash = hash;
   }
+  function go(path) {
+    navigateTo(path.startsWith('#') ? path : `#${path}`);
+    closeNav();
+  }
   function onRoute() {
     const hash = window.location.hash || '#/';
     const parts = hash.slice(2).split('/').filter(Boolean);
@@ -760,7 +1055,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const markActive = route => {
       document.querySelectorAll('.nav-link').forEach(a => {
         const href = a.getAttribute('href');
-        if ((route === 'home' && href === '#/') || (route === 'about' && href === '#/about')) {
+        const activeMatch =
+          (route === 'home' && href === '#/') ||
+          (route === 'about' && href === '#/about') ||
+          (route === 'profile' && href === '#/profile') ||
+          (route === 'settings' && href === '#/settings');
+        if (activeMatch) {
           a.classList.add('active');
         } else {
           a.classList.remove('active');
@@ -771,11 +1071,14 @@ document.addEventListener('DOMContentLoaded', () => {
       aboutView.classList.remove('active');
       homeView.classList.add('active');
       gameView.classList.remove('active');
+      profileView?.classList.remove('active');
+      settingsView?.classList.remove('active');
       renderHome();
       markActive('home');
       // Show a random header gif on Home
       setHeaderGifVisible(true);
       resetScrollTop();
+      closeNav();
     } else {
       const id = parts[0];
       // About route: dedicated minimal page showing only the Meowth City GIF
@@ -783,17 +1086,47 @@ document.addEventListener('DOMContentLoaded', () => {
         homeView.classList.remove('active');
         gameView.classList.remove('active');
         aboutView.classList.add('active');
+        profileView?.classList.remove('active');
+        settingsView?.classList.remove('active');
         // Apply About theme tokens and ensure chatbot is closed
-        document.body.className = document.body.className
-          .split(' ')
-          .filter(c => !c.startsWith('theme-'))
-          .join(' ');
+        clearThemes();
         document.body.classList.add('theme-about');
         document.body.classList.remove('show-chatbot');
         // Hide header gif on About
         setHeaderGifVisible(false);
         markActive('about');
         resetScrollTop();
+        closeNav();
+        return;
+      }
+      if (id === 'profile') {
+        homeView.classList.remove('active');
+        gameView.classList.remove('active');
+        aboutView.classList.remove('active');
+        settingsView?.classList.remove('active');
+        profileView?.classList.add('active');
+        clearThemes();
+        document.body.classList.add('theme-home');
+        renderProfile();
+        markActive('profile');
+        setHeaderGifVisible(true);
+        resetScrollTop();
+        closeNav();
+        return;
+      }
+      if (id === 'settings') {
+        homeView.classList.remove('active');
+        gameView.classList.remove('active');
+        aboutView.classList.remove('active');
+        profileView?.classList.remove('active');
+        settingsView?.classList.add('active');
+        clearThemes();
+        document.body.classList.add('theme-home');
+        hydrateSettings();
+        markActive('settings');
+        setHeaderGifVisible(true);
+        resetScrollTop();
+        closeNav();
         return;
       }
       const proceed = async () => {
@@ -812,6 +1145,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (game) {
           aboutView.classList.remove('active');
           homeView.classList.remove('active');
+          profileView?.classList.remove('active');
+          settingsView?.classList.remove('active');
           gameView.classList.add('active');
           renderGame(game);
           // Hydrate richer data if available
@@ -834,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', onRoute);
 
   // Back and Jump actions
-  backBtn.addEventListener('click', () => navigateTo('#/'));
+  backBtn.addEventListener('click', () => go('#/'));
   openChat.addEventListener('click', () => {
     document.body.classList.add('show-chatbot');
     if (!authToken && !authPromptShown) {
@@ -842,9 +1177,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     chatInput.focus();
   });
+  menuToggle?.addEventListener('click', toggleNav);
+  navBackdrop?.addEventListener('click', closeNav);
+  document.addEventListener('click', e => {
+    if (!document.body.classList.contains('nav-open')) return;
+    if (mainNav && mainNav.contains(e.target)) return;
+    if (menuToggle && menuToggle.contains(e.target)) return;
+    closeNav();
+  });
   scrollForum.addEventListener('click', () => {
     forumEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+  tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
   // Chatbot logic (Google Gemini API)
   const inputInitHeight = chatInput.scrollHeight;
@@ -1025,6 +1369,23 @@ Constraints:
     }
   });
 
+  // Home filters
+  [filterPlatform, filterYear, filterSearch].forEach(el =>
+    el?.addEventListener('input', () => renderHome())
+  );
+  filterReset?.addEventListener('click', () => {
+    if (filterPlatform) filterPlatform.value = '';
+    if (filterYear) filterYear.value = '';
+    if (filterSearch) filterSearch.value = '';
+    renderHome();
+  });
+
+  // Close nav on route changes
+  window.addEventListener('hashchange', closeNav);
+
+  // Profile filters
+  collectionFilter?.addEventListener('change', renderCollectionGrid);
+
   // --- Auth UI wiring ---
   updateAuthUI();
   authBtn?.addEventListener('click', () => {
@@ -1035,10 +1396,11 @@ Constraints:
       setTimeout(() => authEmail?.focus(), 50);
     }
   });
+  authTabs.forEach(btn => btn.addEventListener('click', () => setAuthTab(btn.dataset.authTab)));
   authModal
     ?.querySelectorAll('[data-auth-close]')
     ?.forEach(el => el.addEventListener('click', closeAuthModal));
-  authForm?.addEventListener('submit', async e => {
+  authForms.login?.addEventListener('submit', async e => {
     e.preventDefault();
     const email = (authEmail?.value || '').trim();
     const password = (authPass?.value || '').trim();
@@ -1059,6 +1421,45 @@ Constraints:
     } catch {
       alert('Login failed');
     }
+  });
+  authForms.register?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = (authNameReg?.value || '').trim();
+    const email = (authEmailReg?.value || '').trim();
+    const password = (authPassReg?.value || '').trim();
+    if (!email || !password) return;
+    try {
+      const resp = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const payload = await resp.json();
+      if (!resp.ok) throw new Error(payload?.error || 'Registration failed');
+      setAuth(payload.user, payload.token);
+      authPromptShown = false;
+      closeAuthModal();
+    } catch {
+      alert('Registration failed');
+    }
+  });
+
+  // Settings actions
+  document.getElementById('save-account')?.addEventListener('click', persistSettings);
+  document.getElementById('save-preferences')?.addEventListener('click', persistSettings);
+  document
+    .getElementById('save-password')
+    ?.addEventListener('click', () => alert('Password update requested (demo only)'));
+  document.getElementById('clear-storage')?.addEventListener('click', () => {
+    localStorage.clear();
+    setAuth(null, '');
+    renderPosts();
+    renderHome();
+    alert('Local data cleared');
+  });
+  document.getElementById('revoke-sessions')?.addEventListener('click', () => {
+    setAuth(null, '');
+    alert('All sessions revoked (demo)');
   });
 
   // Initial render
