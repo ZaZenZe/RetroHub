@@ -115,7 +115,15 @@ router.post('/games', verifyToken, requireAdmin, async (req, res, next) => {
     const { tips = [], faqs = [], ...gameInput } = payload;
     const game = await Game.create(gameInput);
 
-    const tipDocs = tips.map(content => ({ gameId: game._id, content, category: 'gameplay' }));
+    const tipDocs = tips.map(t =>
+      typeof t === 'string'
+        ? { gameId: game._id, content: t, category: 'gameplay' }
+        : {
+            gameId: game._id,
+            content: t.content,
+            category: t.category || 'gameplay',
+          }
+    );
     const faqDocs = faqs.map(item => ({
       gameId: game._id,
       question: item.question,
@@ -138,7 +146,26 @@ router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next
     const game = await findGameByParam(req.params.gameParam);
     if (!game) return res.status(404).json({ error: 'Game not found' });
     const updates = req.body || {};
-    Object.assign(game, updates);
+    const allowed = [
+      'title',
+      'slug',
+      'platform',
+      'releaseYear',
+      'year',
+      'versionLabel',
+      'region',
+      'description',
+      'coverImageUrl',
+      'heroImageUrl',
+      'hoverImageUrl',
+      'screenshots',
+      'theme',
+    ];
+    allowed.forEach(key => {
+      if (Object.prototype.hasOwnProperty.call(updates, key)) {
+        game[key] = updates[key];
+      }
+    });
     await game.save();
     res.json({ game: sanitizeGame(game) });
   } catch (err) {

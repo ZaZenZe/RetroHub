@@ -36,22 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const shotPrev = document.getElementById('shot-prev');
   const shotNext = document.getElementById('shot-next');
   const shotModalContent = shotModal ? shotModal.querySelector('.map-modal-content') : null;
-  let shotItems = [];
-  let shotIndex = 0;
+  const shotState = { items: [], index: 0 };
   const SWIPE_THRESHOLD = 40;
 
   const isShotModalOpen = () => shotModal?.getAttribute('aria-hidden') === 'false';
 
   function updateShotNavState() {
-    const disabled = shotItems.length <= 1;
+    const disabled = shotState.items.length <= 1;
     if (shotPrev) shotPrev.disabled = disabled;
     if (shotNext) shotNext.disabled = disabled;
   }
 
   function showShot(index) {
-    if (!shotModalImg || !shotItems.length) return;
-    shotIndex = (index + shotItems.length) % shotItems.length;
-    const shot = shotItems[shotIndex];
+    if (!shotModalImg || !shotState.items.length) return;
+    shotState.index = (index + shotState.items.length) % shotState.items.length;
+    const shot = shotState.items[shotState.index];
     const alt = shot.alt || 'Screenshot full view';
     shotModalImg.src = shot.url;
     shotModalImg.alt = alt;
@@ -68,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openShotModalAt(index = 0) {
-    if (!shotModal || !shotItems.length) return;
+    if (!shotModal || !shotState.items.length) return;
     showShot(index);
     shotModal.setAttribute('aria-hidden', 'false');
   }
@@ -79,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function changeShot(delta) {
-    if (!shotItems.length) return;
-    showShot(shotIndex + delta);
+    if (!shotState.items.length) return;
+    showShot(shotState.index + delta);
   }
 
   shotPrev?.addEventListener('click', () => changeShot(-1));
@@ -89,10 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ?.querySelectorAll('[data-close-shot]')
     ?.forEach(el => el.addEventListener('click', closeShotModal));
   window.addEventListener('keydown', ev => {
-    if (!isShotModalOpen()) {
-      if (ev.key === 'Escape') closeShotModal();
-      return;
-    }
+    if (!isShotModalOpen()) return;
     if (ev.key === 'ArrowRight') {
       ev.preventDefault();
       changeShot(1);
@@ -870,8 +866,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (game.art) fallbacks.push({ url: game.art, alt: `${game.title} cover` });
       return fallbacks;
     })();
-    shotItems = screenshots;
-    shotIndex = 0;
+    shotState.items = screenshots;
+    shotState.index = 0;
     updateShotNavState();
     if (shotsStrip) {
       shotsStrip.innerHTML = '';
@@ -1048,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
       prefAnalytics: !!prefAnalytics?.checked,
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
-    alert('Settings saved');
+    alert('Your settings have been saved successfully');
   }
 
   // Forum submit
@@ -1463,8 +1459,9 @@ Constraints:
       setAuth(payload.user, payload.token);
       authPromptShown = false;
       closeAuthModal();
-    } catch {
-      alert('Login failed');
+    } catch (err) {
+      const message = err?.message ? `Login failed: ${err.message}` : 'Login failed';
+      alert(message);
     }
   });
   authForms.register?.addEventListener('submit', async e => {
@@ -1484,8 +1481,9 @@ Constraints:
       setAuth(payload.user, payload.token);
       authPromptShown = false;
       closeAuthModal();
-    } catch {
-      alert('Registration failed');
+    } catch (err) {
+      const message = err?.message ? `Registration failed: ${err.message}` : 'Registration failed';
+      alert(message);
     }
   });
 

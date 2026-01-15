@@ -60,7 +60,10 @@ router.post('/register', async (req, res, next) => {
       return res.status(409).json({ error: 'email or username already in use' });
     }
 
-    const canSetRole = (process.env.ALLOW_ADMIN_REGISTRATION || 'false').toLowerCase() === 'true';
+    const allowedAdminValues = new Set(['true', '1', 'yes']);
+    const canSetRole = allowedAdminValues.has(
+      String(process.env.ALLOW_ADMIN_REGISTRATION || 'false').toLowerCase()
+    );
     const user = new User({
       email,
       username,
@@ -69,6 +72,10 @@ router.post('/register', async (req, res, next) => {
     });
     await user.save();
     await ensureStats(user._id);
+
+    if (user.role === 'admin') {
+      console.warn(`[audit] Admin account created: ${user.email}`);
+    }
 
     const token = signToken(user);
     return res.status(201).json({ user: sanitizeUser(user), token });
