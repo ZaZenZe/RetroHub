@@ -55,7 +55,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const alt = shot.alt || 'Screenshot full view';
     shotModalImg.src = shot.url;
     shotModalImg.alt = alt;
-    if (shotDownload) shotDownload.href = shot.url;
+    if (shotDownload) {
+      shotDownload.href = shot.url;
+      const filename = shot.filename || (shot.url ? shot.url.split('/').pop() : 'retrohub-shot');
+      if (filename) {
+        shotDownload.setAttribute('download', filename);
+      } else {
+        shotDownload.removeAttribute('download');
+      }
+    }
     updateShotNavState();
   }
 
@@ -140,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Chatbot elements
   const chatbotToggler = document.querySelector('.chatbot-toggler');
+  const chatbotPanel = document.querySelector('.chatbot');
   const closeBtn = document.querySelector('.close-btn');
   const chatbox = document.querySelector('.chatbox');
   const chatInput = document.querySelector('.chat-input textarea');
@@ -272,6 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
       form.setAttribute('aria-hidden', active ? 'false' : 'true');
     });
   }
+
+  const isAuthModalOpen = () => authModal?.getAttribute('aria-hidden') === 'false';
 
   function openAuthModal() {
     if (authModal) authModal.setAttribute('aria-hidden', 'false');
@@ -764,6 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="cta" data-open="${g.id}">Open</button>
         </div>
       `;
+      card.tabIndex = 0;
       // Hover GIF preview per game (Home only)
       const thumb = card.querySelector('.thumb');
       const originalUrl = g.art || '';
@@ -797,7 +809,18 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = gifUrl;
       });
       card.addEventListener('focusout', () => applyBg(originalUrl));
-      card.querySelector('[data-open]')?.addEventListener('click', () => navigateTo(`#/${g.id}`));
+      const openDetail = () => navigateTo(`#/${g.id}`);
+      card.addEventListener('click', e => {
+        if (e.target.closest('[data-open]')) return;
+        openDetail();
+      });
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openDetail();
+        }
+      });
+      card.querySelector('[data-open]')?.addEventListener('click', openDetail);
       grid.appendChild(card);
     });
   }
@@ -1186,7 +1209,9 @@ document.addEventListener('DOMContentLoaded', () => {
     closeNav();
   });
   scrollForum.addEventListener('click', () => {
+    activateTab('community');
     forumEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    postText?.focus({ preventScroll: true });
   });
   tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
@@ -1366,6 +1391,26 @@ Constraints:
     document.body.classList.toggle('show-chatbot');
     if (document.body.classList.contains('show-chatbot') && !authToken && !authPromptShown) {
       promptSignInWithOak();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!document.body.classList.contains('show-chatbot')) return;
+    const target = e.target;
+    if (chatbotPanel?.contains(target)) return;
+    if (chatbotToggler?.contains(target)) return;
+    if (openChat?.contains(target)) return;
+    document.body.classList.remove('show-chatbot');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.body.classList.contains('show-chatbot')) {
+      document.body.classList.remove('show-chatbot');
+      return;
+    }
+    if (isAuthModalOpen()) {
+      closeAuthModal();
     }
   });
 
