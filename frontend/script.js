@@ -136,8 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsView = document.getElementById('settings-view');
   const settingsName = document.getElementById('settings-name');
   const settingsEmail = document.getElementById('settings-email');
-  const settingsPassOld = document.getElementById('settings-pass-old');
-  const settingsPassNew = document.getElementById('settings-pass-new');
   const prefChat = document.getElementById('pref-chat');
   const prefBadge = document.getElementById('pref-badge');
   const prefAnalytics = document.getElementById('pref-analytics');
@@ -1333,8 +1331,6 @@ Constraints:
       } catch {
         chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8);
       }
-    } finally {
-      // Do not auto-jump to the very bottom; keep view at the top of the new message
     }
   };
 
