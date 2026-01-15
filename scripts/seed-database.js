@@ -1,7 +1,10 @@
 'use strict';
 
+// Note: This script is referenced by the "seed-db" service in docker-compose.yml.
+// If you rename this file (e.g., to seed-db.js), be sure to update the docker-compose
+// configuration so the service still points to the correct script path.
 require('dotenv').config();
-const { connectWithRetry, mongoose } = require('../backend/shared/db');
+const { connectWithRetry } = require('../backend/shared/db');
 const Game = require('../backend/shared/models/Game');
 const Tip = require('../backend/shared/models/Tip');
 const FAQ = require('../backend/shared/models/FAQ');
