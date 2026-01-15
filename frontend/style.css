@@ -45,7 +45,7 @@ button:hover, a:hover { cursor: url('https://unpkg.com/nes.css@2.3.0/assets/curs
 .app-header{ position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, var(--header-from), var(--header-to)); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
 .app-header .brand{ display: flex; align-items: center; gap: 12px; padding: 14px 20px; }
 .app-header .logo{ display: inline-block; border-radius: 8px; object-fit: contain; image-rendering: pixelated; }
-.app-header .logo-home{ width: 32px; height: 32px; }
+.app-header .logo-home{ width: 44px; height: 44px; }
 /* Keep the same small icon at all times; never swap to inner banner */
 .app-header .logo-inner{ display: none; }
 .app-header .titles h1{ font-size: 18px; font-weight: 600; letter-spacing: .3px; }
