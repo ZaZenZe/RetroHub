@@ -21,14 +21,21 @@ async function upsertStats(userId, inc = {}) {
 router.get('/games/:gameId/posts', async (req, res, next) => {
   try {
     const { gameId } = req.params;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
     if (!Types.ObjectId.isValid(gameId)) {
       return res.status(400).json({ error: 'Invalid game id' });
     }
-    const posts = await Post.find({ gameId })
-      .populate('userId', 'username avatarUrl')
-      .sort({ createdAt: -1 })
-      .lean();
-    res.json({ posts });
+    const [posts, total] = await Promise.all([
+      Post.find({ gameId })
+        .populate('userId', 'username avatarUrl')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Post.countDocuments({ gameId }),
+    ]);
+    res.json({ posts, page, total });
   } catch (err) {
     next(err);
   }
@@ -64,12 +71,14 @@ router.post('/games/:gameId/posts', verifyToken, async (req, res, next) => {
 router.get('/posts/:postId/replies', async (req, res, next) => {
   try {
     const { postId } = req.params;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
     if (!Types.ObjectId.isValid(postId)) {
       return res.status(400).json({ error: 'Invalid post id' });
     }
     const replies = await Reply.findByPost(postId)
       .populate('userId', 'username avatarUrl')
       .sort({ createdAt: 1 })
+      .limit(limit)
       .lean();
     res.json({ replies });
   } catch (err) {
@@ -114,13 +123,10 @@ router.post('/posts/:postId/vote', verifyToken, async (req, res, next) => {
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
-    if (direction === 'up') {
-      await post.upvote();
-    } else if (direction === 'down') {
-      await post.downvote();
-    } else {
+    if (direction !== 'up' && direction !== 'down') {
       return res.status(400).json({ error: 'direction must be up or down' });
     }
+    await post.applyVote(req.user.sub, direction);
     res.json({ upvotes: post.upvotes, downvotes: post.downvotes });
   } catch (err) {
     next(err);

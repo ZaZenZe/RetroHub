@@ -11,6 +11,11 @@ const router = express.Router();
 router.get('/games', async (req, res, next) => {
   try {
     const { q, platform } = req.query;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 50);
+    const minYear = parseInt(req.query.minYear, 10);
+    const maxYear = parseInt(req.query.maxYear, 10);
+
     const filter = {};
     if (q) {
       filter.title = new RegExp(q, 'i');
@@ -18,8 +23,19 @@ router.get('/games', async (req, res, next) => {
     if (platform) {
       filter.platform = platform;
     }
-    const games = await Game.find(filter).sort({ title: 1 });
-    res.json({ games });
+    if (!Number.isNaN(minYear) || !Number.isNaN(maxYear)) {
+      filter.releaseYear = {};
+      if (!Number.isNaN(minYear)) filter.releaseYear.$gte = minYear;
+      if (!Number.isNaN(maxYear)) filter.releaseYear.$lte = maxYear;
+    }
+    const [games, total] = await Promise.all([
+      Game.find(filter)
+        .sort({ releaseYear: -1, title: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Game.countDocuments(filter),
+    ]);
+    res.json({ games, page, total });
   } catch (err) {
     next(err);
   }

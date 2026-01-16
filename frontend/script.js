@@ -142,219 +142,96 @@ document.addEventListener('DOMContentLoaded', () => {
     if (authModal) authModal.setAttribute('aria-hidden', 'true');
   }
 
-  // App State
-  const games = [
-    {
-      id: 'chrono-trigger',
-      title: 'Chrono Trigger',
-      platform: 'SNES',
-      year: '1995',
-      version: 'Time-Travel Saga',
-      art: '',
-      banner: '',
-      description:
-        'Time-hopping RPG with multiple endings, dual techs, and side quests that reshape the finale.',
-      tips: [
-        'Use dual/triple techs for efficient boss damage.',
-        'Stock Shelters for quick heals at save points.',
-        'Do optional era quests before the final fight to unlock better endings.',
-      ],
-      faq: [
-        {
-          q: 'How to recruit Magus?',
-          a: 'During the North Cape confrontation, spare him and he will later join your party.',
-        },
-        {
-          q: 'Best place to grind mid-game?',
-          a: 'Use the Hunting Range (Prehistory) for Tech Points and the Black Omen for late-game EXP.',
-        },
-      ],
-      kb: [
-        ['magus|recruit', 'Spare Magus at North Cape; he joins later with strong shadow techs.'],
-        ['black omen|exp|tp', 'Run the Black Omen for high EXP/TP and rare drops before Lavos.'],
-      ],
-    },
-    {
-      id: 'super-metroid',
-      title: 'Super Metroid',
-      platform: 'SNES',
-      year: '1994',
-      version: 'Zebes',
-      art: '',
-      banner: '',
-      description:
-        'Classic exploratory platformer with sequence breaks, upgrades, and atmospheric boss fights.',
-      tips: [
-        'Grab the early Charge Beam to conserve ammo.',
-        'Use wall jumps and mockball to access items early.',
-        'Save before major bosses like Phantoon and Ridley.',
-      ],
-      faq: [
-        {
-          q: 'Where is the Gravity Suit?',
-          a: 'Clear the Wrecked Ship (Phantoon), then reach the suit in the flooded shaft of the ship.',
-        },
-        {
-          q: 'How to break glass tube in Maridia?',
-          a: 'Use a Power Bomb inside the tube to shatter it and open the route.',
-        },
-      ],
-      kb: [
-        [
-          'gravity suit|wrecked ship',
-          'Defeat Phantoon, power the ship, then drop to the flooded shaft for the Gravity Suit.',
-        ],
-        [
-          'glass tube|maridia|power bomb',
-          'Detonate a Power Bomb inside the glass tube to enter Maridia.',
-        ],
-      ],
-    },
-    {
-      id: 'link-to-the-past',
-      title: 'The Legend of Zelda: A Link to the Past',
-      platform: 'SNES',
-      year: '1991',
-      version: 'Hyrule',
-      art: '',
-      banner: '',
-      description:
-        'Top-down adventure with parallel Light/Dark Worlds, dungeons, and key item-driven progression.',
-      tips: [
-        'Grab the Bottle and Bug Net early for fairies.',
-        'Use the Pegasus Boots to break weak walls and reach chests.',
-        'Clear Dark World dungeons in flexible order once you have key items.',
-      ],
-      faq: [
-        {
-          q: 'Where to get the Flute?',
-          a: 'In the Light World Haunted Grove; play it to free the bird for fast travel.',
-        },
-        {
-          q: 'How to enter Misery Mire?',
-          a: 'Equip the Ether Medallion and use it on the Misery Mire tablet to unlock the dungeon.',
-        },
-      ],
-      kb: [
-        [
-          'flute|fast travel|bird',
-          'Find the Flute in the Haunted Grove; the bird enables map travel once freed.',
-        ],
-        [
-          'ether medallion|misery mire',
-          'Use Ether at the Misery Mire entrance to reveal the dungeon doorway.',
-        ],
-      ],
-    },
-    {
-      id: 'sonic-2',
-      title: 'Sonic the Hedgehog 2',
-      platform: 'Sega Genesis',
-      year: '1992',
-      version: 'Emerald Hill',
-      art: '',
-      banner: '',
-      description: 'High-speed platformer with split-screen races, Super Sonic, and iconic zones.',
-      tips: [
-        'Use spin dash starts to keep momentum through loops.',
-        'Collect 50 rings before checkpoints to enter Special Stages.',
-        'Super Sonic drains rings—activate when you can keep pace.',
-      ],
-      faq: [
-        {
-          q: 'How to get all Chaos Emeralds?',
-          a: 'Enter Special Stages via checkpoints with 50 rings; memorize layouts and prioritize ring paths.',
-        },
-        {
-          q: 'Best place to farm lives?',
-          a: 'Casino Night Zone has plentiful rings and slot machines—play safely to stock up.',
-        },
-      ],
-      kb: [
-        [
-          'chaos emeralds|special stage',
-          'Hit checkpoints with 50 rings to access half-pipe Special Stages; learn ring patterns.',
-        ],
-        [
-          'super sonic|rings drain',
-          'Transformation costs 50 rings and drains 1 per second—toggle when stages are open and fast.',
-        ],
-      ],
-    },
-    {
-      id: 'mega-man-x',
-      title: 'Mega Man X',
-      platform: 'SNES',
-      year: '1993',
-      version: 'Maverick Hunter',
-      art: '',
-      banner: '',
-      description:
-        'Action-platformer with dash mobility, armor upgrades, and boss weapon weaknesses.',
-      tips: [
-        'Get the Dash Boots in Chill Penguin’s stage first.',
-        'Use Storm Tornado against Launch Octopus and Sting Chameleon.',
-        'Heart Tanks and Sub-Tanks massively boost survivability.',
-      ],
-      faq: [
-        {
-          q: 'Where is the Hadouken capsule?',
-          a: 'After all upgrades, revisit Armored Armadillo and take the final cart jump with full health multiple times until the capsule appears.',
-        },
-        {
-          q: 'Easy weakness order?',
-          a: 'Chill Penguin → Spark Mandrill → Armored Armadillo → Launch Octopus → Boomer Kuwanger → Sting Chameleon → Storm Eagle → Flame Mammoth.',
-        },
-      ],
-      kb: [
-        [
-          'dash boots|chill penguin',
-          'Find the boots in Chill Penguin’s stage to unlock dashing and wall kicks.',
-        ],
-        [
-          'hadouken|armored armadillo',
-          'Full upgrades and repeated final jump in Armored Armadillo reveal the Hadouken capsule.',
-        ],
-      ],
-    },
-    {
-      id: 'sotn',
-      title: 'Castlevania: Symphony of the Night',
-      platform: 'PlayStation',
-      year: '1997',
-      version: "Dracula's Castle",
-      art: '',
-      banner: '',
-      description:
-        'Exploratory action RPG with relics, inverted castle, and a wide arsenal of spells and weapons.',
-      tips: [
-        'Buy the Jewel of Open early to access more areas.',
-        'Use the Shield Rod + Alucard Shield combo for survivability.',
-        'Explore thoroughly to reveal the inverted castle trigger (Silver/Gold Rings).',
-      ],
-      faq: [
-        {
-          q: 'How to reach the inverted castle?',
-          a: 'Equip the Silver and Gold Rings, visit the clock room, then defeat Richter with the Holy Glasses equipped.',
-        },
-        {
-          q: 'Good early weapon?',
-          a: 'The Short Sword upgrade Rapier and the Stopwatch sub-weapon carry early zones; get Jewel Knuckles in the Alchemy Lab.',
-        },
-      ],
-      kb: [
-        [
-          'inverted castle|richter|holy glasses',
-          'Wear the Silver/Gold Rings to reveal the clock room path, then keep Richter alive using Holy Glasses.',
-        ],
-        [
-          'shield rod|alucard shield',
-          'Equip together for a powerful defensive buff that trivializes many fights.',
-        ],
-      ],
-    },
-  ];
+  // API helpers
+  async function apiJson(path, options = {}) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(options.headers || {}),
+    };
+    const resp = await fetch(path, { ...options, headers });
+    let payload = null;
+    try {
+      payload = await resp.json();
+    } catch {
+      payload = null;
+    }
+    if (!resp.ok) {
+      const err = new Error((payload && payload.error) || resp.statusText || 'Request failed');
+      err.status = resp.status;
+      err.payload = payload;
+      throw err;
+    }
+    return payload || {};
+  }
 
+  const api = {
+    getGames: () => apiJson('/api/games'),
+    getGame: id => apiJson(`/api/games/${id}`),
+    getTips: id => apiJson(`/api/games/${id}/tips`),
+    getFaqs: id => apiJson(`/api/games/${id}/faqs`),
+    getPosts: gameId => apiJson(`/api/community/games/${gameId}/posts`),
+    createPost: (gameId, content) =>
+      apiJson(`/api/community/games/${gameId}/posts`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    getReplies: postId => apiJson(`/api/community/posts/${postId}/replies`),
+    createReply: (postId, content) =>
+      apiJson(`/api/community/posts/${postId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    validate: () => apiJson('/api/auth/me'),
+  };
+
+  async function loadGames() {
+    const { games: list = [] } = await api.getGames();
+    games = list.map(g => ({ ...g, id: g._id }));
+    gamesById.clear();
+    games.forEach(g => gamesById.set(g.id, g));
+    return games;
+  }
+
+  let gamesLoadPromise = null;
+  async function ensureGamesLoaded() {
+    if (games && games.length) return games;
+    if (!gamesLoadPromise) {
+      gamesLoadPromise = loadGames().catch(err => {
+        gamesLoadPromise = null;
+        throw err;
+      });
+    }
+    return gamesLoadPromise;
+  }
+
+  async function loadTips(gameId) {
+    if (tipsCache.has(gameId)) return tipsCache.get(gameId);
+    const { tips = [] } = await api.getTips(gameId);
+    tipsCache.set(gameId, tips);
+    return tips;
+  }
+
+  async function loadFaqs(gameId) {
+    if (faqCache.has(gameId)) return faqCache.get(gameId);
+    const { faqs = [] } = await api.getFaqs(gameId);
+    faqCache.set(gameId, faqs);
+    return faqs;
+  }
+
+  async function loadPosts(gameId) {
+    if (postsCache.has(gameId)) return postsCache.get(gameId);
+    const { posts = [] } = await api.getPosts(gameId);
+    postsCache.set(gameId, posts);
+    return posts;
+  }
+
+  // App State (API-driven)
+  let games = [];
+  const gamesById = new Map();
+  const tipsCache = new Map();
+  const faqCache = new Map();
+  const postsCache = new Map();
   let currentGameId = null;
 
   // Per-game randomized welcome messages
@@ -412,19 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chatbox.scrollTo(0, chatbox.scrollHeight);
   }
 
-  // Utility: localStorage helpers
-  const storageKey = gameId => `forum:${gameId}`;
-  const loadPosts = gameId => {
-    try {
-      return JSON.parse(localStorage.getItem(storageKey(gameId)) || '[]');
-    } catch {
-      return [];
-    }
-  };
-  const savePosts = (gameId, posts) => {
-    localStorage.setItem(storageKey(gameId), JSON.stringify(posts.slice(0, 200))); // cap
-  };
-
   // Ensure we start at the top after each route change
   function resetScrollTop() {
     // Do it on next frame to allow layout to settle
@@ -470,11 +334,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('theme-home');
     // Reset chatbot with generic welcome on Home
     resetChatWithWelcome(null);
+    if (!games.length) {
+      grid.innerHTML =
+        '<div class="map-hint" role="alert">No games found. Check if the game service is running.</div>';
+      return;
+    }
     games.forEach(g => {
       const card = document.createElement('article');
       card.className = 'card';
       card.setAttribute('role', 'listitem');
-      const thumbStyle = g.art ? `style="background-image:url('${g.art}')"` : '';
+      const thumbStyle = g.coverImageUrl
+        ? `style="background-image:url('${g.coverImageUrl}')"`
+        : '';
       const platformClass = (g.platform || '').toLowerCase().includes('3ds')
         ? 'threeds'
         : (g.platform || '').toLowerCase().includes('gba')
@@ -488,14 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="title">${g.title}</div>
           <div class="chips">
             <span class="chip chip-platform ${platformClass}">${g.platform}</span>
-            <span class="chip">${g.year}</span>
+            <span class="chip">${g.releaseYear || ''}</span>
           </div>
           <button class="cta" data-open="${g.id}">Open</button>
         </div>
       `;
       // Hover GIF preview per game (Home only)
       const thumb = card.querySelector('.thumb');
-      const originalUrl = g.art || '';
+      const originalUrl = g.coverImageUrl || '';
       const gifUrl = gameGifMap[g.id] || '';
       let hoverToken = 0;
       const applyBg = url => {
@@ -532,25 +403,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Render Game Detail
-  function renderGame(game) {
+  async function renderGame(game) {
     currentGameId = game.id;
-    // Apply per-game theme
+    // Apply per-game theme (fallback to platform-based coloring)
     const themeMap = {
-      'chrono-trigger': 'theme-fire-red',
-      'super-metroid': 'theme-emerald',
-      'link-to-the-past': 'theme-heart-gold',
-      'sonic-2': 'theme-platinum',
-      'mega-man-x': 'theme-black-2',
-      sotn: 'theme-y',
+      gba: 'theme-fire-red',
+      ds: 'theme-platinum',
+      '3ds': 'theme-y',
+      snes: 'theme-emerald',
+      playstation: 'theme-heart-gold',
     };
+    const themeKey = (game.platform || '').toLowerCase();
     document.body.className = document.body.className
       .split(' ')
       .filter(c => !c.startsWith('theme-'))
       .join(' ');
-    document.body.classList.add(themeMap[game.id] || 'theme-home');
+    document.body.classList.add(themeMap[themeKey] || 'theme-home');
+
     gameTitle.textContent = game.title;
-    // Use gameplay GIF in the hero art
-    const heroUrl = gameplayGifMap[game.id] || '';
+    const heroUrl = gameplayGifMap[game.id] || game.coverImageUrl || '';
     if (heroUrl) {
       gameArt.classList.remove('no-image');
       gameArt.style.backgroundImage = `url('${heroUrl}')`;
@@ -559,18 +430,18 @@ document.addEventListener('DOMContentLoaded', () => {
       gameArt.classList.add('no-image');
     }
     gamePlatform.textContent = game.platform;
-    gameYear.textContent = game.year;
-    gameVersion.textContent = game.version;
+    gameYear.textContent = game.releaseYear || '';
+    gameVersion.textContent = game.region || 'Global';
     gameDescription.textContent = game.description;
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
     resetChatWithWelcome(game.id);
 
-    // Region Map panel (uses existing banner URL if provided)
+    // Region Map panel (uses banner/cover when available)
     const mapPanel = document.getElementById('map-panel');
     const mapImg = document.getElementById('map-image');
     const mapLink = document.getElementById('map-link');
-    const mapUrl = game.banner || '';
+    const mapUrl = game.banner || game.coverImageUrl || '';
     if (mapUrl) {
       mapPanel.style.display = '';
       mapImg.src = mapUrl;
@@ -605,69 +476,131 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tips
     tipsList.innerHTML = '';
-    game.tips.forEach(t => {
+    try {
+      const tips = await loadTips(game.id);
+      if (!tips.length) {
+        const li = document.createElement('li');
+        li.textContent = 'No tips yet.';
+        tipsList.appendChild(li);
+      } else {
+        tips.forEach(t => {
+          const li = document.createElement('li');
+          li.textContent = t.content || t;
+          tipsList.appendChild(li);
+        });
+      }
+    } catch (err) {
       const li = document.createElement('li');
-      li.textContent = t;
+      li.textContent = 'Unable to load tips right now.';
       tipsList.appendChild(li);
-    });
+      console.error(err);
+    }
 
     // FAQ
     faqList.innerHTML = '';
-    game.faq.forEach(({ q, a }) => {
-      const d = document.createElement('details');
-      const s = document.createElement('summary');
-      s.textContent = q;
-      d.appendChild(s);
-      const p = document.createElement('p');
-      p.textContent = a;
-      d.appendChild(p);
+    try {
+      const faqs = await loadFaqs(game.id);
+      if (!faqs.length) {
+        const d = document.createElement('div');
+        d.className = 'map-hint';
+        d.textContent = 'No FAQs yet.';
+        faqList.appendChild(d);
+      } else {
+        faqs.forEach(({ question, answer }) => {
+          const d = document.createElement('details');
+          const s = document.createElement('summary');
+          s.textContent = question;
+          d.appendChild(s);
+          const p = document.createElement('p');
+          p.textContent = answer;
+          d.appendChild(p);
+          faqList.appendChild(d);
+        });
+      }
+    } catch (err) {
+      const d = document.createElement('div');
+      d.className = 'map-hint';
+      d.textContent = 'Unable to load FAQs right now.';
       faqList.appendChild(d);
-    });
+      console.error(err);
+    }
 
     // Forum posts
-    renderPosts();
+    await renderPosts();
   }
 
-  function renderPosts() {
+  async function renderPosts() {
     postsEl.innerHTML = '';
-    const posts = loadPosts(currentGameId);
-    if (!posts.length) {
-      const empty = document.createElement('li');
-      empty.className = 'post';
-      empty.innerHTML =
-        '<div class="bubble"><div class="text">No posts yet. Be the first to share a tip or ask a question!</div></div>';
-      postsEl.appendChild(empty);
-      return;
+    const loading = document.createElement('li');
+    loading.className = 'post';
+    loading.innerHTML = '<div class="bubble"><div class="text">Loading posts…</div></div>';
+    postsEl.appendChild(loading);
+    if (!currentGameId) return;
+    try {
+      const posts = await loadPosts(currentGameId);
+      postsEl.innerHTML = '';
+      if (!posts.length) {
+        const empty = document.createElement('li');
+        empty.className = 'post';
+        empty.innerHTML =
+          '<div class="bubble"><div class="text">No posts yet. Be the first to share a tip or ask a question!</div></div>';
+        postsEl.appendChild(empty);
+        return;
+      }
+      posts.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'post';
+        const author = (p.userId && (p.userId.username || p.userId.email)) || 'Member';
+        const ts = p.createdAt ? new Date(p.createdAt).toLocaleString() : '';
+        li.innerHTML = `
+          <div class="meta"><span>${author}</span><span>•</span><span>${ts}</span></div>
+          <div class="bubble"><div class="text"></div></div>
+        `;
+        li.querySelector('.text').textContent = p.content;
+        postsEl.appendChild(li);
+      });
+    } catch (err) {
+      postsEl.innerHTML = '';
+      const errorLi = document.createElement('li');
+      errorLi.className = 'post';
+      const msg =
+        err.status === 401
+          ? 'Sign in to view posts for this game.'
+          : 'Unable to load posts right now.';
+      errorLi.innerHTML = `<div class="bubble"><div class="text">${msg}</div></div>`;
+      postsEl.appendChild(errorLi);
+      console.error(err);
     }
-    posts.forEach(p => {
-      const li = document.createElement('li');
-      li.className = 'post';
-      li.innerHTML = `
-        <div class="meta"><span>${p.name || 'Anon'}</span><span>•</span><span>${new Date(p.ts).toLocaleString()}</span></div>
-        <div class="bubble"><div class="text"></div></div>
-      `;
-      li.querySelector('.text').textContent = p.text;
-      postsEl.appendChild(li);
-    });
   }
 
   // Forum submit
-  postForm.addEventListener('submit', e => {
+  postForm.addEventListener('submit', async e => {
     e.preventDefault();
     const text = postText.value.trim();
     if (!text || !currentGameId) return;
-    const posts = loadPosts(currentGameId);
-    posts.unshift({ name: postName.value.trim(), text, ts: Date.now() });
-    savePosts(currentGameId, posts);
-    postText.value = '';
-    renderPosts();
+    if (!authToken) {
+      promptSignInWithRetroBot();
+      return;
+    }
+    try {
+      await api.createPost(currentGameId, text);
+      postText.value = '';
+      postsCache.delete(currentGameId);
+      await renderPosts();
+    } catch (err) {
+      if (err.status === 401) {
+        promptSignInWithRetroBot();
+        return;
+      }
+      alert(err.message || 'Could not publish post.');
+    }
   });
 
   // Simple Router
   function navigateTo(hash) {
     window.location.hash = hash;
   }
-  function onRoute() {
+  async function onRoute() {
     const hash = window.location.hash || '#/';
     const parts = hash.slice(2).split('/').filter(Boolean);
     // Update active nav link state
@@ -681,6 +614,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     };
+
+    try {
+      await ensureGamesLoaded();
+    } catch (err) {
+      console.error('Failed to load games', err);
+    }
+
     if (parts.length === 0) {
       aboutView.classList.remove('active');
       homeView.classList.add('active');
@@ -710,12 +650,26 @@ document.addEventListener('DOMContentLoaded', () => {
         resetScrollTop();
         return;
       }
-      const game = games.find(g => g.id === id);
+      let game = gamesById.get(id);
+      if (!game) {
+        try {
+          const { game: fetched } = await api.getGame(id);
+          if (fetched) {
+            game = { ...fetched, id: fetched._id };
+            gamesById.set(game.id, game);
+            if (!games.find(g => g.id === game.id)) {
+              games.push(game);
+            }
+          }
+        } catch (err) {
+          console.error('Game not found', err);
+        }
+      }
       if (game) {
         aboutView.classList.remove('active');
         homeView.classList.remove('active');
         gameView.classList.add('active');
-        renderGame(game);
+        await renderGame(game);
         markActive('');
         // Show a random header gif on Game pages
         setHeaderGifVisible(true);
@@ -726,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-  window.addEventListener('hashchange', onRoute);
+  window.addEventListener('hashchange', () => onRoute().catch(console.error));
 
   // Back and Jump actions
   backBtn.addEventListener('click', () => navigateTo('#/'));
@@ -784,14 +738,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Build a strong domain-constrained prompt with per-game context
   function buildPrompt(userText) {
-    const game = games.find(g => g.id === currentGameId);
+    const game = gamesById.get(currentGameId);
     const title = game?.title || 'Retro game';
     const platform = game?.platform || 'Various';
-    const year = game?.year || '';
-    const version = game?.version || '';
+    const year = game?.releaseYear || '';
+    const version = game?.region || '';
     const description = game?.description || '';
-    const tips = (game?.tips || []).map(t => `- ${t}`).join('\n');
-    const faqs = (game?.faq || []).map(f => `- Q: ${f.q}\n  A: ${f.a}`).join('\n');
+    const tipsArr = tipsCache.get(currentGameId) || [];
+    const faqsArr = faqCache.get(currentGameId) || [];
+    const tips = tipsArr.map(t => `- ${t.content || t}`).join('\n');
+    const faqs = faqsArr.map(f => `- Q: ${f.question || f.q}\n  A: ${f.answer || f.a}`).join('\n');
 
     const persona = RETROBOT_PERSONA
       ? 'You are RetroBot, a concise retro gaming assistant. Keep tone friendly, skip roleplay, focus on clear, actionable answers.'
@@ -951,18 +907,16 @@ Constraints:
   });
 
   // Initial render
-  renderHome();
-  onRoute();
+  onRoute().catch(console.error);
   // Try to hydrate auth chip from server token if present (optional)
   if (authToken && !authUser) {
-    try {
-      fetch('/api/auth/me', { headers: { Authorization: `Bearer ${authToken}` } })
-        .then(r => r.json())
-        .then(data => {
-          if (data?.user) {
-            setAuth(data.user, authToken);
-          }
-        });
-    } catch {}
+    api
+      .validate()
+      .then(data => {
+        if (data?.user) {
+          setAuth(data.user, authToken);
+        }
+      })
+      .catch(() => {});
   }
 });

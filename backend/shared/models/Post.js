@@ -46,6 +46,11 @@ const postSchema = new Schema(
       type: Date,
       default: null,
     },
+    voteMap: {
+      type: Map,
+      of: String,
+      default: {},
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -70,6 +75,24 @@ postSchema.methods.upvote = function upvote() {
 
 postSchema.methods.downvote = function downvote() {
   this.downvotes += 1;
+  return this.save();
+};
+
+postSchema.methods.applyVote = function applyVote(userId, direction) {
+  if (!userId) return this;
+  const key = userId.toString();
+  if (!this.voteMap) this.voteMap = new Map();
+  const prev = this.voteMap.get(key);
+
+  if (prev === direction) return this;
+
+  if (prev === 'up') this.upvotes = Math.max(0, this.upvotes - 1);
+  if (prev === 'down') this.downvotes = Math.max(0, this.downvotes - 1);
+
+  if (direction === 'up') this.upvotes += 1;
+  if (direction === 'down') this.downvotes += 1;
+
+  this.voteMap.set(key, direction);
   return this.save();
 };
 
