@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>RetroHub — Retro Gaming Guides + Bot</title>
+  <title>Retro Hub — Classics, Guides & Bot</title>
   <link rel="stylesheet" href="style.css">
   <!-- Retro font + NES.css (scoped usage) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +21,7 @@
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0">
   <script src="script.js" defer></script>
-  <meta name="description" content="RetroHub — a retro gaming companion with guides, community posts, and an in-app chatbot for classic titles.">
+  <meta name="description" content="Retro Hub — browse classic games, read tips/FAQ, and chat with the built-in helper.">
 </head>
 
 <body>
@@ -29,19 +29,26 @@
   <header class="app-header" role="banner">
     <div class="brand">
       <!-- Separate logos: small icon for Home, banner for inner pages -->
-      <img class="logo logo-home" src="assets/pokeball.png" alt="RetroHub icon" width="32" height="32" />
-      <img class="logo logo-inner" src="assets/pokeball.png" alt="RetroHub banner" width="120" height="32" />
+      <img class="logo logo-home" src="assets/pokeball.png" alt="Retro Hub icon" width="32" height="32" />
+      <img class="logo logo-inner" src="assets/pokeball.png" alt="Retro Hub banner" width="120" height="32" />
       <div class="titles">
-        <h1>RetroHub</h1>
-        <p class="subtitle">Explore • Discuss • Get Tips • Play them all</p>
+        <h1>Retro Hub</h1>
+        <p class="subtitle">Explore • Discuss • Get tips on beloved classics</p>
       </div>
     </div>
     <nav class="main-nav" aria-label="Primary">
       <a href="#/" class="nav-link" data-link>Home</a>
       <a href="#/about" class="nav-link" data-link>About</a>
+      <a href="#/profile" class="nav-link" data-link>Profile</a>
+      <a href="#/settings" class="nav-link" data-link>Settings</a>
       <button id="auth-btn" class="nav-link" type="button">Sign in</button>
       <span id="auth-chip" class="chip" style="display:none;">Signed in</span>
     </nav>
+    <button class="menu-toggle" aria-label="Toggle navigation">
+      <span class="material-symbols-outlined">menu</span>
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <div class="nav-backdrop" aria-hidden="true"></div>
   </header>
 
   <!-- Main Views -->
@@ -49,16 +56,57 @@
     <!-- Home Grid View -->
     <section id="home-view" class="view active" aria-labelledby="home-title">
       <div class="hero">
-        <h2 id="home-title">Featured Retro Classics</h2>
-        <p>Browse a curated set of classics. Open a game to see info, chat with the bot, and join its forum.</p>
+        <h2 id="home-title">Featured Retro Games</h2>
+        <p>Browse the library. Open a game to see info, community notes, and chat with the built-in guide.</p>
+      </div>
+      <div class="filters" aria-label="Game filters">
+        <div class="filter-group">
+          <label for="filter-platform">Platform</label>
+          <select id="filter-platform">
+            <option value="">All</option>
+            <option value="GBA">GBA</option>
+            <option value="DS">DS</option>
+            <option value="3DS">3DS</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-year">Release</label>
+          <select id="filter-year">
+            <option value="">Any</option>
+            <option value="2004">2004</option>
+            <option value="2005">2005</option>
+            <option value="2008">2008</option>
+            <option value="2009">2009</option>
+            <option value="2012">2012</option>
+            <option value="2013">2013</option>
+          </select>
+        </div>
+        <div class="filter-group search">
+          <label for="filter-search">Search</label>
+          <input id="filter-search" type="search" placeholder="Search by title, region, or platform" />
+        </div>
+        <div class="filter-actions">
+          <button id="filter-reset" class="cta secondary" type="button">Reset</button>
+        </div>
+      </div>
+      <div id="home-empty" class="empty-state" role="status" aria-live="polite" hidden>
+        <p>No games match your filters. Clear filters or try another keyword.</p>
+      </div>
+      <div id="home-loading" class="loading-grid" aria-hidden="true">
+        <div class="skeleton card"></div>
+        <div class="skeleton card"></div>
+        <div class="skeleton card"></div>
+        <div class="skeleton card"></div>
+        <div class="skeleton card"></div>
+        <div class="skeleton card"></div>
       </div>
       <div id="game-grid" class="game-grid" role="list"></div>
     </section>
 
     <!-- About (Standalone SPA page) -->
-    <section id="about-view" class="view" aria-label="About RetroHub">
+    <section id="about-view" class="view" aria-label="About: Meowth City">
       <div class="about-stage">
-        <img src="assets/meowth-city.gif" alt="Retro city pixel art animation" />
+        <img src="assets/meowth-city.gif" alt="Meowth City pixel art animation" />
       </div>
     </section>
 
@@ -85,34 +133,112 @@
         </div>
       </div>
 
-      <div class="columns">
-        <div class="panel" aria-labelledby="tips-title">
-          <h3 id="tips-title">Quick Tips</h3>
-          <ul id="tips-list" class="tips-list"></ul>
+      <div class="panel shots-panel" aria-labelledby="shots-title">
+        <h3 id="shots-title">Additional Screenshots</h3>
+        <div class="shots-strip" id="shots-strip" role="list"></div>
+        <p class="map-hint">Swipe or scroll horizontally. Tap a screenshot to expand.</p>
+      </div>
+      <div class="tabbed" id="game-tabs">
+        <div class="tab-list" role="tablist" aria-label="Game panels">
+          <button class="tab active" role="tab" aria-selected="true" aria-controls="tab-tips" data-tab="tips">Tips</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="tab-faq" data-tab="faq">FAQs</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="tab-community" data-tab="community">Community</button>
         </div>
-        <div class="panel" aria-labelledby="faq-title">
-          <h3 id="faq-title">Popular Questions</h3>
-          <div class="faq" id="faq-list"></div>
+        <div class="tab-panels">
+          <div id="tab-tips" class="tab-panel active" role="tabpanel" aria-labelledby="tips-title" data-panel="tips">
+            <div class="panel" aria-labelledby="tips-title">
+              <h3 id="tips-title">Quick Tips</h3>
+              <ul id="tips-list" class="tips-list"></ul>
+            </div>
+          </div>
+          <div id="tab-faq" class="tab-panel" role="tabpanel" aria-labelledby="faq-title" data-panel="faq">
+            <div class="panel" aria-labelledby="faq-title">
+              <h3 id="faq-title">Popular Questions</h3>
+              <div class="faq" id="faq-list"></div>
+            </div>
+          </div>
+          <div id="tab-community" class="tab-panel" role="tabpanel" aria-labelledby="forum-title" data-panel="community">
+            <div class="panel forum" id="forum" aria-labelledby="forum-title">
+              <h3 id="forum-title">Community Thread</h3>
+              <form id="post-form" class="post-form" autocomplete="off">
+                <input type="text" id="post-name" placeholder="Your name (optional)" aria-label="Your name">
+                <textarea id="post-text" placeholder="Share a tip, ask a question…" aria-label="Your message" required></textarea>
+                <button type="submit" class="cta">Post</button>
+              </form>
+              <ul id="posts" class="posts" role="list"></ul>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Region Map panel (new) -->
-      <div class="panel map-panel" id="map-panel" aria-labelledby="map-title">
-        <h3 id="map-title">Region Map</h3>
-        <a id="map-link" href="#" target="_blank" rel="noopener" class="map-frame" aria-label="Open full map in new tab">
-          <img id="map-image" alt="Region map" />
-        </a>
-        <p class="map-hint">Tip: Click the map to open the full-size version.</p>
+    </section>
+    <!-- Profile View -->
+    <section id="profile-view" class="view" aria-labelledby="profile-title">
+    <div class="panel profile-hero">
+      <div class="profile-card">
+        <img id="profile-avatar" class="profile-avatar" src="assets/pixel/6Vww.gif" alt="Trainer avatar" />
+        <div>
+          <h2 id="profile-title">Trainer Profile</h2>
+          <p id="profile-tagline" class="map-hint">Retro collector and walkthrough writer.</p>
+          <div class="chips" id="profile-tags"></div>
+        </div>
       </div>
+      <div class="profile-stats" id="profile-stats"></div>
+    </div>
+    <div class="panel" aria-labelledby="collection-title">
+      <div class="section-head">
+        <div>
+          <h3 id="collection-title">Collection</h3>
+          <p class="map-hint">Filter by platform or completion.</p>
+        </div>
+        <div class="filter-group compact">
+          <label for="collection-filter">Platform</label>
+          <select id="collection-filter">
+            <option value="">All</option>
+            <option value="GBA">GBA</option>
+            <option value="DS">DS</option>
+            <option value="3DS">3DS</option>
+          </select>
+        </div>
+      </div>
+      <div id="collection-grid" class="collection-grid"></div>
+    </div>
+    <div class="panel" aria-labelledby="achievements-title">
+      <h3 id="achievements-title">Achievements</h3>
+      <div id="achievements-grid" class="achievements-grid"></div>
+    </div>
+    </section>
 
-      <div class="panel forum" id="forum" aria-labelledby="forum-title">
-        <h3 id="forum-title">Community Thread</h3>
-        <form id="post-form" class="post-form" autocomplete="off">
-          <input type="text" id="post-name" placeholder="Your name (optional)" aria-label="Your name">
-          <textarea id="post-text" placeholder="Share a tip, ask a question…" aria-label="Your message" required></textarea>
-          <button type="submit" class="cta">Post</button>
-        </form>
-        <ul id="posts" class="posts" role="list"></ul>
+    <!-- Settings View -->
+    <section id="settings-view" class="view" aria-labelledby="settings-title">
+    <div class="panel" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Account</h3>
+          <label>Display name<input id="settings-name" type="text" placeholder="Trainer" /></label>
+          <label>Email<input id="settings-email" type="email" placeholder="trainer@example.com" /></label>
+          <button class="cta secondary" type="button" id="save-account">Save account</button>
+        </div>
+        <div class="settings-card">
+          <h3>Password</h3>
+          <label>Current password<input id="settings-pass-old" type="password" placeholder="••••••" /></label>
+          <label>New password<input id="settings-pass-new" type="password" placeholder="••••••" /></label>
+          <button class="cta secondary" type="button" id="save-password">Update password</button>
+        </div>
+        <div class="settings-card">
+          <h3>Preferences</h3>
+          <label class="switch"><input id="pref-chat" type="checkbox" checked /><span>Keep chatbot open per game</span></label>
+          <label class="switch"><input id="pref-badge" type="checkbox" checked /><span>Show achievement pings</span></label>
+          <label class="switch"><input id="pref-analytics" type="checkbox" /><span>Opt into anonymized analytics</span></label>
+          <button class="cta secondary" type="button" id="save-preferences">Save preferences</button>
+        </div>
+        <div class="settings-card danger">
+          <h3>Danger Zone</h3>
+          <p class="map-hint">Clear local data or sign out everywhere.</p>
+          <button class="cta" type="button" id="clear-storage">Clear local data</button>
+          <button class="cta secondary" type="button" id="revoke-sessions">Revoke all sessions</button>
+        </div>
+      </div>
       </div>
     </section>
   </main>
@@ -121,17 +247,27 @@
     <div class="map-modal-backdrop" data-auth-close></div>
     <div class="map-modal-content" role="document">
       <button class="map-modal-close material-symbols-outlined" type="button" aria-label="Close" data-auth-close>close</button>
-      <h3 style="margin-bottom:6px;">Sign in</h3>
+      <h3 style="margin-bottom:6px;">Welcome back</h3>
       <p class="map-hint" style="margin-bottom:8px;">Demo only — use one of the sample accounts below.</p>
-      <form id="auth-form" class="post-form" autocomplete="off">
-        <input id="auth-email" type="email" placeholder="Email (e.g., player@retrohub)" required />
-        <input id="auth-pass" type="password" placeholder="Password (e.g., retro123)" required />
+      <div class="auth-tabs" role="tablist" aria-label="Auth tabs">
+        <button class="auth-tab active" role="tab" aria-selected="true" data-auth-tab="login">Login</button>
+        <button class="auth-tab" role="tab" aria-selected="false" data-auth-tab="register">Register</button>
+      </div>
+      <form id="auth-form-login" class="post-form" autocomplete="off" role="tabpanel" aria-hidden="false">
+        <input id="auth-email" type="email" placeholder="Email (e.g., oak@lab)" required />
+        <input id="auth-pass" type="password" placeholder="Password (e.g., pikachu)" required />
         <button type="submit" class="cta">Sign in</button>
+      </form>
+      <form id="auth-form-register" class="post-form" autocomplete="off" role="tabpanel" aria-hidden="true" style="display:none;">
+        <input id="auth-name" type="text" placeholder="Display name" />
+        <input id="auth-email-register" type="email" placeholder="Email" required />
+        <input id="auth-pass-register" type="password" placeholder="Password" required />
+        <button type="submit" class="cta">Create account</button>
       </form>
       <div class="map-hint">
         <div>Demo users:</div>
-        <div>• player@retrohub / retro123 (admin)</div>
-        <div>• guest@retrohub / retro123 (member)</div>
+        <div>• oak@lab / pikachu (admin)</div>
+        <div>• student@epita / rattata (student)</div>
       </div>
     </div>
   </div>
@@ -144,7 +280,7 @@
   <div class="chatbot" role="dialog" aria-labelledby="chatbot-header">
     <header id="chatbot-header">
       <h2><img src="assets/pixel/6Vww.gif" alt="RetroBot" class="chat-title-avatar" /> RetroBot</h2>
-      <p class="chat-subtitle" id="chat-subtitle">Ask about any retro game for tips and walkthroughs.</p>
+      <p class="chat-subtitle" id="chat-subtitle">Ask about a game for tips and walkthroughs.</p>
       <button class="close-btn material-symbols-outlined" aria-label="Close Chatbot">close</button>
     </header>
     <ul class="chatbox" aria-live="polite"></ul>
@@ -154,21 +290,27 @@
     </div>
   </div>
 
-  <!-- Map Zoom Modal -->
-  <div id="map-modal" class="map-modal" aria-hidden="true" role="dialog" aria-label="Map viewer">
-    <div class="map-modal-backdrop" data-close-map></div>
+  <!-- Screenshot Modal -->
+  <div id="shot-modal" class="map-modal" aria-hidden="true" role="dialog" aria-label="Screenshot viewer">
+    <div class="map-modal-backdrop" data-close-shot></div>
     <div class="map-modal-content" role="document">
-      <button class="map-modal-close material-symbols-outlined" type="button" aria-label="Close map" data-close-map>close</button>
-      <img id="map-modal-image" alt="Region map full view" />
+      <button class="map-modal-close material-symbols-outlined" type="button" aria-label="Close screenshot" data-close-shot>close</button>
+      <button class="shot-nav prev" type="button" id="shot-prev" aria-label="Previous screenshot">
+        <span class="material-symbols-rounded">chevron_left</span>
+      </button>
+      <img id="shot-modal-image" alt="Screenshot full view" />
+      <button class="shot-nav next" type="button" id="shot-next" aria-label="Next screenshot">
+        <span class="material-symbols-rounded">chevron_right</span>
+      </button>
       <div class="map-modal-actions">
-        <a id="map-download" class="cta secondary" href="#" target="_blank" rel="noopener">Open original</a>
+        <a id="shot-download" class="cta secondary" href="#" target="_blank" rel="noopener">Open original</a>
       </div>
     </div>
   </div>
 
   <footer class="app-footer" role="contentinfo">
-    <p>Fan-made retro gaming hub for school project purposes.</p>
-    <p>Made by the RetroHub team (Mark & Sayan)</p>
+    <p>Retro Hub — fan-made project for showcasing and discussing classic games.</p>
+      <p>Made by the RetroHub team</p>
   </footer>
 </body>
 

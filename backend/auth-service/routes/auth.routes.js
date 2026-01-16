@@ -13,7 +13,12 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 function signToken(user) {
   return jwt.sign(
-    { sub: user._id.toString(), email: user.email, username: user.username },
+    {
+      sub: user._id.toString(),
+      email: user.email,
+      username: user.username,
+      role: user.role || 'user',
+    },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -24,6 +29,7 @@ function sanitizeUser(user) {
     id: user._id.toString(),
     email: user.email,
     username: user.username,
+    role: user.role || 'user',
     avatarUrl: user.avatarUrl,
     level: user.level,
     experiencePoints: user.experiencePoints,
@@ -42,7 +48,7 @@ async function ensureStats(userId) {
 
 router.post('/register', async (req, res, next) => {
   try {
-    const { email, username, password } = req.body || {};
+    const { email, username, password, role } = req.body || {};
     if (!email || !username || !password) {
       return res.status(400).json({ error: 'email, username, and password are required' });
     }
@@ -54,9 +60,22 @@ router.post('/register', async (req, res, next) => {
       return res.status(409).json({ error: 'email or username already in use' });
     }
 
-    const user = new User({ email, username, passwordHash: password });
+    const allowedAdminValues = new Set(['true', '1', 'yes']);
+    const canSetRole = allowedAdminValues.has(
+      String(process.env.ALLOW_ADMIN_REGISTRATION || 'false').toLowerCase()
+    );
+    const user = new User({
+      email,
+      username,
+      passwordHash: password,
+      role: canSetRole && role === 'admin' ? 'admin' : 'user',
+    });
     await user.save();
     await ensureStats(user._id);
+
+    if (user.role === 'admin') {
+      console.warn(`[audit] Admin account created: ${user.email}`);
+    }
 
     const token = signToken(user);
     return res.status(201).json({ user: sanitizeUser(user), token });

@@ -1,10 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Elements
   const $ = sel => document.querySelector(sel);
-  const app = $('#app');
   const homeView = $('#home-view');
   const gameView = $('#game-view');
   const aboutView = $('#about-view');
+  const mainNav = document.querySelector('.main-nav');
+  const navBackdrop = document.querySelector('.nav-backdrop');
+  const menuToggle = document.querySelector('.menu-toggle');
   const grid = $('#game-grid');
   const backBtn = $('#back-btn');
   const gameTitle = $('#game-title');
@@ -22,9 +24,125 @@ document.addEventListener('DOMContentLoaded', () => {
   const postForm = $('#post-form');
   const postName = $('#post-name');
   const postText = $('#post-text');
+  // Tabs
+  const tabsHost = document.getElementById('game-tabs');
+  const tabButtons = tabsHost ? Array.from(tabsHost.querySelectorAll('[data-tab]')) : [];
+  const tabPanels = tabsHost ? Array.from(tabsHost.querySelectorAll('[data-panel]')) : [];
+  // Screenshots panel
+  const shotsStrip = document.getElementById('shots-strip');
+  const shotModal = document.getElementById('shot-modal');
+  const shotModalImg = document.getElementById('shot-modal-image');
+  const shotDownload = document.getElementById('shot-download');
+  const shotPrev = document.getElementById('shot-prev');
+  const shotNext = document.getElementById('shot-next');
+  const shotModalContent = shotModal ? shotModal.querySelector('.map-modal-content') : null;
+  const shotState = { items: [], index: 0 };
+  const SWIPE_THRESHOLD = 40;
+
+  const isShotModalOpen = () => shotModal?.getAttribute('aria-hidden') === 'false';
+
+  function updateShotNavState() {
+    const disabled = shotState.items.length <= 1;
+    if (shotPrev) shotPrev.disabled = disabled;
+    if (shotNext) shotNext.disabled = disabled;
+  }
+
+  function showShot(index) {
+    if (!shotModalImg || !shotState.items.length) return;
+    shotState.index = (index + shotState.items.length) % shotState.items.length;
+    const shot = shotState.items[shotState.index];
+    const alt = shot.alt || 'Screenshot full view';
+    shotModalImg.src = shot.url;
+    shotModalImg.alt = alt;
+    if (shotDownload) {
+      shotDownload.href = shot.url;
+      const filename = shot.filename || (shot.url ? shot.url.split('/').pop() : 'retrohub-shot');
+      if (filename) {
+        shotDownload.setAttribute('download', filename);
+      } else {
+        shotDownload.removeAttribute('download');
+      }
+    }
+    updateShotNavState();
+  }
+
+  function openShotModalAt(index = 0) {
+    if (!shotModal || !shotState.items.length) return;
+    showShot(index);
+    shotModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeShotModal() {
+    if (!shotModal) return;
+    shotModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function changeShot(delta) {
+    if (!shotState.items.length) return;
+    showShot(shotState.index + delta);
+  }
+
+  shotPrev?.addEventListener('click', () => changeShot(-1));
+  shotNext?.addEventListener('click', () => changeShot(1));
+  shotModal
+    ?.querySelectorAll('[data-close-shot]')
+    ?.forEach(el => el.addEventListener('click', closeShotModal));
+  window.addEventListener('keydown', ev => {
+    if (!isShotModalOpen()) return;
+    if (ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      changeShot(1);
+    } else if (ev.key === 'ArrowLeft') {
+      ev.preventDefault();
+      changeShot(-1);
+    } else if (ev.key === 'Escape') {
+      closeShotModal();
+    }
+  });
+
+  let swipeStartX = null;
+  shotModalContent?.addEventListener('pointerdown', e => {
+    swipeStartX = e.clientX;
+  });
+  shotModalContent?.addEventListener('pointerup', e => {
+    if (swipeStartX === null) return;
+    const deltaX = e.clientX - swipeStartX;
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      changeShot(deltaX < 0 ? 1 : -1);
+    }
+    swipeStartX = null;
+  });
+  shotModalContent?.addEventListener('pointercancel', () => {
+    swipeStartX = null;
+  });
+  // Home filters and states
+  const filterPlatform = document.getElementById('filter-platform');
+  const filterYear = document.getElementById('filter-year');
+  const filterSearch = document.getElementById('filter-search');
+  const filterReset = document.getElementById('filter-reset');
+  const homeEmpty = document.getElementById('home-empty');
+  const homeLoading = document.getElementById('home-loading');
+
+  // Profile + Settings
+  const profileView = document.getElementById('profile-view');
+  const profileAvatar = document.getElementById('profile-avatar');
+  const profileTagline = document.getElementById('profile-tagline');
+  const profileTags = document.getElementById('profile-tags');
+  const profileStats = document.getElementById('profile-stats');
+  const collectionGrid = document.getElementById('collection-grid');
+  const collectionFilter = document.getElementById('collection-filter');
+  const achievementsGrid = document.getElementById('achievements-grid');
+
+  const settingsView = document.getElementById('settings-view');
+  const settingsName = document.getElementById('settings-name');
+  const settingsEmail = document.getElementById('settings-email');
+  const prefChat = document.getElementById('pref-chat');
+  const prefBadge = document.getElementById('pref-badge');
+  const prefAnalytics = document.getElementById('pref-analytics');
 
   // Chatbot elements
   const chatbotToggler = document.querySelector('.chatbot-toggler');
+  const chatbotPanel = document.querySelector('.chatbot');
   const closeBtn = document.querySelector('.close-btn');
   const chatbox = document.querySelector('.chatbox');
   const chatInput = document.querySelector('.chat-input textarea');
@@ -34,11 +152,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const authBtn = document.getElementById('auth-btn');
   const authChip = document.getElementById('auth-chip');
   const authModal = document.getElementById('auth-modal');
-  const authForm = document.getElementById('auth-form');
+  const authTabs = authModal ? Array.from(authModal.querySelectorAll('[data-auth-tab]')) : [];
+  const authForms = {
+    login: document.getElementById('auth-form-login'),
+    register: document.getElementById('auth-form-register'),
+  };
   const authEmail = document.getElementById('auth-email');
   const authPass = document.getElementById('auth-pass');
+  const authNameReg = document.getElementById('auth-name');
+  const authEmailReg = document.getElementById('auth-email-register');
+  const authPassReg = document.getElementById('auth-pass-register');
   // Header GIF slot configuration (random pixel GIF on the right side)
   const headerEl = document.querySelector('.app-header');
+  const logoHome = document.querySelector('.logo-home');
+  const logoInner = document.querySelector('.logo-inner');
   const pixelGifs = [
     'assets/pixel/12c6a260613c6e51b16af016dd38c44e182fcd68_hq.gif',
     'assets/pixel/36541a1369a2eec1894ebff1b9e4a948a78cea80_hq.gif',
@@ -54,20 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let headerGifHost = null;
   let headerGifImg = null;
   let lastGifIndex = -1;
+  const DEFAULT_LOGO = 'assets/pokeball.png';
 
   function ensureHeaderGifHost() {
-    if (!headerEl) return null;
-    if (!headerGifHost) {
-      headerGifHost = document.createElement('div');
-      headerGifHost.id = 'header-gif';
-      headerGifHost.setAttribute('aria-hidden', 'true');
-      headerGifImg = document.createElement('img');
-      headerGifImg.alt = '';
-      headerGifImg.loading = 'lazy';
-      headerGifImg.decoding = 'async';
-      headerGifHost.appendChild(headerGifImg);
-      headerEl.appendChild(headerGifHost);
-    }
+    if (!logoHome) return null;
+    headerGifHost = logoHome;
+    headerGifImg = logoHome;
     return headerGifHost;
   }
   function pickNewGifIndex() {
@@ -83,23 +202,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const host = ensureHeaderGifHost();
     if (!host) return;
     if (!visible) {
-      host.style.display = 'none';
+      host.src = DEFAULT_LOGO;
+      if (logoInner) logoInner.src = DEFAULT_LOGO;
       return;
     }
-    host.style.display = '';
     const idx = pickNewGifIndex();
     if (idx >= 0) {
-      headerGifImg.src = pixelGifs[idx];
+      const src = pixelGifs[idx];
+      headerGifImg.src = src;
+      if (logoInner) logoInner.src = src;
     }
   }
 
   // Gemini API config (nothing yet)
   // Gemini API via local server proxy; no API key in client
   const API_URL = '/api/chat';
-  // Chat avatar asset (RetroBot)
-  const RETROBOT_AVATAR = 'assets/pixel/6Vww.gif';
-  // Persona toggle: when true, the bot speaks in a retro helper voice
-  const RETROBOT_PERSONA = false;
+  const API_BASE = '/api';
+  // Chat avatar asset (Professor Oak)
+  const OAK_AVATAR = 'assets/PikPng.com_professor-oak-png_1480585.png';
+  // Persona toggle: when true, the bot speaks as Prof. Oak
+  const OAK_PERSONA = true;
+  const NO_INFO_LINE = "It's dangerous to go alone! No info yet.";
+  const textOrFallback = (value, fallback = NO_INFO_LINE) => {
+    const str = (value ?? '').toString().trim();
+    return str ? str : fallback;
+  };
   // Demo auth state (token + user)
   let authToken = localStorage.getItem('authToken') || '';
   let authUser = null;
@@ -135,13 +262,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function setAuthTab(tab) {
+    authTabs.forEach(btn => {
+      const active = btn.dataset.authTab === tab;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    Object.entries(authForms).forEach(([key, form]) => {
+      if (!form) return;
+      const active = key === tab;
+      form.style.display = active ? 'grid' : 'none';
+      form.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+  }
+
+  const isAuthModalOpen = () => authModal?.getAttribute('aria-hidden') === 'false';
+
   function openAuthModal() {
     if (authModal) authModal.setAttribute('aria-hidden', 'false');
+    setAuthTab('login');
   }
   function closeAuthModal() {
     if (authModal) authModal.setAttribute('aria-hidden', 'true');
   }
-
   // API helpers
   async function apiJson(path, options = {}) {
     const headers = {
@@ -165,6 +308,139 @@ document.addEventListener('DOMContentLoaded', () => {
     return payload || {};
   }
 
+  // App State (fallback seeds, replaced by API if available)
+  let games = [
+    {
+      id: 'fire-red',
+      title: 'Pokémon Fire Red',
+      platform: 'GBA',
+      year: '2004',
+      version: 'Kanto',
+      art: 'assets/box art/640px-FireRed_EN_boxart.png',
+      banner: 'assets/map/red.png',
+      description:
+        'Return to Kanto in this remake of the original adventure. Catch, train, and battle across iconic towns and routes.',
+      tips: [
+        'Pick Bulbasaur for an easier early-game vs. Brock and Misty.',
+        'Catch a Flying-type early for utility (e.g., Pidgey).',
+        'Use the Vs. Seeker to level efficiently on known trainers.',
+      ],
+      faq: [
+        {
+          q: 'Where to get the VS Seeker?',
+          a: 'Route 24/25 area: Receive it from the aide after leaving the Underground Path house near Vermilion City (after getting the Bike Voucher).',
+        },
+        {
+          q: 'How to get Flash for Rock Tunnel?',
+          a: 'Catch at least 10 Pokémon and visit Professor Oak’s aide on Route 2 (south of Pewter via Diglett’s Cave) to receive HM05 Flash.',
+        },
+      ],
+    },
+    {
+      id: 'emerald',
+      title: 'Pokémon Emerald',
+      platform: 'GBA',
+      year: '2005',
+      version: 'Hoenn',
+      art: 'assets/box art/emerald.jpg',
+      banner: 'assets/map/emerald.png',
+      description: 'The definitive Hoenn experience with Battle Frontier and more double battles.',
+      tips: [
+        'Mudkip eases early gyms; Treecko is fast but fragile.',
+        'Prepare for lots of double battles—balance your team roles.',
+        'Try the Battle Frontier post-game for advanced challenges.',
+      ],
+    },
+  ];
+  let gamesLoadedFromApi = false;
+  const gamesById = new Map();
+  const tipsCache = new Map();
+  const faqCache = new Map();
+  const postsCache = new Map();
+  let currentGameId = null;
+
+  function syncGameIndex() {
+    gamesById.clear();
+    games.forEach(g => gamesById.set(g.id, g));
+  }
+  syncGameIndex();
+
+  // Profile mock data (local only)
+  const profileData = {
+    name: 'Trainer Oak Jr.',
+    tagline: 'Retro collector and walkthrough writer.',
+    avatar: 'assets/pixel/6Vww.gif',
+    tags: ['Collector', 'Guide writer', 'Kanto native'],
+    stats: [
+      { label: 'Games cleared', value: 42 },
+      { label: 'Badges earned', value: 48 },
+      { label: 'Tips shared', value: 128 },
+    ],
+    achievements: [
+      { title: 'Kanto Veteran', desc: 'Completed all Gym Leader rematches', tier: 'gold' },
+      { title: 'Frontier Brain', desc: 'Won 50 Battle Frontier streak', tier: 'platinum' },
+      { title: 'Dex Scholar', desc: 'Filled regional dex without trades', tier: 'silver' },
+      { title: 'Speedrunner', desc: 'Beat Elite Four in under 3 hours', tier: 'bronze' },
+    ],
+  };
+
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  }
+
+  function mapApiGame(g) {
+    if (!g) return null;
+    return {
+      id: g.slug || g.id || g._id,
+      slug: g.slug || g.id || g._id,
+      title: g.title,
+      platform: g.platform,
+      year: g.releaseYear || g.year,
+      version: g.versionLabel || g.region || 'Retro',
+      art: g.coverImageUrl,
+      banner: g.heroImageUrl || g.coverImageUrl,
+      hover: g.hoverImageUrl || g.coverImageUrl,
+      description: g.description,
+      screenshots: Array.isArray(g.screenshots) ? g.screenshots : [],
+      theme: g.theme,
+    };
+  }
+
+  async function loadGamesFromApi() {
+    try {
+      const data = await fetchJson(`${API_BASE}/games`);
+      const mapped = (data?.games || []).map(mapApiGame).filter(Boolean);
+      if (mapped.length) {
+        games = mapped;
+        syncGameIndex();
+      }
+    } catch {
+      console.warn('Using fallback games; API unavailable');
+    } finally {
+      gamesLoadedFromApi = true;
+    }
+  }
+
+  async function fetchGameFull(id) {
+    try {
+      const data = await fetchJson(`${API_BASE}/games/${encodeURIComponent(id)}/full`);
+      const g = mapApiGame(data?.game);
+      const tips = (data?.tips || []).map(t => t.content || t).filter(Boolean);
+      const faqs = (data?.faqs || []).map(f => ({ q: f.question, a: f.answer })).filter(Boolean);
+      if (g) {
+        if (tips.length) g.tips = tips;
+        if (faqs.length) g.faq = faqs;
+        if (tips.length) tipsCache.set(g.id, tips);
+        if (faqs.length) faqCache.set(g.id, faqs);
+      }
+      return g;
+    } catch {
+      return null;
+    }
+  }
+
   const api = {
     getGames: () => apiJson('/api/games'),
     getGame: id => apiJson(`/api/games/${id}`),
@@ -185,24 +461,17 @@ document.addEventListener('DOMContentLoaded', () => {
     validate: () => apiJson('/api/auth/me'),
   };
 
-  async function loadGames() {
-    const { games: list = [] } = await api.getGames();
-    games = list.map(g => ({ ...g, id: g._id }));
-    gamesById.clear();
-    games.forEach(g => gamesById.set(g.id, g));
-    return games;
-  }
-
   let gamesLoadPromise = null;
   async function ensureGamesLoaded() {
     if (games && games.length) return games;
     if (!gamesLoadPromise) {
-      gamesLoadPromise = loadGames().catch(err => {
+      gamesLoadPromise = loadGamesFromApi().catch(err => {
         gamesLoadPromise = null;
         throw err;
       });
     }
-    return gamesLoadPromise;
+    await gamesLoadPromise;
+    return games;
   }
 
   async function loadTips(gameId) {
@@ -226,50 +495,42 @@ document.addEventListener('DOMContentLoaded', () => {
     return posts;
   }
 
-  // App State (API-driven)
-  let games = [];
-  const gamesById = new Map();
-  const tipsCache = new Map();
-  const faqCache = new Map();
-  const postsCache = new Map();
-  let currentGameId = null;
-
   // Per-game randomized welcome messages
   const welcomePool = {
     generic: [
       'Hi there! Select a game to get tailored help.',
-      'Welcome to RetroHub! Pick a game and ask for tips or a walkthrough.',
-      'Need guidance? Choose a title and start asking questions!',
+      'Welcome! Pick a game and ask for tips or a walkthrough.',
+      'Need guidance? Choose a game and start asking questions!',
     ],
-    'chrono-trigger': [
-      'Crono and friends are ready—ask about techs, endings, or era routes.',
-      'Want guidance on Magus, Black Omen, or side quests?',
-      'Need a route for multiple endings or fast TP?',
+    'fire-red': [
+      'Welcome to Kanto! Ask about gyms, routes, or items like the VS Seeker.',
+      'Fire Red tips ready—starters, Brock & Misty strats, or where to find Flash.',
+      'Got questions for Kanto? Teams, badges, or leveling—ask away!',
     ],
-    'super-metroid': [
-      'Zebes awaits—ask about suits, bosses, or sequence breaks.',
-      'Need help with wall jumps, mockball, or item routes?',
-      'Stuck in Wrecked Ship or Maridia? I can guide you.',
+    emerald: [
+      'Hoenn time! Ask about gyms, Team Aqua/Magma, or the Battle Frontier.',
+      'Emerald tips: double battles, good early team picks, or EXP spots.',
+      'Want Battle Frontier pointers or story progression help?',
     ],
-    'link-to-the-past': [
-      'Hyrule help—dungeon order, key items, or Dark World routes.',
-      'Need Flute, medallions, or heart piece tips?',
-      'Ask about bosses, fast travel, or secret caves.',
+    'heart-gold': [
+      'Johto awaits! Ask about Whitney’s Miltank or where to get Exp. Share.',
+      'Need help with Johto gyms or Kanto post-game?',
+      'Heart Gold tips—routes, items, and gym strategies.',
     ],
-    'sonic-2': [
-      'Speedrun or casual? Ask about Chaos Emeralds or ring routes.',
-      'Need Special Stage help or boss tips?',
-      'Looking to unlock Super Sonic efficiently?',
+    platinum: [
+      'Sinnoh tips here! Distortion World, team ideas, or leveling routes.',
+      'Platinum help: gym counters, Giratina path, or dex variety.',
+      'Ask about Sinnoh travel, items, or story beats.',
     ],
-    'mega-man-x': [
-      'Maverick order, Heart Tanks, or armor pieces—ask away.',
-      'Need weaknesses or Hadouken capsule steps?',
-      'Want a fast route to dash boots and upgrades?',
+    'black-2': [
+      'Unova guidance: Join Avenue, EXP farming, or story routes.',
+      'Black 2 tips—Habitat List, Lucky Egg, or team balance.',
+      'Need help with challenge modes or gym plans?',
     ],
-    sotn: [
-      'Castle tips—relics, rings, and inverted path questions welcome.',
-      'Need a good farm spot or weapon suggestion?',
-      'Ask about Richter, Holy Glasses, or map completion.',
+    y: [
+      'Kalos help ready! Mega Ring, team comps, or gym counters.',
+      'Pokémon Y tips—Exp. Share pacing, Megas, or early-game teams.',
+      'Ask about routes, items, or where to go next in Kalos.',
     ],
   };
 
@@ -283,8 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const greeting = randomWelcome(gameId);
     const li = document.createElement('li');
     li.className = 'chat incoming';
-    const opening = 'Welcome to RetroHub! Ask anything about your chosen game.\n\n';
-    li.innerHTML = `<img src="${RETROBOT_AVATAR}" alt="RetroBot" class="chat-avatar" /><p>${opening}${greeting}</p>`;
+    const opening = 'Hello there! Welcome to the world of Pokémon!\n\n';
+    li.innerHTML = `<img src="${OAK_AVATAR}" alt="Professor Oak" class="chat-avatar" /><p>${opening}${greeting}</p>`;
     chatbox.appendChild(li);
     chatbox.scrollTo(0, chatbox.scrollHeight);
   }
@@ -305,47 +566,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Map gameId -> correct GIF path based on actual assets folder structure
   const gameGifMap = {
-    'chrono-trigger': '',
-    'super-metroid': '',
-    'link-to-the-past': '',
-    'sonic-2': '',
-    'mega-man-x': '',
-    sotn: '',
+    'fire-red': 'assets/game/fire-red.gif',
+    emerald: 'assets/game/pokemon-emerald.gif',
+    'heart-gold': 'assets/game/heart-gold.gif',
+    platinum: 'assets/game/platinum.gif',
+    'black-2': 'assets/game/black2.gif',
+    y: 'assets/game/y.gif',
   };
+
+  function activateTab(id) {
+    tabButtons.forEach(btn => {
+      const active = btn.dataset.tab === id;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      btn.tabIndex = active ? 0 : -1;
+    });
+    tabPanels.forEach(panel => {
+      const active = panel.dataset.panel === id;
+      panel.classList.toggle('active', active);
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+  }
 
   // New: gameplay GIFs for the hero area (inside pages)
   const gameplayGifMap = {
-    'chrono-trigger': '',
-    'super-metroid': '',
-    'link-to-the-past': '',
-    'sonic-2': '',
-    'mega-man-x': '',
-    sotn: '',
+    'fire-red': 'assets/gameplay/pokemon-fire-red.gif',
+    emerald: 'assets/gameplay/emerald.gif',
+    'heart-gold': 'assets/gameplay/heartgold.gif',
+    platinum: 'assets/gameplay/platinum.gif',
+    'black-2': 'assets/gameplay/black2.gif',
+    y: 'assets/gameplay/y.gif',
   };
 
-  // Render Home Grid
-  function renderHome() {
-    grid.innerHTML = '';
-    // Theme: Home (light red/white)
+  function setHomeLoading(isLoading) {
+    if (!homeLoading) return;
+    homeLoading.style.display = isLoading ? 'grid' : 'none';
+    homeLoading.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+  }
+
+  const clearThemes = () => {
     document.body.className = document.body.className
       .split(' ')
       .filter(c => !c.startsWith('theme-'))
       .join(' ');
+  };
+  function openNav() {
+    document.body.classList.add('nav-open');
+  }
+  function closeNav() {
+    document.body.classList.remove('nav-open');
+  }
+  function toggleNav() {
+    if (document.body.classList.contains('nav-open')) closeNav();
+    else openNav();
+  }
+
+  function filterGameList(list) {
+    const platform = (filterPlatform?.value || '').toLowerCase();
+    const year = filterYear?.value || '';
+    const term = (filterSearch?.value || '').toLowerCase().trim();
+    return list.filter(g => {
+      const platformMatch = platform ? (g.platform || '').toLowerCase().includes(platform) : true;
+      const yearMatch = year ? (g.year || '').toString() === year : true;
+      const text = `${g.title || ''} ${g.platform || ''} ${g.version || ''}`.toLowerCase();
+      const searchMatch = term ? text.includes(term) : true;
+      return platformMatch && yearMatch && searchMatch;
+    });
+  }
+
+  // Render Home Grid
+  async function renderHome() {
+    if (homeEmpty) homeEmpty.hidden = true;
+    grid.innerHTML = '';
+    setHomeLoading(true);
+    if (!gamesLoadedFromApi) {
+      await loadGamesFromApi();
+    }
+    setHomeLoading(false);
+    // Theme: Home (light red/white)
+    clearThemes();
     document.body.classList.add('theme-home');
     // Reset chatbot with generic welcome on Home
     resetChatWithWelcome(null);
-    if (!games.length) {
-      grid.innerHTML =
-        '<div class="map-hint" role="alert">No games found. Check if the game service is running.</div>';
+    const filtered = filterGameList(games);
+    if (!filtered.length) {
+      if (homeEmpty) homeEmpty.hidden = false;
       return;
     }
-    games.forEach(g => {
+    filtered.forEach(g => {
       const card = document.createElement('article');
       card.className = 'card';
       card.setAttribute('role', 'listitem');
-      const thumbStyle = g.coverImageUrl
-        ? `style="background-image:url('${g.coverImageUrl}')"`
-        : '';
+      const thumbStyle = g.art ? `style="background-image:url('${g.art}')"` : '';
       const platformClass = (g.platform || '').toLowerCase().includes('3ds')
         ? 'threeds'
         : (g.platform || '').toLowerCase().includes('gba')
@@ -359,15 +671,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="title">${g.title}</div>
           <div class="chips">
             <span class="chip chip-platform ${platformClass}">${g.platform}</span>
-            <span class="chip">${g.releaseYear || ''}</span>
+            <span class="chip">${g.year || 'TBA'}</span>
           </div>
           <button class="cta" data-open="${g.id}">Open</button>
         </div>
       `;
+      card.tabIndex = 0;
       // Hover GIF preview per game (Home only)
       const thumb = card.querySelector('.thumb');
-      const originalUrl = g.coverImageUrl || '';
-      const gifUrl = gameGifMap[g.id] || '';
+      const originalUrl = g.art || '';
+      const gifUrl = g.hover || gameGifMap[g.id] || '';
       let hoverToken = 0;
       const applyBg = url => {
         thumb.style.backgroundImage = url ? `url('${url}')` : '';
@@ -397,7 +710,18 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = gifUrl;
       });
       card.addEventListener('focusout', () => applyBg(originalUrl));
-      card.querySelector('[data-open]')?.addEventListener('click', () => navigateTo(`#/${g.id}`));
+      const openDetail = () => navigateTo(`#/${g.id}`);
+      card.addEventListener('click', e => {
+        if (e.target.closest('[data-open]')) return;
+        openDetail();
+      });
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openDetail();
+        }
+      });
+      card.querySelector('[data-open]')?.addEventListener('click', openDetail);
       grid.appendChild(card);
     });
   }
@@ -406,22 +730,30 @@ document.addEventListener('DOMContentLoaded', () => {
   async function renderGame(game) {
     currentGameId = game.id;
     // Apply per-game theme (fallback to platform-based coloring)
-    const themeMap = {
+    const themeMapId = {
+      'fire-red': 'theme-fire-red',
+      emerald: 'theme-emerald',
+      'heart-gold': 'theme-heart-gold',
+      platinum: 'theme-platinum',
+      'black-2': 'theme-black-2',
+      y: 'theme-y',
+    };
+    const themeMapPlatform = {
       gba: 'theme-fire-red',
       ds: 'theme-platinum',
       '3ds': 'theme-y',
       snes: 'theme-emerald',
       playstation: 'theme-heart-gold',
     };
-    const themeKey = (game.platform || '').toLowerCase();
-    document.body.className = document.body.className
-      .split(' ')
-      .filter(c => !c.startsWith('theme-'))
-      .join(' ');
-    document.body.classList.add(themeMap[themeKey] || 'theme-home');
+    const platformKey = (game.platform || '').toLowerCase();
+    const themeClass =
+      themeMapId[game.id] || themeMapId[game.slug] || themeMapPlatform[platformKey];
+    clearThemes();
+    document.body.classList.add(themeClass || 'theme-home');
 
     gameTitle.textContent = game.title;
-    const heroUrl = gameplayGifMap[game.id] || game.coverImageUrl || '';
+    // Prefer gameplay GIF if available, then banner, then art
+    const heroUrl = gameplayGifMap[game.id] || game.banner || game.art || game.coverImageUrl || '';
     if (heroUrl) {
       gameArt.classList.remove('no-image');
       gameArt.style.backgroundImage = `url('${heroUrl}')`;
@@ -429,101 +761,81 @@ document.addEventListener('DOMContentLoaded', () => {
       gameArt.style.backgroundImage = '';
       gameArt.classList.add('no-image');
     }
-    gamePlatform.textContent = game.platform;
-    gameYear.textContent = game.releaseYear || '';
-    gameVersion.textContent = game.region || 'Global';
-    gameDescription.textContent = game.description;
+    gamePlatform.textContent = textOrFallback(game.platform, 'Platform TBA');
+    gameYear.textContent = textOrFallback(game.year, 'Year TBA');
+    gameVersion.textContent = textOrFallback(game.version || game.region, 'Version TBA');
+    gameDescription.textContent = textOrFallback(game.description);
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
     resetChatWithWelcome(game.id);
 
-    // Region Map panel (uses banner/cover when available)
-    const mapPanel = document.getElementById('map-panel');
-    const mapImg = document.getElementById('map-image');
-    const mapLink = document.getElementById('map-link');
-    const mapUrl = game.banner || game.coverImageUrl || '';
-    if (mapUrl) {
-      mapPanel.style.display = '';
-      mapImg.src = mapUrl;
-      mapImg.alt = `${game.title} — Region map`;
-      mapLink.href = mapUrl;
-      // Map modal: open on click instead of navigating away
-      const modal = document.getElementById('map-modal');
-      const modalImg = document.getElementById('map-modal-image');
-      const modalDownload = document.getElementById('map-download');
-      const setHidden = hidden => modal.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-      const openMap = e => {
-        e.preventDefault();
-        modalImg.src = mapUrl;
-        modalDownload.href = mapUrl;
-        setHidden(false);
-      };
-      const closeMap = () => setHidden(true);
-      mapLink.onclick = openMap;
-      modal.querySelectorAll('[data-close-map]').forEach(el => (el.onclick = closeMap));
-      window.addEventListener(
-        'keydown',
-        ev => {
-          if (ev.key === 'Escape') closeMap();
-        },
-        { once: true }
-      );
-    } else {
-      mapPanel.style.display = 'none';
-      mapImg.removeAttribute('src');
-      mapLink.removeAttribute('href');
+    // Additional Screenshots (temporary: reuse region map image until backend provides real screenshots)
+    const screenshots = (() => {
+      const fromGame = Array.isArray(game.screenshots)
+        ? game.screenshots
+            .map(s => (typeof s === 'string' ? { url: s, alt: `${game.title} screenshot` } : s))
+            .filter(s => s && s.url)
+        : [];
+      if (fromGame.length) return fromGame;
+      const fallbacks = [];
+      if (game.banner) fallbacks.push({ url: game.banner, alt: `${game.title} map` });
+      if (game.art) fallbacks.push({ url: game.art, alt: `${game.title} cover` });
+      return fallbacks;
+    })();
+    shotState.items = screenshots;
+    shotState.index = 0;
+    updateShotNavState();
+    if (shotsStrip) {
+      shotsStrip.innerHTML = '';
+      const shotsPanelHost = shotsStrip.closest('.panel');
+      if (!screenshots.length) {
+        if (shotsPanelHost) shotsPanelHost.style.display = 'none';
+        closeShotModal();
+      } else {
+        if (shotsPanelHost) shotsPanelHost.style.display = '';
+        screenshots.forEach((shot, idx) => {
+          const item = document.createElement('button');
+          item.className = 'shot-thumb';
+          item.type = 'button';
+          item.setAttribute('role', 'listitem');
+          item.setAttribute('aria-label', shot.alt || `${game.title} screenshot ${idx + 1}`);
+          item.innerHTML = `<img src="${shot.url}" alt="${shot.alt || `${game.title} screenshot ${idx + 1}`}" loading="lazy" />`;
+          item.addEventListener('click', () => openShotModalAt(idx));
+          shotsStrip.appendChild(item);
+        });
+      }
     }
 
     // Tips
     tipsList.innerHTML = '';
-    try {
-      const tips = await loadTips(game.id);
-      if (!tips.length) {
-        const li = document.createElement('li');
-        li.textContent = 'No tips yet.';
-        tipsList.appendChild(li);
-      } else {
-        tips.forEach(t => {
-          const li = document.createElement('li');
-          li.textContent = t.content || t;
-          tipsList.appendChild(li);
-        });
-      }
-    } catch (err) {
+    const tips = Array.isArray(game.tips) && game.tips.length ? game.tips : [NO_INFO_LINE];
+    tips.forEach(t => {
       const li = document.createElement('li');
-      li.textContent = 'Unable to load tips right now.';
+      li.textContent = textOrFallback(t);
       tipsList.appendChild(li);
-      console.error(err);
-    }
+    });
 
     // FAQ
     faqList.innerHTML = '';
-    try {
-      const faqs = await loadFaqs(game.id);
-      if (!faqs.length) {
-        const d = document.createElement('div');
-        d.className = 'map-hint';
-        d.textContent = 'No FAQs yet.';
+    const faqs = Array.isArray(game.faq) && game.faq.length ? game.faq : null;
+    if (!faqs) {
+      const empty = document.createElement('div');
+      empty.className = 'map-hint';
+      empty.textContent = NO_INFO_LINE;
+      faqList.appendChild(empty);
+    } else {
+      faqs.forEach(({ q, a }) => {
+        const d = document.createElement('details');
+        const s = document.createElement('summary');
+        s.textContent = textOrFallback(q, 'Question TBD');
+        d.appendChild(s);
+        const p = document.createElement('p');
+        p.textContent = textOrFallback(a);
+        d.appendChild(p);
         faqList.appendChild(d);
-      } else {
-        faqs.forEach(({ question, answer }) => {
-          const d = document.createElement('details');
-          const s = document.createElement('summary');
-          s.textContent = question;
-          d.appendChild(s);
-          const p = document.createElement('p');
-          p.textContent = answer;
-          d.appendChild(p);
-          faqList.appendChild(d);
-        });
-      }
-    } catch (err) {
-      const d = document.createElement('div');
-      d.className = 'map-hint';
-      d.textContent = 'Unable to load FAQs right now.';
-      faqList.appendChild(d);
-      console.error(err);
+      });
     }
+    activateTab('tips');
 
     // Forum posts
     await renderPosts();
@@ -573,6 +885,105 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function buildCollection() {
+    return games.map((g, idx) => ({
+      ...g,
+      status: ['Completed', 'In progress', 'Wishlist'][idx % 3],
+      progress: 42 + ((idx * 13) % 55),
+    }));
+  }
+
+  function renderCollectionGrid() {
+    if (!collectionGrid) return;
+    collectionGrid.innerHTML = '';
+    const platform = (collectionFilter?.value || '').toLowerCase();
+    const list = buildCollection().filter(item =>
+      platform ? (item.platform || '').toLowerCase().includes(platform) : true
+    );
+    if (!list.length) {
+      const empty = document.createElement('p');
+      empty.className = 'map-hint';
+      empty.textContent = 'No games in this filter yet.';
+      collectionGrid.appendChild(empty);
+      return;
+    }
+    list.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'collection-card';
+      card.innerHTML = `
+        <div class="thumb" style="background-image:url('${item.art || ''}')"></div>
+        <div class="meta">
+          <div class="title">${item.title}</div>
+          <div class="chips">
+            <span class="chip">${item.platform || 'TBA'}</span>
+            <span class="chip">${item.status}</span>
+          </div>
+          <div class="progress" aria-label="${item.progress}% complete"><span style="width:${item.progress}%"></span></div>
+        </div>
+      `;
+      collectionGrid.appendChild(card);
+    });
+  }
+
+  function renderAchievements() {
+    if (!achievementsGrid) return;
+    achievementsGrid.innerHTML = '';
+    profileData.achievements.forEach(a => {
+      const card = document.createElement('div');
+      card.className = `achievement tier-${a.tier}`;
+      card.innerHTML = `<h4>${a.title}</h4><p>${a.desc}</p>`;
+      achievementsGrid.appendChild(card);
+    });
+  }
+
+  function renderProfile() {
+    if (!profileView) return;
+    profileAvatar.src = profileData.avatar;
+    profileTagline.textContent = profileData.tagline;
+    profileTags.innerHTML = '';
+    profileData.tags.forEach(t => {
+      const c = document.createElement('span');
+      c.className = 'chip';
+      c.textContent = t;
+      profileTags.appendChild(c);
+    });
+    profileStats.innerHTML = '';
+    profileData.stats.forEach(stat => {
+      const s = document.createElement('div');
+      s.className = 'stat';
+      s.innerHTML = `<div class="label">${stat.label}</div><div class="value">${stat.value}</div>`;
+      profileStats.appendChild(s);
+    });
+    renderCollectionGrid();
+    renderAchievements();
+  }
+
+  const SETTINGS_KEY = 'retrohub-settings';
+  function hydrateSettings() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (settingsName) settingsName.value = stored.name || authUser?.name || 'Trainer';
+      if (settingsEmail)
+        settingsEmail.value = stored.email || authUser?.email || 'trainer@example.com';
+      if (prefChat) prefChat.checked = stored.prefChat ?? true;
+      if (prefBadge) prefBadge.checked = stored.prefBadge ?? true;
+      if (prefAnalytics) prefAnalytics.checked = stored.prefAnalytics ?? false;
+    } catch {
+      /* ignore */
+    }
+  }
+  function persistSettings() {
+    const payload = {
+      name: settingsName?.value || 'Trainer',
+      email: settingsEmail?.value || 'trainer@example.com',
+      prefChat: !!prefChat?.checked,
+      prefBadge: !!prefBadge?.checked,
+      prefAnalytics: !!prefAnalytics?.checked,
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+    alert('Your settings have been saved successfully');
+  }
+
   // Forum submit
   postForm.addEventListener('submit', async e => {
     e.preventDefault();
@@ -600,6 +1011,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function navigateTo(hash) {
     window.location.hash = hash;
   }
+  function go(path) {
+    navigateTo(path.startsWith('#') ? path : `#${path}`);
+    closeNav();
+  }
   async function onRoute() {
     const hash = window.location.hash || '#/';
     const parts = hash.slice(2).split('/').filter(Boolean);
@@ -607,7 +1022,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const markActive = route => {
       document.querySelectorAll('.nav-link').forEach(a => {
         const href = a.getAttribute('href');
-        if ((route === 'home' && href === '#/') || (route === 'about' && href === '#/about')) {
+        const activeMatch =
+          (route === 'home' && href === '#/') ||
+          (route === 'about' && href === '#/about') ||
+          (route === 'profile' && href === '#/profile') ||
+          (route === 'settings' && href === '#/settings');
+        if (activeMatch) {
           a.classList.add('active');
         } else {
           a.classList.remove('active');
@@ -625,11 +1045,14 @@ document.addEventListener('DOMContentLoaded', () => {
       aboutView.classList.remove('active');
       homeView.classList.add('active');
       gameView.classList.remove('active');
+      profileView?.classList.remove('active');
+      settingsView?.classList.remove('active');
       renderHome();
       markActive('home');
       // Show a random header gif on Home
       setHeaderGifVisible(true);
       resetScrollTop();
+      closeNav();
     } else {
       const id = parts[0];
       // About route: dedicated minimal page showing only the Meowth City GIF
@@ -637,63 +1060,83 @@ document.addEventListener('DOMContentLoaded', () => {
         homeView.classList.remove('active');
         gameView.classList.remove('active');
         aboutView.classList.add('active');
+        profileView?.classList.remove('active');
+        settingsView?.classList.remove('active');
         // Apply About theme tokens and ensure chatbot is closed
-        document.body.className = document.body.className
-          .split(' ')
-          .filter(c => !c.startsWith('theme-'))
-          .join(' ');
+        clearThemes();
         document.body.classList.add('theme-about');
         document.body.classList.remove('show-chatbot');
         // Hide header gif on About
         setHeaderGifVisible(false);
         markActive('about');
         resetScrollTop();
+        closeNav();
         return;
       }
-      let game = gamesById.get(id);
-      if (!game) {
-        try {
-          const { game: fetched } = await api.getGame(id);
-          if (fetched) {
-            game = { ...fetched, id: fetched._id };
-            gamesById.set(game.id, game);
-            if (!games.find(g => g.id === game.id)) {
-              games.push(game);
-            }
-          }
-        } catch (err) {
-          console.error('Game not found', err);
+      const proceed = async () => {
+        let game = games.find(g => g.id === id || g.slug === id);
+        if (!game) {
+          await loadGamesFromApi();
+          game = games.find(g => g.id === id || g.slug === id);
         }
-      }
-      if (game) {
-        aboutView.classList.remove('active');
-        homeView.classList.remove('active');
-        gameView.classList.add('active');
-        await renderGame(game);
-        markActive('');
-        // Show a random header gif on Game pages
-        setHeaderGifVisible(true);
-        resetScrollTop();
-      } else {
-        // fallback to home
-        navigateTo('#/');
-      }
+        if (!game) {
+          const fetched = await fetchGameFull(id);
+          if (fetched) {
+            games.push(fetched);
+            game = fetched;
+            syncGameIndex();
+          }
+        }
+        if (game) {
+          aboutView.classList.remove('active');
+          homeView.classList.remove('active');
+          profileView?.classList.remove('active');
+          settingsView?.classList.remove('active');
+          gameView.classList.add('active');
+          renderGame(game);
+          // Hydrate richer data if available
+          fetchGameFull(game.id).then(full => {
+            if (full) {
+              Object.assign(game, full);
+              syncGameIndex();
+              renderGame(game);
+            }
+          });
+          markActive('');
+          setHeaderGifVisible(true);
+          resetScrollTop();
+        } else {
+          navigateTo('#/');
+        }
+      };
+      proceed();
     }
   }
   window.addEventListener('hashchange', () => onRoute().catch(console.error));
 
   // Back and Jump actions
-  backBtn.addEventListener('click', () => navigateTo('#/'));
+  backBtn.addEventListener('click', () => go('#/'));
   openChat.addEventListener('click', () => {
     document.body.classList.add('show-chatbot');
     if (!authToken && !authPromptShown) {
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
     }
     chatInput.focus();
   });
-  scrollForum.addEventListener('click', () => {
-    forumEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  menuToggle?.addEventListener('click', toggleNav);
+  navBackdrop?.addEventListener('click', closeNav);
+  document.addEventListener('click', e => {
+    if (!document.body.classList.contains('nav-open')) return;
+    if (mainNav && mainNav.contains(e.target)) return;
+    if (menuToggle && menuToggle.contains(e.target)) return;
+    closeNav();
   });
+  scrollForum.addEventListener('click', () => {
+    activateTab('community');
+    forumEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    postText?.focus({ preventScroll: true });
+  });
+  tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
   // Chatbot logic (Google Gemini API)
   const inputInitHeight = chatInput.scrollHeight;
@@ -706,23 +1149,26 @@ document.addEventListener('DOMContentLoaded', () => {
     chatLi.innerHTML =
       className === 'outgoing'
         ? `<p>${message}</p>`
-        : `<img src="${RETROBOT_AVATAR}" alt="RetroBot" class="chat-avatar" /><p>${message}</p>`;
+        : `<img src="${OAK_AVATAR}" alt="Professor Oak" class="chat-avatar" /><p>${message}</p>`;
     return chatLi;
   };
 
-  // Randomized RetroBot persona messages to prompt sign-in
-  function getRetroBotSignInMessage() {
+  // Randomized Oak persona messages to prompt sign-in
+  function getOakSignInMessage() {
     const options = [
-      'Sign in to save your posts and sync across devices.',
-      'Sign in to keep your chat context and forum posts.',
-      'Create an account to sync tips and bookmarks.',
+      "Ah! You'll need to sign in at my lab before we can chat.",
+      'Hold on, Trainer! Please sign in so I can assist you properly.',
+      "Hm! Access denied—sign in first, then I'll help you out.",
+      "Aha! I recognize keen curiosity—sign in, and let's begin.",
+      'Patience! Sign in to sync your Trainer Card, then ask away.',
+      'Safety first! Please sign in so I can share proper guidance.',
     ];
     return options[Math.floor(Math.random() * options.length)];
   }
 
-  // Show a RetroBot-styled sign-in prompt and open the login modal
-  function promptSignInWithRetroBot(replaceEl) {
-    const msg = getRetroBotSignInMessage();
+  // Show an Oak-styled sign-in prompt and open the login modal
+  function promptSignInWithOak(replaceEl) {
+    const msg = getOakSignInMessage();
     if (replaceEl) {
       const p = replaceEl.querySelector('p');
       if (p) p.textContent = msg;
@@ -738,23 +1184,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Build a strong domain-constrained prompt with per-game context
   function buildPrompt(userText) {
-    const game = gamesById.get(currentGameId);
-    const title = game?.title || 'Retro game';
+    const game = gamesById.get(currentGameId) || games.find(g => g.id === currentGameId);
+    const title = game?.title || 'Pokémon (series)';
     const platform = game?.platform || 'Various';
-    const year = game?.releaseYear || '';
-    const version = game?.region || '';
+    const year = game?.year || '';
+    const version = game?.version || '';
     const description = game?.description || '';
     const tipsArr = tipsCache.get(currentGameId) || [];
     const faqsArr = faqCache.get(currentGameId) || [];
     const tips = tipsArr.map(t => `- ${t.content || t}`).join('\n');
     const faqs = faqsArr.map(f => `- Q: ${f.question || f.q}\n  A: ${f.answer || f.a}`).join('\n');
 
-    const persona = RETROBOT_PERSONA
-      ? 'You are RetroBot, a concise retro gaming assistant. Keep tone friendly, skip roleplay, focus on clear, actionable answers.'
-      : 'You are a concise retro gaming helper.';
-
+    const persona = OAK_PERSONA
+      ? 'You are Professor Oak speaking to the player. Keep a warm, mentor-like tone. Use first-person briefly when helpful ("I"/"my lab"), but stay concise and practical. Do not roleplay long monologues.'
+      : 'You are Pokémon Helper Bot.';
     return `
-${persona} Answer only with gameplay help for the selected classic title. If the user asks about unrelated topics, politely steer back to the game. Prefer short steps or bullets. If unsure, say so briefly and suggest a likely direction in-game.
+${persona} Your purpose is to answer ONLY Pokémon game questions. If the user asks about anything non-Pokémon (news, politics, code, math, etc.), refuse briefly and steer them back to Pokémon gameplay, tips, items, routes, gyms, or strategies.
+
+When the user opens a specific game, you MUST tailor your answers strictly to that title. Keep responses concise and actionable. Prefer steps or bullet points. Include route/town names, items, or NPCs when useful. If you don't know, say so briefly and suggest an in-game direction.
 
 Game context:
 - Title: ${title}
@@ -769,7 +1216,8 @@ User question:
 ${userText}
 
 Constraints:
-- Stay on retro gaming help for the listed title.
+- Stay Pokémon-only. Politely refuse unrelated topics.
+- Be specific to ${title}. If the question is about another game, ask the user to open that game from Home.
 - Be brief; use bullets or short steps when appropriate.
 `.trim();
   }
@@ -778,17 +1226,16 @@ Constraints:
     const messageElement = chatElement.querySelector('p');
     const requestOptions = {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      },
-      body: JSON.stringify({ message: userMessage, prompt: buildPrompt(userMessage) }),
+      headers: Object.assign(
+        { 'Content-Type': 'application/json' },
+        authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      ),
+      body: JSON.stringify({ prompt: buildPrompt(userMessage) }),
     };
-
     try {
       const response = await fetch(API_URL, requestOptions);
       if (response.status === 401) {
-        promptSignInWithRetroBot(chatElement);
+        promptSignInWithOak(chatElement);
         return;
       }
       const data = await response.json();
@@ -822,12 +1269,12 @@ Constraints:
     userMessage = chatInput.value.trim();
     if (!userMessage) return;
     if (!authToken) {
-      // Append the user's message, then have RetroBot respond with a sign-in prompt
+      // Append the user's message, then have Oak respond with a sign-in prompt
       chatInput.value = '';
       chatInput.style.height = `${inputInitHeight}px`;
       chatbox.appendChild(createChatLi(userMessage, 'outgoing'));
       chatbox.scrollTo(0, chatbox.scrollHeight);
-      const incoming = createChatLi(getRetroBotSignInMessage(), 'incoming');
+      const incoming = createChatLi(getOakSignInMessage(), 'incoming');
       chatbox.appendChild(incoming);
       chatbox.scrollTo(0, chatbox.scrollHeight);
       openAuthModal();
@@ -852,7 +1299,7 @@ Constraints:
     chatInput.style.height = `${chatInput.scrollHeight}px`;
     if (!authToken && chatInput.value.trim() && !authPromptShown) {
       document.body.classList.add('show-chatbot');
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
     }
   });
   chatInput.addEventListener('keydown', e => {
@@ -866,9 +1313,46 @@ Constraints:
   chatbotToggler.addEventListener('click', () => {
     document.body.classList.toggle('show-chatbot');
     if (document.body.classList.contains('show-chatbot') && !authToken && !authPromptShown) {
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
     }
   });
+
+  document.addEventListener('click', e => {
+    if (!document.body.classList.contains('show-chatbot')) return;
+    const target = e.target;
+    if (chatbotPanel?.contains(target)) return;
+    if (chatbotToggler?.contains(target)) return;
+    if (openChat?.contains(target)) return;
+    document.body.classList.remove('show-chatbot');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.body.classList.contains('show-chatbot')) {
+      document.body.classList.remove('show-chatbot');
+      return;
+    }
+    if (isAuthModalOpen()) {
+      closeAuthModal();
+    }
+  });
+
+  // Home filters
+  [filterPlatform, filterYear, filterSearch].forEach(el =>
+    el?.addEventListener('input', () => renderHome())
+  );
+  filterReset?.addEventListener('click', () => {
+    if (filterPlatform) filterPlatform.value = '';
+    if (filterYear) filterYear.value = '';
+    if (filterSearch) filterSearch.value = '';
+    renderHome();
+  });
+
+  // Close nav on route changes
+  window.addEventListener('hashchange', closeNav);
+
+  // Profile filters
+  collectionFilter?.addEventListener('change', renderCollectionGrid);
 
   // --- Auth UI wiring ---
   updateAuthUI();
@@ -880,10 +1364,11 @@ Constraints:
       setTimeout(() => authEmail?.focus(), 50);
     }
   });
+  authTabs.forEach(btn => btn.addEventListener('click', () => setAuthTab(btn.dataset.authTab)));
   authModal
     ?.querySelectorAll('[data-auth-close]')
     ?.forEach(el => el.addEventListener('click', closeAuthModal));
-  authForm?.addEventListener('submit', async e => {
+  authForms.login?.addEventListener('submit', async e => {
     e.preventDefault();
     const email = (authEmail?.value || '').trim();
     const password = (authPass?.value || '').trim();
@@ -902,8 +1387,49 @@ Constraints:
       authPromptShown = false;
       closeAuthModal();
     } catch (err) {
-      alert((err && err.message) || 'Login failed');
+      const message = err?.message ? `Login failed: ${err.message}` : 'Login failed';
+      alert(message);
     }
+  });
+  authForms.register?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = (authNameReg?.value || '').trim();
+    const email = (authEmailReg?.value || '').trim();
+    const password = (authPassReg?.value || '').trim();
+    if (!email || !password) return;
+    try {
+      const resp = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const payload = await resp.json();
+      if (!resp.ok) throw new Error(payload?.error || 'Registration failed');
+      setAuth(payload.user, payload.token);
+      authPromptShown = false;
+      closeAuthModal();
+    } catch (err) {
+      const message = err?.message ? `Registration failed: ${err.message}` : 'Registration failed';
+      alert(message);
+    }
+  });
+
+  // Settings actions
+  document.getElementById('save-account')?.addEventListener('click', persistSettings);
+  document.getElementById('save-preferences')?.addEventListener('click', persistSettings);
+  document
+    .getElementById('save-password')
+    ?.addEventListener('click', () => alert('Password update requested (demo only)'));
+  document.getElementById('clear-storage')?.addEventListener('click', () => {
+    localStorage.clear();
+    setAuth(null, '');
+    renderPosts();
+    renderHome();
+    alert('Local data cleared');
+  });
+  document.getElementById('revoke-sessions')?.addEventListener('click', () => {
+    setAuth(null, '');
+    alert('All sessions revoked (demo)');
   });
 
   // Initial render
