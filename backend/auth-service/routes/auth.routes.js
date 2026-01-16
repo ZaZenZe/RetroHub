@@ -2,9 +2,9 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../../shared/models/User');
-const UserStats = require('../../shared/models/UserStats');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
+const User = require('../shared/models/User');
+const UserStats = require('../shared/models/UserStats');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
 
 const router = express.Router();
 

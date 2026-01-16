@@ -26,7 +26,6 @@ if (process.env.NODE_ENV !== 'production') {
   console.log('[gateway] proxy targets', targets);
 }
 
-app.use(express.json({ limit: '1mb' }));
 app.use(express.static(FRONTEND_DIR));
 
 function proxy(envKey, target) {
@@ -39,10 +38,8 @@ function proxy(envKey, target) {
   return createProxyMiddleware({
     target: targetUrl,
     changeOrigin: true,
-    logLevel: 'warn',
-    onError: (_err, req, res) => {
-      res.status(502).json({ error: `Upstream service unavailable for ${req.baseUrl}` });
-    },
+    pathRewrite: path => path,
+    logLevel: process.env.NODE_ENV === 'production' ? 'error' : 'warn',
   });
 }
 
@@ -61,6 +58,6 @@ app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Gateway running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Gateway running at http://0.0.0.0:${PORT}`);
 });

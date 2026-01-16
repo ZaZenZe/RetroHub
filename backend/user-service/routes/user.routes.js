@@ -2,12 +2,12 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
-const User = require('../../shared/models/User');
-const UserStats = require('../../shared/models/UserStats');
-const Achievement = require('../../shared/models/Achievement');
-const UserGame = require('../../shared/models/UserGame');
-const Game = require('../../shared/models/Game');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
+const User = require('../shared/models/User');
+const UserStats = require('../shared/models/UserStats');
+const Achievement = require('../shared/models/Achievement');
+const UserGame = require('../shared/models/UserGame');
+const Game = require('../shared/models/Game');
 
 const router = express.Router();
 const allowedStatuses = ['PLAYING', 'COMPLETED', 'BACKLOG', 'WISH_LIST'];

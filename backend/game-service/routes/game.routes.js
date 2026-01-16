@@ -2,10 +2,10 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const Game = require('../../shared/models/Game');
-const Tip = require('../../shared/models/Tip');
-const FAQ = require('../../shared/models/FAQ');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
+const Game = require('../shared/models/Game');
+const Tip = require('../shared/models/Tip');
+const FAQ = require('../shared/models/FAQ');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
 
 const router = express.Router();
 

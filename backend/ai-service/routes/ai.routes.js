@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
 const { callGemini, hasGeminiKey } = require('../utils/gemini');
 
 const HISTORY_LIMIT = 6;

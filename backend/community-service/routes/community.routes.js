@@ -2,11 +2,11 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
-const Post = require('../../shared/models/Post');
-const Reply = require('../../shared/models/Reply');
-const Game = require('../../shared/models/Game');
-const UserStats = require('../../shared/models/UserStats');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
+const Post = require('../shared/models/Post');
+const Reply = require('../shared/models/Reply');
+const Game = require('../shared/models/Game');
+const UserStats = require('../shared/models/UserStats');
 
 const router = express.Router();
 
