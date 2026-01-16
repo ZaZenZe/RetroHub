@@ -1397,15 +1397,25 @@ Constraints:
     const email = (authEmailReg?.value || '').trim();
     const password = (authPassReg?.value || '').trim();
     if (!email || !password) return;
+    const username = name || email.split('@')[0] || 'trainer';
     try {
       const resp = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ username, email, password }),
       });
-      const payload = await resp.json();
-      if (!resp.ok) throw new Error(payload?.error || 'Registration failed');
-      setAuth(payload.user, payload.token);
+      const raw = await resp.text();
+      let payload;
+      try {
+        payload = raw ? JSON.parse(raw) : {};
+      } catch {
+        payload = null;
+      }
+      if (!resp.ok) {
+        const msg = payload?.error || raw || 'Registration failed';
+        throw new Error(msg);
+      }
+      setAuth(payload?.user, payload?.token);
       authPromptShown = false;
       closeAuthModal();
     } catch (err) {

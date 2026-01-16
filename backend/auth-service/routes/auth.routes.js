@@ -10,6 +10,7 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || 'demo-secret-change-me';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 function signToken(user) {
   return jwt.sign(
@@ -80,7 +81,15 @@ router.post('/register', async (req, res, next) => {
     const token = signToken(user);
     return res.status(201).json({ user: sanitizeUser(user), token });
   } catch (err) {
-    return next(err);
+    // Handle duplicate key errors explicitly
+    if (err && err.code === 11000) {
+      return res.status(409).json({ error: 'email or username already in use' });
+    }
+    console.error('[auth] register failed', err);
+    return res.status(500).json({
+      error: 'Registration failed',
+      detail: IS_DEV ? err.message || err.toString() : undefined,
+    });
   }
 });
 
