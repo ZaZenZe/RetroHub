@@ -22,36 +22,66 @@ const targets = {
   ai: resolveTarget('AI_SERVICE_URL', 'http://localhost:3005'),
 };
 
-if (process.env.NODE_ENV !== 'production') {
-  console.log('[gateway] proxy targets', targets);
-}
+console.log('[gateway] targets:', targets);
 
-app.use(express.static(FRONTEND_DIR));
+app.use(express.json());
 
-function proxy(envKey, target) {
-  const targetUrl = (target || '').toString().trim();
-
-  if (!targetUrl) {
-    throw new Error(`Proxy target missing. Set ${envKey} in your environment.`);
-  }
-
-  return createProxyMiddleware({
-    target: targetUrl,
+app.use(
+  '/api/auth',
+  createProxyMiddleware({
+    target: targets.auth,
     changeOrigin: true,
-    pathRewrite: path => path,
-    logLevel: process.env.NODE_ENV === 'production' ? 'error' : 'warn',
-  });
-}
+    pathRewrite: { '^': '/auth' },
+    logLevel: 'warn',
+  })
+);
 
-app.use('/api/auth', proxy('AUTH_SERVICE_URL', targets.auth));
-app.use('/api/users', proxy('USER_SERVICE_URL', targets.user));
-app.use('/api/games', proxy('GAME_SERVICE_URL', targets.game));
-app.use('/api/community', proxy('COMMUNITY_SERVICE_URL', targets.community));
-app.use('/api/chat', proxy('AI_SERVICE_URL', targets.ai));
+app.use(
+  '/api/users',
+  createProxyMiddleware({
+    target: targets.user,
+    changeOrigin: true,
+    pathRewrite: { '^': '/users' },
+    logLevel: 'warn',
+  })
+);
+
+app.use(
+  '/api/games',
+  createProxyMiddleware({
+    target: targets.game,
+    changeOrigin: true,
+    pathRewrite: { '^': '/games' },
+    logLevel: 'warn',
+  })
+);
+
+app.use(
+  '/api/community',
+  createProxyMiddleware({
+    target: targets.community,
+    changeOrigin: true,
+    pathRewrite: { '^': '/community' },
+    logLevel: 'warn',
+  })
+);
+
+app.use(
+  '/api/chat',
+  createProxyMiddleware({
+    target: targets.ai,
+    changeOrigin: true,
+    pathRewrite: { '^': '/chat' },
+    logLevel: 'warn',
+  })
+);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', services: targets, timestamp: Date.now() });
 });
+
+// Static files and SPA shell AFTER API routes
+app.use(express.static(FRONTEND_DIR));
 
 // Serve SPA shell for any non-API route
 app.get(/^(?!\/api).*/, (req, res) => {

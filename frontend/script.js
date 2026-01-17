@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const mainNav = document.querySelector('.main-nav');
   const navBackdrop = document.querySelector('.nav-backdrop');
   const menuToggle = document.querySelector('.menu-toggle');
+  const navLinks = Array.from(document.querySelectorAll('.nav-link[data-link]'));
   const grid = $('#game-grid');
   const backBtn = $('#back-btn');
   const gameTitle = $('#game-title');
@@ -308,81 +309,67 @@ document.addEventListener('DOMContentLoaded', () => {
     return payload || {};
   }
 
-  // App State (fallback seeds, replaced by API if available)
-  let games = [
-    {
-      id: 'fire-red',
-      title: 'Pokémon Fire Red',
-      platform: 'GBA',
-      year: '2004',
-      version: 'Kanto',
-      art: 'assets/box art/640px-FireRed_EN_boxart.png',
-      banner: 'assets/map/red.png',
-      description:
-        'Return to Kanto in this remake of the original adventure. Catch, train, and battle across iconic towns and routes.',
-      tips: [
-        'Pick Bulbasaur for an easier early-game vs. Brock and Misty.',
-        'Catch a Flying-type early for utility (e.g., Pidgey).',
-        'Use the Vs. Seeker to level efficiently on known trainers.',
-      ],
-      faq: [
-        {
-          q: 'Where to get the VS Seeker?',
-          a: 'Route 24/25 area: Receive it from the aide after leaving the Underground Path house near Vermilion City (after getting the Bike Voucher).',
-        },
-        {
-          q: 'How to get Flash for Rock Tunnel?',
-          a: 'Catch at least 10 Pokémon and visit Professor Oak’s aide on Route 2 (south of Pewter via Diglett’s Cave) to receive HM05 Flash.',
-        },
-      ],
-    },
-    {
-      id: 'emerald',
-      title: 'Pokémon Emerald',
-      platform: 'GBA',
-      year: '2005',
-      version: 'Hoenn',
-      art: 'assets/box art/emerald.jpg',
-      banner: 'assets/map/emerald.png',
-      description: 'The definitive Hoenn experience with Battle Frontier and more double battles.',
-      tips: [
-        'Mudkip eases early gyms; Treecko is fast but fragile.',
-        'Prepare for lots of double battles—balance your team roles.',
-        'Try the Battle Frontier post-game for advanced challenges.',
-      ],
-    },
-  ];
+  // App State (API-driven only)
+  let games = [];
   let gamesLoadedFromApi = false;
   const gamesById = new Map();
+  const gamesByDbId = new Map();
   const tipsCache = new Map();
   const faqCache = new Map();
   const postsCache = new Map();
-  let currentGameId = null;
+  let currentGameId = null; // route key (slug)
+  let currentGameDbId = null; // ObjectId for API calls
+
+  function indexGame(game) {
+    if (!game) return;
+    const routeKey = game.slug || game.id || game.dbId;
+    if (routeKey) gamesById.set(routeKey, game);
+    if (game.dbId) gamesByDbId.set(game.dbId, game);
+  }
 
   function syncGameIndex() {
     gamesById.clear();
-    games.forEach(g => gamesById.set(g.id, g));
+    gamesByDbId.clear();
+    games.forEach(indexGame);
   }
   syncGameIndex();
 
-  // Profile mock data (local only)
-  const profileData = {
-    name: 'Trainer Oak Jr.',
-    tagline: 'Retro collector and walkthrough writer.',
-    avatar: 'assets/pixel/6Vww.gif',
-    tags: ['Collector', 'Guide writer', 'Kanto native'],
-    stats: [
-      { label: 'Games cleared', value: 42 },
-      { label: 'Badges earned', value: 48 },
-      { label: 'Tips shared', value: 128 },
-    ],
-    achievements: [
-      { title: 'Kanto Veteran', desc: 'Completed all Gym Leader rematches', tier: 'gold' },
-      { title: 'Frontier Brain', desc: 'Won 50 Battle Frontier streak', tier: 'platinum' },
-      { title: 'Dex Scholar', desc: 'Filled regional dex without trades', tier: 'silver' },
-      { title: 'Speedrunner', desc: 'Beat Elite Four in under 3 hours', tier: 'bronze' },
-    ],
+  // Profile state (hydrated from API)
+  const profileState = {
+    user: null,
+    stats: null,
+    achievements: [],
+    games: [],
   };
+
+  async function fetchProfileBundle() {
+    if (!authUser || !authUser.id) return null;
+    const userId = authUser.id || authUser._id || authUser.sub;
+    const [userRes, statsRes, achRes, gamesRes] = await Promise.all([
+      apiJson(`/api/users/${userId}`),
+      apiJson(`/api/users/${userId}/stats`),
+      apiJson(`/api/users/${userId}/achievements`),
+      apiJson(`/api/users/${userId}/games`),
+    ]);
+    profileState.user = userRes?.user || null;
+    profileState.stats = statsRes?.stats || null;
+    profileState.achievements = Array.isArray(achRes?.achievements) ? achRes.achievements : [];
+    profileState.games = Array.isArray(gamesRes?.games)
+      ? gamesRes.games.map(entry => {
+          const g = entry.gameId || {};
+          return {
+            id: g.slug || g._id || g.id,
+            dbId: g._id || g.id,
+            title: g.title,
+            platform: g.platform,
+            art: g.coverImageUrl,
+            status: entry.status,
+            progress: entry.progressPercentage,
+          };
+        })
+      : [];
+    return profileState;
+  }
 
   async function fetchJson(url) {
     const res = await fetch(url);
@@ -392,9 +379,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function mapApiGame(g) {
     if (!g) return null;
+    const dbId = g.id || g._id;
+    const slug = g.slug || dbId;
     return {
-      id: g.slug || g.id || g._id,
-      slug: g.slug || g.id || g._id,
+      id: slug, // used for routing/hash
+      slug,
+      dbId,
       title: g.title,
       platform: g.platform,
       year: g.releaseYear || g.year,
@@ -412,10 +402,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const data = await fetchJson(`${API_BASE}/games`);
       const mapped = (data?.games || []).map(mapApiGame).filter(Boolean);
-      if (mapped.length) {
-        games = mapped;
-        syncGameIndex();
-      }
+      games = mapped;
+      syncGameIndex();
     } catch {
       console.warn('Using fallback games; API unavailable');
     } finally {
@@ -432,8 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (g) {
         if (tips.length) g.tips = tips;
         if (faqs.length) g.faq = faqs;
-        if (tips.length) tipsCache.set(g.id, tips);
-        if (faqs.length) faqCache.set(g.id, faqs);
+        if (tips.length) tipsCache.set(g.dbId || g.id, tips);
+        if (faqs.length) faqCache.set(g.dbId || g.id, faqs);
       }
       return g;
     } catch {
@@ -474,24 +462,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return games;
   }
 
-  async function loadTips(gameId) {
-    if (tipsCache.has(gameId)) return tipsCache.get(gameId);
-    const { tips = [] } = await api.getTips(gameId);
-    tipsCache.set(gameId, tips);
+  async function loadTips(gameDbId) {
+    if (tipsCache.has(gameDbId)) return tipsCache.get(gameDbId);
+    const { tips = [] } = await api.getTips(gameDbId);
+    tipsCache.set(gameDbId, tips);
     return tips;
   }
 
-  async function loadFaqs(gameId) {
-    if (faqCache.has(gameId)) return faqCache.get(gameId);
-    const { faqs = [] } = await api.getFaqs(gameId);
-    faqCache.set(gameId, faqs);
+  async function loadFaqs(gameDbId) {
+    if (faqCache.has(gameDbId)) return faqCache.get(gameDbId);
+    const { faqs = [] } = await api.getFaqs(gameDbId);
+    faqCache.set(gameDbId, faqs);
     return faqs;
   }
 
-  async function loadPosts(gameId) {
-    if (postsCache.has(gameId)) return postsCache.get(gameId);
-    const { posts = [] } = await api.getPosts(gameId);
-    postsCache.set(gameId, posts);
+  async function loadPosts(gameDbId) {
+    if (postsCache.has(gameDbId)) return postsCache.get(gameDbId);
+    const { posts = [] } = await api.getPosts(gameDbId);
+    postsCache.set(gameDbId, posts);
     return posts;
   }
 
@@ -710,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = gifUrl;
       });
       card.addEventListener('focusout', () => applyBg(originalUrl));
-      const openDetail = () => navigateTo(`#/${g.id}`);
+      const openDetail = () => navigateTo(`#/${g.slug || g.id}`);
       card.addEventListener('click', e => {
         if (e.target.closest('[data-open]')) return;
         openDetail();
@@ -728,7 +716,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render Game Detail
   async function renderGame(game) {
-    currentGameId = game.id;
+    currentGameId = game.slug || game.id;
+    currentGameDbId = game.dbId || game.id;
     // Apply per-game theme (fallback to platform-based coloring)
     const themeMapId = {
       'fire-red': 'theme-fire-red',
@@ -753,7 +742,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     gameTitle.textContent = game.title;
     // Prefer gameplay GIF if available, then banner, then art
-    const heroUrl = gameplayGifMap[game.id] || game.banner || game.art || game.coverImageUrl || '';
+    const heroUrl =
+      gameplayGifMap[game.slug] ||
+      gameplayGifMap[game.id] ||
+      game.banner ||
+      game.art ||
+      game.coverImageUrl ||
+      '';
     if (heroUrl) {
       gameArt.classList.remove('no-image');
       gameArt.style.backgroundImage = `url('${heroUrl}')`;
@@ -767,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
     gameDescription.textContent = textOrFallback(game.description);
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
-    resetChatWithWelcome(game.id);
+    resetChatWithWelcome(game.slug || game.id);
 
     // Additional Screenshots (temporary: reuse region map image until backend provides real screenshots)
     const screenshots = (() => {
@@ -847,9 +842,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loading.className = 'post';
     loading.innerHTML = '<div class="bubble"><div class="text">Loading posts…</div></div>';
     postsEl.appendChild(loading);
-    if (!currentGameId) return;
+    if (!currentGameDbId) return;
     try {
-      const posts = await loadPosts(currentGameId);
+      const posts = await loadPosts(currentGameDbId);
       postsEl.innerHTML = '';
       if (!posts.length) {
         const empty = document.createElement('li');
@@ -897,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!collectionGrid) return;
     collectionGrid.innerHTML = '';
     const platform = (collectionFilter?.value || '').toLowerCase();
-    const list = buildCollection().filter(item =>
+    const list = (profileState.games || []).filter(item =>
       platform ? (item.platform || '').toLowerCase().includes(platform) : true
     );
     if (!list.length) {
@@ -928,43 +923,72 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAchievements() {
     if (!achievementsGrid) return;
     achievementsGrid.innerHTML = '';
-    profileData.achievements.forEach(a => {
+    if (!profileState.achievements.length) {
+      const empty = document.createElement('p');
+      empty.className = 'map-hint';
+      empty.textContent = 'No achievements yet.';
+      achievementsGrid.appendChild(empty);
+      return;
+    }
+    profileState.achievements.forEach(a => {
       const card = document.createElement('div');
-      card.className = `achievement tier-${a.tier}`;
-      card.innerHTML = `<h4>${a.title}</h4><p>${a.desc}</p>`;
+      card.className = 'achievement';
+      card.innerHTML = `<h4>${a.name}</h4><p>${a.description}</p>`;
       achievementsGrid.appendChild(card);
     });
   }
 
   function renderProfile() {
     if (!profileView) return;
-    profileAvatar.src = profileData.avatar;
-    profileTagline.textContent = profileData.tagline;
-    profileTags.innerHTML = '';
-    profileData.tags.forEach(t => {
-      const c = document.createElement('span');
-      c.className = 'chip';
-      c.textContent = t;
-      profileTags.appendChild(c);
-    });
-    profileStats.innerHTML = '';
-    profileData.stats.forEach(stat => {
-      const s = document.createElement('div');
-      s.className = 'stat';
-      s.innerHTML = `<div class="label">${stat.label}</div><div class="value">${stat.value}</div>`;
-      profileStats.appendChild(s);
-    });
-    renderCollectionGrid();
-    renderAchievements();
+    if (!authUser) {
+      profileView.querySelector('.panel')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      profileAvatar.src = 'assets/pixel/6Vww.gif';
+      profileTagline.textContent = 'Sign in to view your trainer card.';
+      profileTags.innerHTML = '';
+      profileStats.innerHTML = '<p class="map-hint">Please sign in first.</p>';
+      collectionGrid.innerHTML = '<p class="map-hint">Sign in to see your collection.</p>';
+      achievementsGrid.innerHTML = '<p class="map-hint">Sign in to see achievements.</p>';
+      return;
+    }
+    if (profileState.user) {
+      profileAvatar.src = profileState.user.avatarUrl || 'assets/pixel/6Vww.gif';
+      profileTagline.textContent = profileState.user.username || 'Trainer';
+      profileTags.innerHTML = '';
+      const tags = [profileState.user.role === 'admin' ? 'Admin' : 'Member'];
+      tags.forEach(t => {
+        const c = document.createElement('span');
+        c.className = 'chip';
+        c.textContent = t;
+        profileTags.appendChild(c);
+      });
+      profileStats.innerHTML = '';
+      const statsList = [
+        { label: 'Games tracked', value: profileState.stats?.totalGames ?? 0 },
+        { label: 'Completed', value: profileState.stats?.completedGames ?? 0 },
+        { label: 'Forum posts', value: profileState.stats?.forumPosts ?? 0 },
+        { label: 'Forum replies', value: profileState.stats?.forumReplies ?? 0 },
+      ];
+      statsList.forEach(stat => {
+        const s = document.createElement('div');
+        s.className = 'stat';
+        s.innerHTML = `<div class="label">${stat.label}</div><div class="value">${stat.value}</div>`;
+        profileStats.appendChild(s);
+      });
+      renderCollectionGrid();
+      renderAchievements();
+    }
   }
 
   const SETTINGS_KEY = 'retrohub-settings';
   function hydrateSettings() {
     try {
       const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-      if (settingsName) settingsName.value = stored.name || authUser?.name || 'Trainer';
-      if (settingsEmail)
-        settingsEmail.value = stored.email || authUser?.email || 'trainer@example.com';
+      if (settingsName)
+        settingsName.value = profileState.user?.username || stored.name || 'Trainer';
+      if (settingsEmail) {
+        settingsEmail.value = profileState.user?.email || authUser?.email || '';
+        settingsEmail.readOnly = true; // backend does not expose email change yet
+      }
       if (prefChat) prefChat.checked = stored.prefChat ?? true;
       if (prefBadge) prefBadge.checked = stored.prefBadge ?? true;
       if (prefAnalytics) prefAnalytics.checked = stored.prefAnalytics ?? false;
@@ -975,28 +999,28 @@ document.addEventListener('DOMContentLoaded', () => {
   function persistSettings() {
     const payload = {
       name: settingsName?.value || 'Trainer',
-      email: settingsEmail?.value || 'trainer@example.com',
+      email: settingsEmail?.value || '',
       prefChat: !!prefChat?.checked,
       prefBadge: !!prefBadge?.checked,
       prefAnalytics: !!prefAnalytics?.checked,
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
-    alert('Your settings have been saved successfully');
+    alert('Your preferences have been saved locally');
   }
 
   // Forum submit
   postForm.addEventListener('submit', async e => {
     e.preventDefault();
     const text = postText.value.trim();
-    if (!text || !currentGameId) return;
+    if (!text || !currentGameDbId) return;
     if (!authToken) {
       promptSignInWithRetroBot();
       return;
     }
     try {
-      await api.createPost(currentGameId, text);
+      await api.createPost(currentGameDbId, text);
       postText.value = '';
-      postsCache.delete(currentGameId);
+      postsCache.delete(currentGameDbId);
       await renderPosts();
     } catch (err) {
       if (err.status === 401) {
@@ -1018,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function onRoute() {
     const hash = window.location.hash || '#/';
     const parts = hash.slice(2).split('/').filter(Boolean);
+    const routeKey = (parts[0] || '').replace(/[#?].*$/, '').toLowerCase();
     // Update active nav link state
     const markActive = route => {
       document.querySelectorAll('.nav-link').forEach(a => {
@@ -1054,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resetScrollTop();
       closeNav();
     } else {
-      const id = parts[0];
+      const id = routeKey || parts[0];
       // About route: dedicated minimal page showing only the Meowth City GIF
       if (id === 'about') {
         homeView.classList.remove('active');
@@ -1073,11 +1098,66 @@ document.addEventListener('DOMContentLoaded', () => {
         closeNav();
         return;
       }
+
+      // Profile route
+      if (id === 'profile') {
+        homeView.classList.remove('active');
+        gameView.classList.remove('active');
+        aboutView.classList.remove('active');
+        settingsView?.classList.remove('active');
+        profileView?.classList.add('active');
+        clearThemes();
+        document.body.classList.add('theme-home');
+        setHeaderGifVisible(true);
+        if (authUser) {
+          try {
+            await fetchProfileBundle();
+          } catch (err) {
+            console.error('Failed to load profile', err);
+          }
+        }
+        renderProfile();
+        hydrateSettings();
+        markActive('profile');
+        if (!authToken && !authPromptShown) {
+          promptSignInWithOak();
+        }
+        resetScrollTop();
+        closeNav();
+        return;
+      }
+
+      // Settings route
+      if (id === 'settings') {
+        homeView.classList.remove('active');
+        gameView.classList.remove('active');
+        aboutView.classList.remove('active');
+        profileView?.classList.remove('active');
+        settingsView?.classList.add('active');
+        clearThemes();
+        document.body.classList.add('theme-home');
+        setHeaderGifVisible(true);
+        if (authUser) {
+          try {
+            await fetchProfileBundle();
+          } catch (err) {
+            console.error('Failed to load profile for settings', err);
+          }
+        }
+        hydrateSettings();
+        markActive('settings');
+        if (!authToken && !authPromptShown) {
+          promptSignInWithOak();
+        }
+        resetScrollTop();
+        closeNav();
+        return;
+      }
       const proceed = async () => {
-        let game = games.find(g => g.id === id || g.slug === id);
+        let game = games.find(g => g.slug === id || g.id === id || g.dbId === id);
         if (!game) {
           await loadGamesFromApi();
-          game = games.find(g => g.id === id || g.slug === id);
+          game = games.find(g => g.slug === id || g.id === id || g.dbId === id);
         }
         if (!game) {
           const fetched = await fetchGameFull(id);
@@ -1095,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
           gameView.classList.add('active');
           renderGame(game);
           // Hydrate richer data if available
-          fetchGameFull(game.id).then(full => {
+          fetchGameFull(game.dbId || game.slug || game.id).then(full => {
             if (full) {
               Object.assign(game, full);
               syncGameIndex();
@@ -1130,6 +1210,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mainNav && mainNav.contains(e.target)) return;
     if (menuToggle && menuToggle.contains(e.target)) return;
     closeNav();
+  });
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', evt => {
+      const href = link.getAttribute('href') || '#/';
+      if (!href.startsWith('#')) return;
+      evt.preventDefault();
+      go(href);
+    });
   });
   scrollForum.addEventListener('click', () => {
     activateTab('community');
@@ -1184,14 +1273,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Build a strong domain-constrained prompt with per-game context
   function buildPrompt(userText) {
-    const game = gamesById.get(currentGameId) || games.find(g => g.id === currentGameId);
+    const game =
+      gamesById.get(currentGameId) ||
+      gamesByDbId.get(currentGameDbId) ||
+      games.find(g => g.id === currentGameId || g.dbId === currentGameDbId);
     const title = game?.title || 'Pokémon (series)';
     const platform = game?.platform || 'Various';
     const year = game?.year || '';
     const version = game?.version || '';
     const description = game?.description || '';
-    const tipsArr = tipsCache.get(currentGameId) || [];
-    const faqsArr = faqCache.get(currentGameId) || [];
+    const tipsArr = tipsCache.get(currentGameDbId || currentGameId) || [];
+    const faqsArr = faqCache.get(currentGameDbId || currentGameId) || [];
     const tips = tipsArr.map(t => `- ${t.content || t}`).join('\n');
     const faqs = faqsArr.map(f => `- Q: ${f.question || f.q}\n  A: ${f.answer || f.a}`).join('\n');
 
@@ -1384,6 +1476,9 @@ Constraints:
         throw new Error(payload?.error || 'Login failed');
       }
       setAuth(payload.user, payload.token);
+      try {
+        await fetchProfileBundle();
+      } catch {}
       authPromptShown = false;
       closeAuthModal();
     } catch (err) {
@@ -1416,6 +1511,9 @@ Constraints:
         throw new Error(msg);
       }
       setAuth(payload?.user, payload?.token);
+      try {
+        await fetchProfileBundle();
+      } catch {}
       authPromptShown = false;
       closeAuthModal();
     } catch (err) {
@@ -1425,11 +1523,50 @@ Constraints:
   });
 
   // Settings actions
-  document.getElementById('save-account')?.addEventListener('click', persistSettings);
   document.getElementById('save-preferences')?.addEventListener('click', persistSettings);
-  document
-    .getElementById('save-password')
-    ?.addEventListener('click', () => alert('Password update requested (demo only)'));
+  document.getElementById('save-password')?.addEventListener('click', async () => {
+    if (!authUser) {
+      promptSignInWithOak();
+      return;
+    }
+    const userId = authUser.id || authUser._id;
+    const newPassword = (document.getElementById('settings-pass-new')?.value || '').trim();
+    if (!newPassword || newPassword.length < 6) {
+      alert('Please provide a new password (min 6 characters).');
+      return;
+    }
+    try {
+      await apiJson(`/api/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ password: newPassword }),
+      });
+      alert('Password updated');
+    } catch (err) {
+      alert(err?.message || 'Password update failed');
+    }
+  });
+  document.getElementById('save-account')?.addEventListener('click', async () => {
+    if (!authUser) {
+      promptSignInWithOak();
+      return;
+    }
+    const userId = authUser.id || authUser._id;
+    const username = (settingsName?.value || '').trim();
+    try {
+      const resp = await apiJson(`/api/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ username }),
+      });
+      if (resp?.user) {
+        setAuth(resp.user, authToken);
+        await fetchProfileBundle();
+        renderProfile();
+      }
+      alert('Account updated');
+    } catch (err) {
+      alert(err?.message || 'Account update failed');
+    }
+  });
   document.getElementById('clear-storage')?.addEventListener('click', () => {
     localStorage.clear();
     setAuth(null, '');
@@ -1451,6 +1588,7 @@ Constraints:
       .then(data => {
         if (data?.user) {
           setAuth(data.user, authToken);
+          fetchProfileBundle().catch(() => {});
         }
       })
       .catch(() => {});
