@@ -26,12 +26,17 @@ console.log('[gateway] targets:', targets);
 
 app.use(express.json());
 
+// Custom rewrite function that adds back the service path
+const createServiceRewrite = servicePath => reqPath => {
+  return servicePath + reqPath;
+};
+
 app.use(
   '/api/auth',
   createProxyMiddleware({
     target: targets.auth,
     changeOrigin: true,
-    pathRewrite: { '^': '/auth' },
+    pathRewrite: createServiceRewrite('/auth'),
     logLevel: 'warn',
   })
 );
@@ -41,7 +46,7 @@ app.use(
   createProxyMiddleware({
     target: targets.user,
     changeOrigin: true,
-    pathRewrite: { '^': '/users' },
+    pathRewrite: createServiceRewrite('/users'),
     logLevel: 'warn',
   })
 );
@@ -51,7 +56,7 @@ app.use(
   createProxyMiddleware({
     target: targets.game,
     changeOrigin: true,
-    pathRewrite: { '^': '/games' },
+    pathRewrite: createServiceRewrite('/games'),
     logLevel: 'warn',
   })
 );
@@ -61,7 +66,7 @@ app.use(
   createProxyMiddleware({
     target: targets.community,
     changeOrigin: true,
-    pathRewrite: { '^': '/community' },
+    pathRewrite: createServiceRewrite('/community'),
     logLevel: 'warn',
   })
 );
@@ -71,7 +76,7 @@ app.use(
   createProxyMiddleware({
     target: targets.ai,
     changeOrigin: true,
-    pathRewrite: { '^': '/chat' },
+    pathRewrite: createServiceRewrite('/chat'),
     logLevel: 'warn',
   })
 );
