@@ -23,7 +23,16 @@
     "start:user": "cd backend/user-service && npm start",
     "start:game": "cd backend/game-service && npm start",
     "start:community": "cd backend/community-service && npm start",
-    "start:ai": "cd backend/ai-service && npm start"
+    "start:ai": "cd backend/ai-service && npm start",
+    "start:services": "concurrently \"npm run start:auth\" \"npm run start:user\" \"npm run start:game\" \"npm run start:community\" \"npm run start:ai\"",
+    "docker:up": "docker compose up -d mongodb mongo-express",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build",
+    "docker:full": "docker compose up -d",
+    "docker:full:down": "docker compose down -v",
+    "docker:logs": "docker compose logs -f",
+    "stack": "npm run docker:up && npm run seed:db && npm run start:services",
+    "stack:ui": "npm run docker:up && npm run seed:db && npm run start:services & npm start"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

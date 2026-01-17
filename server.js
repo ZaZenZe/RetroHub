@@ -22,45 +22,85 @@ const targets = {
   ai: resolveTarget('AI_SERVICE_URL', 'http://localhost:3005'),
 };
 
-if (process.env.NODE_ENV !== 'production') {
-  console.log('[gateway] proxy targets', targets);
-}
+console.log('[gateway] targets:', targets);
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.static(FRONTEND_DIR));
+// NOTE: Do not register body parsers (express.json/urlencoded) before proxy routes.
+// Doing so drains the request stream and can cause proxied POST/PUT requests to hang.
+// If you need body parsing for non-proxy routes, apply it on those routes only.
 
-function proxy(envKey, target) {
-  const targetUrl = (target || '').toString().trim();
+// Common proxy configuration
+const commonProxyOptions = {
+  changeOrigin: true,
+  proxyTimeout: 10000,
+  timeout: 10000,
+  onError: (err, req, res) => {
+    console.error('[gateway] proxy error:', err.message);
+    res.status(503).json({ error: 'Service unavailable', details: err.message });
+  },
+};
 
-  if (!targetUrl) {
-    throw new Error(`Proxy target missing. Set ${envKey} in your environment.`);
-  }
+// Auth service: routes at root, so /api/auth/login -> /login
+app.use(
+  '/api/auth',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.auth,
+    pathRewrite: path => path || '/',
+  })
+);
 
-  return createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    logLevel: 'warn',
-    onError: (_err, req, res) => {
-      res.status(502).json({ error: `Upstream service unavailable for ${req.baseUrl}` });
-    },
-  });
-}
+// User service: routes prefixed with /users, so /api/users/123 -> /users/123
+app.use(
+  '/api/users',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.user,
+    pathRewrite: path => `/users${path}`, // /123 -> /users/123
+  })
+);
 
-app.use('/api/auth', proxy('AUTH_SERVICE_URL', targets.auth));
-app.use('/api/users', proxy('USER_SERVICE_URL', targets.user));
-app.use('/api/games', proxy('GAME_SERVICE_URL', targets.game));
-app.use('/api/community', proxy('COMMUNITY_SERVICE_URL', targets.community));
-app.use('/api/chat', proxy('AI_SERVICE_URL', targets.ai));
+// Game service: routes prefixed with /games, so /api/games/list -> /games/list
+app.use(
+  '/api/games',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.game,
+    pathRewrite: path => `/games${path}`, // /123 -> /games/123
+  })
+);
+
+// Community service: routes prefixed with /community, so /api/community/posts -> /community/posts
+app.use(
+  '/api/community',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.community,
+    pathRewrite: path => `/community${path}`, // /... -> /community/...
+  })
+);
+
+// Chat service: routes prefixed with /chat, so /api/chat/message -> /chat/message
+app.use(
+  '/api/chat',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.ai,
+    pathRewrite: path => `/chat${path}`, // /... -> /chat/...
+  })
+);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', services: targets, timestamp: Date.now() });
 });
+
+// Static files and SPA shell AFTER API routes
+app.use(express.static(FRONTEND_DIR));
 
 // Serve SPA shell for any non-API route
 app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Gateway running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Gateway running at http://0.0.0.0:${PORT}`);
 });

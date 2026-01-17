@@ -3,9 +3,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { connectWithRetry, connectionState } = require('../shared/db');
-const { corsOptions } = require('../shared/config/cors.config');
-const { errorHandler } = require('../shared/middleware/error.middleware');
+const { connectWithRetry, connectionState } = require('./shared/db');
+const { corsOptions } = require('./shared/config/cors.config');
+const { errorHandler } = require('./shared/middleware/error.middleware');
 const gameRoutes = require('./routes/game.routes');
 
 const PORT = process.env.PORT || 3003;

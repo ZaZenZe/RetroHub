@@ -227,6 +227,7 @@ body.theme-about #header-gif{ display: none !important; }
 /* Auth modal tweaks */
 #auth-modal{ --ring: rgba(255,123,0,.50); }
 #auth-modal .post-form{ display: grid; grid-template-columns: 1fr; gap: 8px; }
+#auth-modal .post-form[aria-hidden="true"]{ display: none; }
 #auth-modal .post-form input{
   background: var(--bg-elev-1);
   width: 100%;

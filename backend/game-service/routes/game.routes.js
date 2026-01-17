@@ -2,10 +2,10 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const Game = require('../../shared/models/Game');
-const Tip = require('../../shared/models/Tip');
-const FAQ = require('../../shared/models/FAQ');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
+const Game = require('../shared/models/Game');
+const Tip = require('../shared/models/Tip');
+const FAQ = require('../shared/models/FAQ');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
 
 const router = express.Router();
 
@@ -35,11 +35,28 @@ function sanitizeGame(doc) {
 router.get('/games', async (req, res, next) => {
   try {
     const { q, platform } = req.query;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 50);
+    const minYear = parseInt(req.query.minYear, 10);
+    const maxYear = parseInt(req.query.maxYear, 10);
+
     const filter = {};
     if (q) filter.title = new RegExp(q, 'i');
     if (platform) filter.platform = platform;
-    const games = await Game.find(filter).sort({ title: 1 }).lean();
-    res.json({ games: games.map(g => ({ ...g, id: g._id?.toString() })) });
+    if (!Number.isNaN(minYear) || !Number.isNaN(maxYear)) {
+      filter.releaseYear = {};
+      if (!Number.isNaN(minYear)) filter.releaseYear.$gte = minYear;
+      if (!Number.isNaN(maxYear)) filter.releaseYear.$lte = maxYear;
+    }
+    const [games, total] = await Promise.all([
+      Game.find(filter)
+        .sort({ releaseYear: -1, title: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Game.countDocuments(filter),
+    ]);
+    res.json({ games: games.map(g => ({ ...g, id: g._id?.toString() })), page, total });
   } catch (err) {
     next(err);
   }

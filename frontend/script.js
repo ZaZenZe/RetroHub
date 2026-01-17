@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const mainNav = document.querySelector('.main-nav');
   const navBackdrop = document.querySelector('.nav-backdrop');
   const menuToggle = document.querySelector('.menu-toggle');
+  const navLinks = Array.from(document.querySelectorAll('.nav-link[data-link]'));
   const grid = $('#game-grid');
   const backBtn = $('#back-btn');
   const gameTitle = $('#game-title');
@@ -285,238 +286,90 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeAuthModal() {
     if (authModal) authModal.setAttribute('aria-hidden', 'true');
   }
+  // API helpers
+  async function apiJson(path, options = {}) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(options.headers || {}),
+    };
+    const resp = await fetch(path, { ...options, headers });
+    let payload = null;
+    try {
+      payload = await resp.json();
+    } catch {
+      payload = null;
+    }
+    if (!resp.ok) {
+      const err = new Error((payload && payload.error) || resp.statusText || 'Request failed');
+      err.status = resp.status;
+      err.payload = payload;
+      throw err;
+    }
+    return payload || {};
+  }
 
-  // App State
-  let games = [
-    {
-      id: 'fire-red',
-      title: 'Pokémon Fire Red',
-      platform: 'GBA',
-      year: '2004',
-      version: 'Kanto',
-      art: 'assets/box art/640px-FireRed_EN_boxart.png',
-      banner: 'assets/map/red.png',
-      description:
-        'Return to Kanto in this remake of the original adventure. Catch, train, and battle across iconic towns and routes.',
-      tips: [
-        'Pick Bulbasaur for an easier early-game vs. Brock and Misty.',
-        'Catch a Flying-type early for utility (e.g., Pidgey).',
-        'Use the Vs. Seeker to level efficiently on known trainers.',
-      ],
-      faq: [
-        {
-          q: 'Where to get the VS Seeker?',
-          a: 'Route 24/25 area: Receive it from the aide after leaving the Underground Path house near Vermilion City (after getting the Bike Voucher).',
-        },
-        {
-          q: 'How to get Flash for Rock Tunnel?',
-          a: 'Catch at least 10 Pokémon and visit Professor Oak’s aide on Route 2 (south of Pewter via Diglett’s Cave) to receive HM05 Flash.',
-        },
-      ],
-      kb: [
-        [
-          'starter|best|begin',
-          'Bulbasaur makes the first two gyms easier; Charmander is harder early but great late-game.',
-        ],
-        [
-          'vs seeker|level|grind',
-          'Use the Vs. Seeker on routes with easy rematches; heal between cycles for fast EXP.',
-        ],
-        [
-          'flash|hm05|rock tunnel',
-          'Get HM05 Flash from Oak’s aide on Route 2 after catching 10 Pokémon.',
-        ],
-      ],
-    },
-    {
-      id: 'emerald',
-      title: 'Pokémon Emerald',
-      platform: 'GBA',
-      year: '2005',
-      version: 'Hoenn',
-      art: 'assets/box art/emerald.jpg',
-      banner: 'assets/map/emerald.png',
-      description: 'The definitive Hoenn experience with Battle Frontier and more double battles.',
-      tips: [
-        'Mudkip eases early gyms; Treecko is fast but fragile.',
-        'Prepare for lots of double battles—balance your team roles.',
-        'Try the Battle Frontier post-game for advanced challenges.',
-      ],
-      faq: [
-        {
-          q: 'How to access Battle Frontier?',
-          a: 'Beat the Champion and complete the main story; then travel to the Battle Frontier via the ferry from Slateport or Lilycove.',
-        },
-        {
-          q: 'Good EXP spots before Elite Four?',
-          a: 'Victory Road trainers and Elite Four rematches; also use Exp. Share on lower-level team members.',
-        },
-      ],
-      kb: [
-        [
-          'battle frontier|symbols|facilities',
-          'The Battle Frontier has multiple facilities; plan sets specifically for each (e.g., Speed control for Battle Tower).',
-        ],
-        [
-          'surf|hm|progress',
-          'HM Surf is obtained from Wally’s uncle in Petalburg after beating the Petalburg Gym.',
-        ],
-      ],
-    },
-    {
-      id: 'heart-gold',
-      title: 'Pokémon Heart Gold',
-      platform: 'DS',
-      year: '2009',
-      version: 'Johto + Kanto',
-      art: 'assets/box art/1200px-HeartGold_EN_boxart.jpg',
-      banner: 'assets/map/gold.jpg',
-      description: 'Remake of Gold with Pokéwalker support and a full Kanto post-game.',
-      tips: [
-        'Train a diverse team for Whitney’s Miltank (use status or Fighting).',
-        'Use Headbutt trees for early captures like Heracross.',
-      ],
-      faq: [
-        {
-          q: 'How to beat Whitney?',
-          a: 'Use a Fighting-type or apply status (Sleep/Paralysis). Disable Rollout with Ghost-types or Attract immunity (female Pokémon).',
-        },
-        {
-          q: 'Where to get Exp. Share?',
-          a: 'Mr. Pokémon on Route 30 after getting the Red Scale from the shiny Gyarados.',
-        },
-      ],
-      kb: [
-        [
-          'whitney|miltank|rollout',
-          'Counter with Fighting moves, status, or a Ghost-type to block Stomp/Attract synergies.',
-        ],
-        [
-          'red scale|exp share|mr. pokemon',
-          'Trade Red Scale to Mr. Pokémon on Route 30 to receive Exp. Share.',
-        ],
-      ],
-    },
-    {
-      id: 'platinum',
-      title: 'Pokémon Platinum',
-      platform: 'DS',
-      year: '2008',
-      version: 'Sinnoh',
-      art: 'assets/box art/Platinum_EN_boxart.png',
-      banner: 'assets/map/platinum.png',
-      description: 'Enhanced Sinnoh adventure with Distortion World and better dex variety.',
-      tips: [
-        'Chimchar helps with early gyms; consider a Water/Ground like Gastrodon later.',
-        'Use the Vs. Seeker and Amity Square for happiness evolutions.',
-      ],
-      faq: [
-        {
-          q: 'How to reach Distortion World?',
-          a: 'Progress through the story until Spear Pillar, then follow Cynthia; the plot will lead you there.',
-        },
-        {
-          q: 'Good team balance idea?',
-          a: 'Fire/Fighting (Infernape), Water/Ground (Gastrodon), Electric (Luxray), Flying (Staraptor), Psychic (Alakazam), Ice (Weavile) as a sample.',
-        },
-      ],
-      kb: [
-        [
-          'distortion world|giratina',
-          'Triggered via story after Spear Pillar events; complete puzzles with rotating platforms.',
-        ],
-        [
-          'amity square|happiness|evolve',
-          'Walk with certain Pokémon to boost happiness; also use Soothe Bell.',
-        ],
-      ],
-    },
-    {
-      id: 'black-2',
-      title: 'Pokémon Black 2',
-      platform: 'DS',
-      year: '2012',
-      version: 'Unova',
-      art: 'assets/box art/pokemon-black-2---button-1558054992410.jpg',
-      banner: 'assets/map/Unova_B2W2_alt.png',
-      description: 'Sequel in Unova with new areas, Join Avenue, and challenge modes.',
-      tips: [
-        'Use the Habitat List to track encounters and complete the Pokédex.',
-        'Join Avenue boosts shops and services—visit often to level it up.',
-      ],
-      faq: [
-        {
-          q: 'Where to get Shiny Charm?',
-          a: 'Complete the National Pokédex and then talk to Professor Juniper to receive it.',
-        },
-        {
-          q: 'Good EXP spots?',
-          a: 'Audino shaking grass and repeated trainer battles with Lucky Egg help significantly.',
-        },
-      ],
-      kb: [
-        [
-          'join avenue|shops|level',
-          'Interact with visitors to level Join Avenue and unlock better services.',
-        ],
-        ['lucky egg|exp|audino', 'Use Lucky Egg and fight Audino in shaking grass for fast EXP.'],
-      ],
-    },
-    {
-      id: 'y',
-      title: 'Pokémon Y',
-      platform: '3DS',
-      year: '2013',
-      version: 'Kalos',
-      art: 'assets/box art/Pokemon-Y.avif',
-      banner: 'assets/map/pokemon-x-y.jpg',
-      description: 'First 3D mainline Pokémon with Mega Evolution and a stylish Kalos region.',
-      tips: [
-        'Use Exp. Share to keep your team even; game pacing assumes it.',
-        'Try Mega Evolutions mid-game for big power spikes.',
-      ],
-      faq: [
-        {
-          q: 'How to get Mega Ring?',
-          a: 'Progress the story to earn the Mega Ring in Shalour City after the Tower of Mastery events.',
-        },
-        {
-          q: 'Good early team idea?',
-          a: 'Starter (Froakie or Fennekin), Fletchling, Bunnelby (Pickup), and an Electric like Pikachu or Helioptile.',
-        },
-      ],
-      kb: [
-        [
-          'mega ring|mega evolve',
-          'You obtain the Mega Ring in Shalour City after the Tower of Mastery, enabling Mega Evolutions in battle.',
-        ],
-        [
-          'exp share|level|balance',
-          'Kalos balances around Exp. Share being ON; toggle off if you want more challenge.',
-        ],
-      ],
-    },
-  ];
+  // App State (API-driven only)
+  let games = [];
   let gamesLoadedFromApi = false;
+  const gamesById = new Map();
+  const gamesByDbId = new Map();
+  const tipsCache = new Map();
+  const faqCache = new Map();
+  const postsCache = new Map();
+  let currentGameId = null; // route key (slug)
+  let currentGameDbId = null; // ObjectId for API calls
 
-  // Profile mock data (local only)
-  const profileData = {
-    name: 'Trainer Oak Jr.',
-    tagline: 'Retro collector and walkthrough writer.',
-    avatar: 'assets/pixel/6Vww.gif',
-    tags: ['Collector', 'Guide writer', 'Kanto native'],
-    stats: [
-      { label: 'Games cleared', value: 42 },
-      { label: 'Badges earned', value: 48 },
-      { label: 'Tips shared', value: 128 },
-    ],
-    achievements: [
-      { title: 'Kanto Veteran', desc: 'Completed all Gym Leader rematches', tier: 'gold' },
-      { title: 'Frontier Brain', desc: 'Won 50 Battle Frontier streak', tier: 'platinum' },
-      { title: 'Dex Scholar', desc: 'Filled regional dex without trades', tier: 'silver' },
-      { title: 'Speedrunner', desc: 'Beat Elite Four in under 3 hours', tier: 'bronze' },
-    ],
+  function indexGame(game) {
+    if (!game) return;
+    const routeKey = game.slug || game.id || game.dbId;
+    if (routeKey) gamesById.set(routeKey, game);
+    if (game.dbId) gamesByDbId.set(game.dbId, game);
+  }
+
+  function syncGameIndex() {
+    gamesById.clear();
+    gamesByDbId.clear();
+    games.forEach(indexGame);
+  }
+  syncGameIndex();
+
+  // Profile state (hydrated from API)
+  const profileState = {
+    user: null,
+    stats: null,
+    achievements: [],
+    games: [],
   };
+
+  async function fetchProfileBundle() {
+    if (!authUser || !authUser.id) return null;
+    const userId = authUser.id || authUser._id || authUser.sub;
+    const [userRes, statsRes, achRes, gamesRes] = await Promise.all([
+      apiJson(`/api/users/${userId}`),
+      apiJson(`/api/users/${userId}/stats`),
+      apiJson(`/api/users/${userId}/achievements`),
+      apiJson(`/api/users/${userId}/games`),
+    ]);
+    profileState.user = userRes?.user || null;
+    profileState.stats = statsRes?.stats || null;
+    profileState.achievements = Array.isArray(achRes?.achievements) ? achRes.achievements : [];
+    profileState.games = Array.isArray(gamesRes?.games)
+      ? gamesRes.games.map(entry => {
+          const g = entry.gameId || {};
+          return {
+            id: g.slug || g._id || g.id,
+            dbId: g._id || g.id,
+            title: g.title,
+            platform: g.platform,
+            art: g.coverImageUrl,
+            status: entry.status,
+            progress: entry.progressPercentage,
+          };
+        })
+      : [];
+    return profileState;
+  }
 
   async function fetchJson(url) {
     const res = await fetch(url);
@@ -526,9 +379,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function mapApiGame(g) {
     if (!g) return null;
+    const dbId = g.id || g._id;
+    const slug = g.slug || dbId;
     return {
-      id: g.slug || g.id || g._id,
-      slug: g.slug || g.id || g._id,
+      id: slug, // used for routing/hash
+      slug,
+      dbId,
       title: g.title,
       platform: g.platform,
       year: g.releaseYear || g.year,
@@ -546,10 +402,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const data = await fetchJson(`${API_BASE}/games`);
       const mapped = (data?.games || []).map(mapApiGame).filter(Boolean);
-      if (mapped.length) {
-        games = mapped;
-        gamesLoadedFromApi = true;
-      }
+      games = mapped;
+      syncGameIndex();
     } catch {
       console.warn('Using fallback games; API unavailable');
     } finally {
@@ -566,6 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (g) {
         if (tips.length) g.tips = tips;
         if (faqs.length) g.faq = faqs;
+        if (tips.length) tipsCache.set(g.dbId || g.id, tips);
+        if (faqs.length) faqCache.set(g.dbId || g.id, faqs);
       }
       return g;
     } catch {
@@ -573,7 +429,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  let currentGameId = null;
+  const api = {
+    getGames: () => apiJson('/api/games'),
+    getGame: id => apiJson(`/api/games/${id}`),
+    getTips: id => apiJson(`/api/games/${id}/tips`),
+    getFaqs: id => apiJson(`/api/games/${id}/faqs`),
+    getPosts: gameId => apiJson(`/api/community/games/${gameId}/posts`),
+    createPost: (gameId, content) =>
+      apiJson(`/api/community/games/${gameId}/posts`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    getReplies: postId => apiJson(`/api/community/posts/${postId}/replies`),
+    createReply: (postId, content) =>
+      apiJson(`/api/community/posts/${postId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    validate: () => apiJson('/api/auth/me'),
+  };
+
+  let gamesLoadPromise = null;
+  async function ensureGamesLoaded() {
+    if (games && games.length) return games;
+    if (!gamesLoadPromise) {
+      gamesLoadPromise = loadGamesFromApi().catch(err => {
+        gamesLoadPromise = null;
+        throw err;
+      });
+    }
+    await gamesLoadPromise;
+    return games;
+  }
+
+  async function loadTips(gameDbId) {
+    if (tipsCache.has(gameDbId)) return tipsCache.get(gameDbId);
+    const { tips = [] } = await api.getTips(gameDbId);
+    tipsCache.set(gameDbId, tips);
+    return tips;
+  }
+
+  async function loadFaqs(gameDbId) {
+    if (faqCache.has(gameDbId)) return faqCache.get(gameDbId);
+    const { faqs = [] } = await api.getFaqs(gameDbId);
+    faqCache.set(gameDbId, faqs);
+    return faqs;
+  }
+
+  async function loadPosts(gameDbId) {
+    if (postsCache.has(gameDbId)) return postsCache.get(gameDbId);
+    const { posts = [] } = await api.getPosts(gameDbId);
+    postsCache.set(gameDbId, posts);
+    return posts;
+  }
 
   // Per-game randomized welcome messages
   const welcomePool = {
@@ -629,19 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chatbox.appendChild(li);
     chatbox.scrollTo(0, chatbox.scrollHeight);
   }
-
-  // Utility: localStorage helpers
-  const storageKey = gameId => `forum:${gameId}`;
-  const loadPosts = gameId => {
-    try {
-      return JSON.parse(localStorage.getItem(storageKey(gameId)) || '[]');
-    } catch {
-      return [];
-    }
-  };
-  const savePosts = (gameId, posts) => {
-    localStorage.setItem(storageKey(gameId), JSON.stringify(posts.slice(0, 200))); // cap
-  };
 
   // Ensure we start at the top after each route change
   function resetScrollTop() {
@@ -803,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = gifUrl;
       });
       card.addEventListener('focusout', () => applyBg(originalUrl));
-      const openDetail = () => navigateTo(`#/${g.id}`);
+      const openDetail = () => navigateTo(`#/${g.slug || g.id}`);
       card.addEventListener('click', e => {
         if (e.target.closest('[data-open]')) return;
         openDetail();
@@ -820,10 +715,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Render Game Detail
-  function renderGame(game) {
-    currentGameId = game.id;
-    // Apply per-game theme
-    const themeMap = {
+  async function renderGame(game) {
+    currentGameId = game.slug || game.id;
+    currentGameDbId = game.dbId || game.id;
+    // Apply per-game theme (fallback to platform-based coloring)
+    const themeMapId = {
       'fire-red': 'theme-fire-red',
       emerald: 'theme-emerald',
       'heart-gold': 'theme-heart-gold',
@@ -831,11 +727,28 @@ document.addEventListener('DOMContentLoaded', () => {
       'black-2': 'theme-black-2',
       y: 'theme-y',
     };
+    const themeMapPlatform = {
+      gba: 'theme-fire-red',
+      ds: 'theme-platinum',
+      '3ds': 'theme-y',
+      snes: 'theme-emerald',
+      playstation: 'theme-heart-gold',
+    };
+    const platformKey = (game.platform || '').toLowerCase();
+    const themeClass =
+      themeMapId[game.id] || themeMapId[game.slug] || themeMapPlatform[platformKey];
     clearThemes();
-    document.body.classList.add(themeMap[game.id] || 'theme-home');
+    document.body.classList.add(themeClass || 'theme-home');
+
     gameTitle.textContent = game.title;
     // Prefer gameplay GIF if available, then banner, then art
-    const heroUrl = gameplayGifMap[game.id] || game.banner || game.art || '';
+    const heroUrl =
+      gameplayGifMap[game.slug] ||
+      gameplayGifMap[game.id] ||
+      game.banner ||
+      game.art ||
+      game.coverImageUrl ||
+      '';
     if (heroUrl) {
       gameArt.classList.remove('no-image');
       gameArt.style.backgroundImage = `url('${heroUrl}')`;
@@ -845,11 +758,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     gamePlatform.textContent = textOrFallback(game.platform, 'Platform TBA');
     gameYear.textContent = textOrFallback(game.year, 'Year TBA');
-    gameVersion.textContent = textOrFallback(game.version, 'Version TBA');
+    gameVersion.textContent = textOrFallback(game.version || game.region, 'Version TBA');
     gameDescription.textContent = textOrFallback(game.description);
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
-    resetChatWithWelcome(game.id);
+    resetChatWithWelcome(game.slug || game.id);
 
     // Additional Screenshots (temporary: reuse region map image until backend provides real screenshots)
     const screenshots = (() => {
@@ -920,30 +833,51 @@ document.addEventListener('DOMContentLoaded', () => {
     activateTab('tips');
 
     // Forum posts
-    renderPosts();
+    await renderPosts();
   }
 
-  function renderPosts() {
+  async function renderPosts() {
     postsEl.innerHTML = '';
-    const posts = loadPosts(currentGameId);
-    if (!posts.length) {
-      const empty = document.createElement('li');
-      empty.className = 'post';
-      empty.innerHTML =
-        '<div class="bubble"><div class="text">No posts yet. Be the first to share a tip or ask a question!</div></div>';
-      postsEl.appendChild(empty);
-      return;
+    const loading = document.createElement('li');
+    loading.className = 'post';
+    loading.innerHTML = '<div class="bubble"><div class="text">Loading posts…</div></div>';
+    postsEl.appendChild(loading);
+    if (!currentGameDbId) return;
+    try {
+      const posts = await loadPosts(currentGameDbId);
+      postsEl.innerHTML = '';
+      if (!posts.length) {
+        const empty = document.createElement('li');
+        empty.className = 'post';
+        empty.innerHTML =
+          '<div class="bubble"><div class="text">No posts yet. Be the first to share a tip or ask a question!</div></div>';
+        postsEl.appendChild(empty);
+        return;
+      }
+      posts.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'post';
+        const author = (p.userId && (p.userId.username || p.userId.email)) || 'Member';
+        const ts = p.createdAt ? new Date(p.createdAt).toLocaleString() : '';
+        li.innerHTML = `
+          <div class="meta"><span>${author}</span><span>•</span><span>${ts}</span></div>
+          <div class="bubble"><div class="text"></div></div>
+        `;
+        li.querySelector('.text').textContent = p.content;
+        postsEl.appendChild(li);
+      });
+    } catch (err) {
+      postsEl.innerHTML = '';
+      const errorLi = document.createElement('li');
+      errorLi.className = 'post';
+      const msg =
+        err.status === 401
+          ? 'Sign in to view posts for this game.'
+          : 'Unable to load posts right now.';
+      errorLi.innerHTML = `<div class="bubble"><div class="text">${msg}</div></div>`;
+      postsEl.appendChild(errorLi);
+      console.error(err);
     }
-    posts.forEach(p => {
-      const li = document.createElement('li');
-      li.className = 'post';
-      li.innerHTML = `
-        <div class="meta"><span>${p.name || 'Anon'}</span><span>•</span><span>${new Date(p.ts).toLocaleString()}</span></div>
-        <div class="bubble"><div class="text"></div></div>
-      `;
-      li.querySelector('.text').textContent = p.text;
-      postsEl.appendChild(li);
-    });
   }
 
   function buildCollection() {
@@ -958,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!collectionGrid) return;
     collectionGrid.innerHTML = '';
     const platform = (collectionFilter?.value || '').toLowerCase();
-    const list = buildCollection().filter(item =>
+    const list = (profileState.games || []).filter(item =>
       platform ? (item.platform || '').toLowerCase().includes(platform) : true
     );
     if (!list.length) {
@@ -989,43 +923,72 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAchievements() {
     if (!achievementsGrid) return;
     achievementsGrid.innerHTML = '';
-    profileData.achievements.forEach(a => {
+    if (!profileState.achievements.length) {
+      const empty = document.createElement('p');
+      empty.className = 'map-hint';
+      empty.textContent = 'No achievements yet.';
+      achievementsGrid.appendChild(empty);
+      return;
+    }
+    profileState.achievements.forEach(a => {
       const card = document.createElement('div');
-      card.className = `achievement tier-${a.tier}`;
-      card.innerHTML = `<h4>${a.title}</h4><p>${a.desc}</p>`;
+      card.className = 'achievement';
+      card.innerHTML = `<h4>${a.name}</h4><p>${a.description}</p>`;
       achievementsGrid.appendChild(card);
     });
   }
 
   function renderProfile() {
     if (!profileView) return;
-    profileAvatar.src = profileData.avatar;
-    profileTagline.textContent = profileData.tagline;
-    profileTags.innerHTML = '';
-    profileData.tags.forEach(t => {
-      const c = document.createElement('span');
-      c.className = 'chip';
-      c.textContent = t;
-      profileTags.appendChild(c);
-    });
-    profileStats.innerHTML = '';
-    profileData.stats.forEach(stat => {
-      const s = document.createElement('div');
-      s.className = 'stat';
-      s.innerHTML = `<div class="label">${stat.label}</div><div class="value">${stat.value}</div>`;
-      profileStats.appendChild(s);
-    });
-    renderCollectionGrid();
-    renderAchievements();
+    if (!authUser) {
+      profileView.querySelector('.panel')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      profileAvatar.src = 'assets/pixel/6Vww.gif';
+      profileTagline.textContent = 'Sign in to view your trainer card.';
+      profileTags.innerHTML = '';
+      profileStats.innerHTML = '<p class="map-hint">Please sign in first.</p>';
+      collectionGrid.innerHTML = '<p class="map-hint">Sign in to see your collection.</p>';
+      achievementsGrid.innerHTML = '<p class="map-hint">Sign in to see achievements.</p>';
+      return;
+    }
+    if (profileState.user) {
+      profileAvatar.src = profileState.user.avatarUrl || 'assets/pixel/6Vww.gif';
+      profileTagline.textContent = profileState.user.username || 'Trainer';
+      profileTags.innerHTML = '';
+      const tags = [profileState.user.role === 'admin' ? 'Admin' : 'Member'];
+      tags.forEach(t => {
+        const c = document.createElement('span');
+        c.className = 'chip';
+        c.textContent = t;
+        profileTags.appendChild(c);
+      });
+      profileStats.innerHTML = '';
+      const statsList = [
+        { label: 'Games tracked', value: profileState.stats?.totalGames ?? 0 },
+        { label: 'Completed', value: profileState.stats?.completedGames ?? 0 },
+        { label: 'Forum posts', value: profileState.stats?.forumPosts ?? 0 },
+        { label: 'Forum replies', value: profileState.stats?.forumReplies ?? 0 },
+      ];
+      statsList.forEach(stat => {
+        const s = document.createElement('div');
+        s.className = 'stat';
+        s.innerHTML = `<div class="label">${stat.label}</div><div class="value">${stat.value}</div>`;
+        profileStats.appendChild(s);
+      });
+      renderCollectionGrid();
+      renderAchievements();
+    }
   }
 
   const SETTINGS_KEY = 'retrohub-settings';
   function hydrateSettings() {
     try {
       const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-      if (settingsName) settingsName.value = stored.name || authUser?.name || 'Trainer';
-      if (settingsEmail)
-        settingsEmail.value = stored.email || authUser?.email || 'trainer@example.com';
+      if (settingsName)
+        settingsName.value = profileState.user?.username || stored.name || 'Trainer';
+      if (settingsEmail) {
+        settingsEmail.value = profileState.user?.email || authUser?.email || '';
+        settingsEmail.readOnly = true; // backend does not expose email change yet
+      }
       if (prefChat) prefChat.checked = stored.prefChat ?? true;
       if (prefBadge) prefBadge.checked = stored.prefBadge ?? true;
       if (prefAnalytics) prefAnalytics.checked = stored.prefAnalytics ?? false;
@@ -1036,25 +999,36 @@ document.addEventListener('DOMContentLoaded', () => {
   function persistSettings() {
     const payload = {
       name: settingsName?.value || 'Trainer',
-      email: settingsEmail?.value || 'trainer@example.com',
+      email: settingsEmail?.value || '',
       prefChat: !!prefChat?.checked,
       prefBadge: !!prefBadge?.checked,
       prefAnalytics: !!prefAnalytics?.checked,
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
-    alert('Your settings have been saved successfully');
+    alert('Your preferences have been saved locally');
   }
 
   // Forum submit
-  postForm.addEventListener('submit', e => {
+  postForm.addEventListener('submit', async e => {
     e.preventDefault();
     const text = postText.value.trim();
-    if (!text || !currentGameId) return;
-    const posts = loadPosts(currentGameId);
-    posts.unshift({ name: postName.value.trim(), text, ts: Date.now() });
-    savePosts(currentGameId, posts);
-    postText.value = '';
-    renderPosts();
+    if (!text || !currentGameDbId) return;
+    if (!authToken) {
+      promptSignInWithRetroBot();
+      return;
+    }
+    try {
+      await api.createPost(currentGameDbId, text);
+      postText.value = '';
+      postsCache.delete(currentGameDbId);
+      await renderPosts();
+    } catch (err) {
+      if (err.status === 401) {
+        promptSignInWithRetroBot();
+        return;
+      }
+      alert(err.message || 'Could not publish post.');
+    }
   });
 
   // Simple Router
@@ -1065,9 +1039,10 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateTo(path.startsWith('#') ? path : `#${path}`);
     closeNav();
   }
-  function onRoute() {
+  async function onRoute() {
     const hash = window.location.hash || '#/';
     const parts = hash.slice(2).split('/').filter(Boolean);
+    const routeKey = (parts[0] || '').replace(/[#?].*$/, '').toLowerCase();
     // Update active nav link state
     const markActive = route => {
       document.querySelectorAll('.nav-link').forEach(a => {
@@ -1084,6 +1059,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     };
+
+    try {
+      await ensureGamesLoaded();
+    } catch (err) {
+      console.error('Failed to load games', err);
+    }
+
     if (parts.length === 0) {
       aboutView.classList.remove('active');
       homeView.classList.add('active');
@@ -1097,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', () => {
       resetScrollTop();
       closeNav();
     } else {
-      const id = parts[0];
+      const id = routeKey || parts[0];
       // About route: dedicated minimal page showing only the Meowth City GIF
       if (id === 'about') {
         homeView.classList.remove('active');
@@ -1116,6 +1098,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeNav();
         return;
       }
+
+      // Profile route
       if (id === 'profile') {
         homeView.classList.remove('active');
         gameView.classList.remove('active');
@@ -1124,13 +1108,26 @@ document.addEventListener('DOMContentLoaded', () => {
         profileView?.classList.add('active');
         clearThemes();
         document.body.classList.add('theme-home');
-        renderProfile();
-        markActive('profile');
         setHeaderGifVisible(true);
+        if (authUser) {
+          try {
+            await fetchProfileBundle();
+          } catch (err) {
+            console.error('Failed to load profile', err);
+          }
+        }
+        renderProfile();
+        hydrateSettings();
+        markActive('profile');
+        if (!authToken && !authPromptShown) {
+          promptSignInWithOak();
+        }
         resetScrollTop();
         closeNav();
         return;
       }
+
+      // Settings route
       if (id === 'settings') {
         homeView.classList.remove('active');
         gameView.classList.remove('active');
@@ -1139,24 +1136,35 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsView?.classList.add('active');
         clearThemes();
         document.body.classList.add('theme-home');
+        setHeaderGifVisible(true);
+        if (authUser) {
+          try {
+            await fetchProfileBundle();
+          } catch (err) {
+            console.error('Failed to load profile for settings', err);
+          }
+        }
         hydrateSettings();
         markActive('settings');
-        setHeaderGifVisible(true);
+        if (!authToken && !authPromptShown) {
+          promptSignInWithOak();
+        }
         resetScrollTop();
         closeNav();
         return;
       }
       const proceed = async () => {
-        let game = games.find(g => g.id === id || g.slug === id);
+        let game = games.find(g => g.slug === id || g.id === id || g.dbId === id);
         if (!game) {
           await loadGamesFromApi();
-          game = games.find(g => g.id === id || g.slug === id);
+          game = games.find(g => g.slug === id || g.id === id || g.dbId === id);
         }
         if (!game) {
           const fetched = await fetchGameFull(id);
           if (fetched) {
             games.push(fetched);
             game = fetched;
+            syncGameIndex();
           }
         }
         if (game) {
@@ -1167,9 +1175,10 @@ document.addEventListener('DOMContentLoaded', () => {
           gameView.classList.add('active');
           renderGame(game);
           // Hydrate richer data if available
-          fetchGameFull(game.id).then(full => {
+          fetchGameFull(game.dbId || game.slug || game.id).then(full => {
             if (full) {
               Object.assign(game, full);
+              syncGameIndex();
               renderGame(game);
             }
           });
@@ -1183,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', () => {
       proceed();
     }
   }
-  window.addEventListener('hashchange', onRoute);
+  window.addEventListener('hashchange', () => onRoute().catch(console.error));
 
   // Back and Jump actions
   backBtn.addEventListener('click', () => go('#/'));
@@ -1201,6 +1210,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mainNav && mainNav.contains(e.target)) return;
     if (menuToggle && menuToggle.contains(e.target)) return;
     closeNav();
+  });
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', evt => {
+      const href = link.getAttribute('href') || '#/';
+      if (!href.startsWith('#')) return;
+      evt.preventDefault();
+      go(href);
+    });
   });
   scrollForum.addEventListener('click', () => {
     activateTab('community');
@@ -1255,14 +1273,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Build a strong domain-constrained prompt with per-game context
   function buildPrompt(userText) {
-    const game = games.find(g => g.id === currentGameId);
+    const game =
+      gamesById.get(currentGameId) ||
+      gamesByDbId.get(currentGameDbId) ||
+      games.find(g => g.id === currentGameId || g.dbId === currentGameDbId);
     const title = game?.title || 'Pokémon (series)';
     const platform = game?.platform || 'Various';
     const year = game?.year || '';
     const version = game?.version || '';
     const description = game?.description || '';
-    const tips = (game?.tips || []).map(t => `- ${t}`).join('\n');
-    const faqs = (game?.faq || []).map(f => `- Q: ${f.q}\n  A: ${f.a}`).join('\n');
+    const tipsArr = tipsCache.get(currentGameDbId || currentGameId) || [];
+    const faqsArr = faqCache.get(currentGameDbId || currentGameId) || [];
+    const tips = tipsArr.map(t => `- ${t.content || t}`).join('\n');
+    const faqs = faqsArr.map(f => `- Q: ${f.question || f.q}\n  A: ${f.answer || f.a}`).join('\n');
 
     const persona = OAK_PERSONA
       ? 'You are Professor Oak speaking to the player. Keep a warm, mentor-like tone. Use first-person briefly when helpful ("I"/"my lab"), but stay concise and practical. Do not roleplay long monologues.'
@@ -1453,6 +1476,9 @@ Constraints:
         throw new Error(payload?.error || 'Login failed');
       }
       setAuth(payload.user, payload.token);
+      try {
+        await fetchProfileBundle();
+      } catch {}
       authPromptShown = false;
       closeAuthModal();
     } catch (err) {
@@ -1466,15 +1492,28 @@ Constraints:
     const email = (authEmailReg?.value || '').trim();
     const password = (authPassReg?.value || '').trim();
     if (!email || !password) return;
+    const username = name || email.split('@')[0] || 'trainer';
     try {
       const resp = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ username, email, password }),
       });
-      const payload = await resp.json();
-      if (!resp.ok) throw new Error(payload?.error || 'Registration failed');
-      setAuth(payload.user, payload.token);
+      const raw = await resp.text();
+      let payload;
+      try {
+        payload = raw ? JSON.parse(raw) : {};
+      } catch {
+        payload = null;
+      }
+      if (!resp.ok) {
+        const msg = payload?.error || raw || 'Registration failed';
+        throw new Error(msg);
+      }
+      setAuth(payload?.user, payload?.token);
+      try {
+        await fetchProfileBundle();
+      } catch {}
       authPromptShown = false;
       closeAuthModal();
     } catch (err) {
@@ -1484,11 +1523,50 @@ Constraints:
   });
 
   // Settings actions
-  document.getElementById('save-account')?.addEventListener('click', persistSettings);
   document.getElementById('save-preferences')?.addEventListener('click', persistSettings);
-  document
-    .getElementById('save-password')
-    ?.addEventListener('click', () => alert('Password update requested (demo only)'));
+  document.getElementById('save-password')?.addEventListener('click', async () => {
+    if (!authUser) {
+      promptSignInWithOak();
+      return;
+    }
+    const userId = authUser.id || authUser._id;
+    const newPassword = (document.getElementById('settings-pass-new')?.value || '').trim();
+    if (!newPassword || newPassword.length < 6) {
+      alert('Please provide a new password (min 6 characters).');
+      return;
+    }
+    try {
+      await apiJson(`/api/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ password: newPassword }),
+      });
+      alert('Password updated');
+    } catch (err) {
+      alert(err?.message || 'Password update failed');
+    }
+  });
+  document.getElementById('save-account')?.addEventListener('click', async () => {
+    if (!authUser) {
+      promptSignInWithOak();
+      return;
+    }
+    const userId = authUser.id || authUser._id;
+    const username = (settingsName?.value || '').trim();
+    try {
+      const resp = await apiJson(`/api/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ username }),
+      });
+      if (resp?.user) {
+        setAuth(resp.user, authToken);
+        await fetchProfileBundle();
+        renderProfile();
+      }
+      alert('Account updated');
+    } catch (err) {
+      alert(err?.message || 'Account update failed');
+    }
+  });
   document.getElementById('clear-storage')?.addEventListener('click', () => {
     localStorage.clear();
     setAuth(null, '');
@@ -1502,18 +1580,17 @@ Constraints:
   });
 
   // Initial render
-  renderHome();
-  onRoute();
+  onRoute().catch(console.error);
   // Try to hydrate auth chip from server token if present (optional)
   if (authToken && !authUser) {
-    try {
-      fetch('/api/auth/me', { headers: { Authorization: `Bearer ${authToken}` } })
-        .then(r => r.json())
-        .then(data => {
-          if (data?.user) {
-            setAuth(data.user, authToken);
-          }
-        });
-    } catch {}
+    api
+      .validate()
+      .then(data => {
+        if (data?.user) {
+          setAuth(data.user, authToken);
+          fetchProfileBundle().catch(() => {});
+        }
+      })
+      .catch(() => {});
   }
 });

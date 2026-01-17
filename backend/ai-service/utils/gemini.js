@@ -4,6 +4,10 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
+function hasGeminiKey() {
+  return Boolean(GEMINI_API_KEY);
+}
+
 /**
  * Call Gemini API with the provided prompt.
  * @param {string} prompt user prompt text
@@ -40,4 +44,4 @@ async function callGemini(prompt) {
   return text || 'No response returned from Gemini.';
 }
 
-module.exports = { callGemini };
+module.exports = { callGemini, hasGeminiKey };

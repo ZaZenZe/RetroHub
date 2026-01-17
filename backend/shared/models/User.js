@@ -58,14 +58,9 @@ const userSchema = new Schema({
 });
 
 // Hash password when changed
-userSchema.pre('save', async function hashPassword(next) {
-  if (!this.isModified('passwordHash')) return next();
-  try {
-    this.passwordHash = await bcrypt.hash(this.passwordHash, SALT_ROUNDS);
-    return next();
-  } catch (err) {
-    return next(err);
-  }
+userSchema.pre('save', async function hashPassword() {
+  if (!this.isModified('passwordHash')) return;
+  this.passwordHash = await bcrypt.hash(this.passwordHash, SALT_ROUNDS);
 });
 
 // Instance methods

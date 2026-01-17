@@ -4,8 +4,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const { corsOptions } = require('../shared/config/cors.config');
-const { errorHandler } = require('../shared/middleware/error.middleware');
+const { corsOptions } = require('./shared/config/cors.config');
+const { errorHandler } = require('./shared/middleware/error.middleware');
 const aiRoutes = require('./routes/ai.routes');
 
 const PORT = process.env.PORT || 3005;

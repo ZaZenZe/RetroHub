@@ -2,14 +2,15 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../../shared/models/User');
-const UserStats = require('../../shared/models/UserStats');
-const { verifyToken } = require('../../shared/middleware/auth.middleware');
+const User = require('../shared/models/User');
+const UserStats = require('../shared/models/UserStats');
+const { verifyToken } = require('../shared/middleware/auth.middleware');
 
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || 'demo-secret-change-me';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 function signToken(user) {
   return jwt.sign(
@@ -80,7 +81,15 @@ router.post('/register', async (req, res, next) => {
     const token = signToken(user);
     return res.status(201).json({ user: sanitizeUser(user), token });
   } catch (err) {
-    return next(err);
+    // Handle duplicate key errors explicitly
+    if (err && err.code === 11000) {
+      return res.status(409).json({ error: 'email or username already in use' });
+    }
+    console.error('[auth] register failed', err);
+    return res.status(500).json({
+      error: 'Registration failed',
+      detail: IS_DEV ? err.message || err.toString() : undefined,
+    });
   }
 });
 
@@ -115,6 +124,18 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/validate', verifyToken, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.sub);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    return res.json({ user: sanitizeUser(user) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/me', verifyToken, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.sub);
     if (!user) {
