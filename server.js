@@ -24,60 +24,68 @@ const targets = {
 
 console.log('[gateway] targets:', targets);
 
-app.use(express.json());
+// NOTE: Do not register body parsers (express.json/urlencoded) before proxy routes.
+// Doing so drains the request stream and can cause proxied POST/PUT requests to hang.
+// If you need body parsing for non-proxy routes, apply it on those routes only.
 
-// Custom rewrite function that adds back the service path
-const createServiceRewrite = servicePath => reqPath => {
-  return servicePath + reqPath;
+// Common proxy configuration
+const commonProxyOptions = {
+  changeOrigin: true,
+  proxyTimeout: 10000,
+  timeout: 10000,
+  onError: (err, req, res) => {
+    console.error('[gateway] proxy error:', err.message);
+    res.status(503).json({ error: 'Service unavailable', details: err.message });
+  },
 };
 
+// Auth service: routes at root, so /api/auth/login -> /login
 app.use(
   '/api/auth',
   createProxyMiddleware({
+    ...commonProxyOptions,
     target: targets.auth,
-    changeOrigin: true,
-    pathRewrite: createServiceRewrite('/auth'),
-    logLevel: 'warn',
+    pathRewrite: path => path || '/',
   })
 );
 
+// User service: routes prefixed with /users, so /api/users/123 -> /users/123
 app.use(
   '/api/users',
   createProxyMiddleware({
+    ...commonProxyOptions,
     target: targets.user,
-    changeOrigin: true,
-    pathRewrite: createServiceRewrite('/users'),
-    logLevel: 'warn',
+    pathRewrite: path => `/users${path}`, // /123 -> /users/123
   })
 );
 
+// Game service: routes prefixed with /games, so /api/games/list -> /games/list
 app.use(
   '/api/games',
   createProxyMiddleware({
+    ...commonProxyOptions,
     target: targets.game,
-    changeOrigin: true,
-    pathRewrite: createServiceRewrite('/games'),
-    logLevel: 'warn',
+    pathRewrite: path => `/games${path}`, // /123 -> /games/123
   })
 );
 
+// Community service: routes prefixed with /community, so /api/community/posts -> /community/posts
 app.use(
   '/api/community',
   createProxyMiddleware({
+    ...commonProxyOptions,
     target: targets.community,
-    changeOrigin: true,
-    pathRewrite: createServiceRewrite('/community'),
-    logLevel: 'warn',
+    pathRewrite: path => `/community${path}`, // /... -> /community/...
   })
 );
 
+// Chat service: routes prefixed with /chat, so /api/chat/message -> /chat/message
 app.use(
   '/api/chat',
   createProxyMiddleware({
+    ...commonProxyOptions,
     target: targets.ai,
-    changeOrigin: true,
-    pathRewrite: createServiceRewrite('/chat'),
-    logLevel: 'warn',
+    pathRewrite: path => `/chat${path}`, // /... -> /chat/...
   })
 );
 
