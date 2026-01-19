@@ -16,6 +16,7 @@ const app = express();
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/health', (req, res) => {
   const dbStatus = connectionState();

@@ -231,11 +231,17 @@ document.addEventListener('DOMContentLoaded', () => {
   navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const viewName = btn.dataset.view;
-      switchView(viewName);
+      if (viewName === 'create') {
+        resetForm();
+        switchView('create');
+      } else {
+        switchView(viewName);
+      }
     });
   });
   
-  function switchView(viewName) {
+  function switchView(viewName, options = {}) {
+    const { preserveForm = false } = options;
     navBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === viewName);
     });
@@ -246,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (viewName === 'games') {
       loadGames();
-    } else if (viewName === 'create') {
+    } else if (viewName === 'create' && !preserveForm) {
       resetForm();
     }
   }
@@ -347,19 +353,21 @@ document.addEventListener('DOMContentLoaded', () => {
       gameHoverInput.value = game.hoverImageUrl || '';
       gameHoverGifInput.value = game.hoverGifUrl || '';
       gameScreenshotsInput.value = (game.screenshots || []).join('\n');
-      
+
       // Theme
       const theme = game.theme || {};
-      themeNameInput.value = theme.name || 'retro';
-      if (theme.colors) {
-        colorPrimaryInput.value = theme.colors.primary || '#ff7b00';
-        colorPrimaryAltInput.value = theme.colors.primaryAlt || '#ff9f1a';
-        colorAccentInput.value = theme.colors.accent || '#4fc3f7';
-        colorBackgroundInput.value = theme.colors.background || '#0d0e12';
-        colorCardInput.value = theme.colors.card || '#1b1f29';
-        colorTextInput.value = theme.colors.text || '#e6e6e9';
-        colorBorderInput.value = theme.colors.border || '#232734';
+      if (themePresetSelect) {
+        themePresetSelect.value = theme.name || '';
       }
+      themeNameInput.value = theme.name || 'retro';
+      const colors = theme.colors || {};
+      colorPrimaryInput.value = colors.primary || '#ff7b00';
+      colorPrimaryAltInput.value = colors.primaryAlt || '#ff9f1a';
+      colorAccentInput.value = colors.accent || '#4fc3f7';
+      colorBackgroundInput.value = colors.background || '#0d0e12';
+      colorCardInput.value = colors.card || '#1b1f29';
+      colorTextInput.value = colors.text || '#e6e6e9';
+      colorBorderInput.value = colors.border || '#232734';
       
       // Tips & FAQs
       tips = data.tips || [];
@@ -377,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateImagePreview('hover-gif', gameHoverGifInput.value);
       updateScreenshotsPreviews();
       
-      switchView('create');
+      switchView('create', { preserveForm: true });
     } catch (err) {
       showNotification(`Failed to load game: ${err.message}`, 'error');
     }

@@ -47,7 +47,7 @@ router.use(verifyToken, loadCurrentUser);
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../../frontend/assets/uploads');
+    const uploadDir = path.join(__dirname, '../../uploads');
     try {
       await fs.mkdir(uploadDir, { recursive: true });
       cb(null, uploadDir);
@@ -264,7 +264,7 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const imageUrl = `/assets/uploads/${req.file.filename}`;
+    const imageUrl = `/uploads/${req.file.filename}`;
     res.json({
       url: imageUrl,
       filename: req.file.filename,

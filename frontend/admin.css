@@ -646,6 +646,29 @@ body.theme-admin {
   .admin-nav {
     overflow-x: auto;
     justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .nav-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .admin-main {
+    padding: 16px;
+  }
+
+  .games-list {
+    grid-template-columns: 1fr;
+  }
+
+  .game-item {
+    grid-template-columns: 1fr;
+  }
+
+  .game-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
   
   .form-row,
@@ -655,5 +678,49 @@ body.theme-admin {
   
   .color-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .filters {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .filters input[type="search"] {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header {
+    padding: 12px;
+  }
+
+  .admin-main {
+    padding: 12px;
+  }
+
+  .game-item {
+    padding: 12px;
+  }
+
+  .cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filters select {
+    width: 100%;
   }
 }

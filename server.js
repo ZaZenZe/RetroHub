@@ -73,6 +73,15 @@ app.use(
   })
 );
 
+// Uploaded assets served by game-service
+app.use(
+  '/uploads',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.game,
+  })
+);
+
 // Community service: routes at root, so /api/community/games/123/posts -> /games/123/posts
 app.use(
   '/api/community',
