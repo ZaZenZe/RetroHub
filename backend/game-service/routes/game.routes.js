@@ -2,10 +2,11 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const Game = require('../shared/models/Game');
-const Tip = require('../shared/models/Tip');
-const FAQ = require('../shared/models/FAQ');
-const { verifyToken } = require('../shared/middleware/auth.middleware');
+const Game = require('../../shared/models/Game');
+const Tip = require('../../shared/models/Tip');
+const FAQ = require('../../shared/models/FAQ');
+const User = require('../../shared/models/User');
+const { verifyToken } = require('../../shared/middleware/auth.middleware');
 
 const router = express.Router();
 
@@ -23,6 +24,17 @@ function requireAdmin(req, res, next) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   return next();
+}
+
+async function canModerateGame(userId, gameId) {
+  if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(gameId)) return false;
+  const user = await User.findById(userId).lean();
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'mod' && Array.isArray(user.moderatedGames)) {
+    return user.moderatedGames.some(id => id.toString() === gameId.toString());
+  }
+  return false;
 }
 
 function sanitizeGame(doc) {
@@ -158,10 +170,12 @@ router.post('/games', verifyToken, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next) => {
+router.put('/games/:gameParam', verifyToken, async (req, res, next) => {
   try {
     const game = await findGameByParam(req.params.gameParam);
     if (!game) return res.status(404).json({ error: 'Game not found' });
+    const canEdit = req.user.role === 'admin' || (req.user.role === 'mod' && (await canModerateGame(req.user.sub, game._id)));
+    if (!canEdit) return res.status(403).json({ error: 'Admin or assigned moderator required' });
     const updates = req.body || {};
     const allowed = [
       'title',
@@ -191,10 +205,12 @@ router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next
   }
 });
 
-router.delete('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next) => {
+router.delete('/games/:gameParam', verifyToken, async (req, res, next) => {
   try {
     const game = await findGameByParam(req.params.gameParam);
     if (!game) return res.status(404).json({ error: 'Game not found' });
+    const canEdit = req.user.role === 'admin' || (req.user.role === 'mod' && (await canModerateGame(req.user.sub, game._id)));
+    if (!canEdit) return res.status(403).json({ error: 'Admin or assigned moderator required' });
     await Promise.all([
       Game.deleteOne({ _id: game._id }),
       Tip.deleteMany({ gameId: game._id }),

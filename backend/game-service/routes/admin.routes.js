@@ -5,11 +5,11 @@ const { Types } = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const Game = require('../shared/models/Game');
-const Tip = require('../shared/models/Tip');
-const FAQ = require('../shared/models/FAQ');
-const User = require('../shared/models/User');
-const { verifyToken } = require('../shared/middleware/auth.middleware');
+const Game = require('../../shared/models/Game');
+const Tip = require('../../shared/models/Tip');
+const FAQ = require('../../shared/models/FAQ');
+const User = require('../../shared/models/User');
+const { verifyToken } = require('../../shared/middleware/auth.middleware');
 
 const router = express.Router();
 

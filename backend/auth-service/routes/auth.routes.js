@@ -2,9 +2,10 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../shared/models/User');
-const UserStats = require('../shared/models/UserStats');
-const { verifyToken } = require('../shared/middleware/auth.middleware');
+const { Types } = require('mongoose');
+const User = require('../../shared/models/User');
+const UserStats = require('../../shared/models/UserStats');
+const { verifyToken } = require('../../shared/middleware/auth.middleware');
 
 const router = express.Router();
 
@@ -25,8 +26,8 @@ function signToken(user) {
   );
 }
 
-function sanitizeUser(user) {
-  return {
+function sanitizeUser(user, { includeModeratedGames = false } = {}) {
+  const base = {
     id: user._id.toString(),
     email: user.email,
     username: user.username,
@@ -37,6 +38,17 @@ function sanitizeUser(user) {
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
   };
+  if (includeModeratedGames) {
+    base.moderatedGames = (user.moderatedGames || []).map(id => id.toString());
+  }
+  return base;
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  return next();
 }
 
 async function ensureStats(userId) {
@@ -146,5 +158,82 @@ router.get('/me', verifyToken, async (req, res, next) => {
     return next(err);
   }
 });
+
+// Admin: change user role
+router.post('/admin/users/:id/role', verifyToken, requireAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body || {};
+    const allowedRoles = ['user', 'mod', 'admin'];
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid user id' });
+    }
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ error: 'role must be user | mod | admin' });
+    }
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.role = role;
+    await user.save();
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true }) });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Admin: add a moderated game to a moderator
+router.post(
+  '/admin/users/:id/moderated-games',
+  verifyToken,
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { gameId } = req.body || {};
+      if (!Types.ObjectId.isValid(id) || !Types.ObjectId.isValid(gameId)) {
+        return res.status(400).json({ error: 'Invalid id(s)' });
+      }
+      const user = await User.findByIdAndUpdate(
+        id,
+        { $addToSet: { moderatedGames: gameId }, $set: { role: 'mod' } },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      return res.json({ user: sanitizeUser(user, { includeModeratedGames: true }) });
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
+
+// Admin: remove a moderated game assignment
+router.delete(
+  '/admin/users/:id/moderated-games/:gameId',
+  verifyToken,
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const { id, gameId } = req.params;
+      if (!Types.ObjectId.isValid(id) || !Types.ObjectId.isValid(gameId)) {
+        return res.status(400).json({ error: 'Invalid id(s)' });
+      }
+      const user = await User.findByIdAndUpdate(
+        id,
+        { $pull: { moderatedGames: gameId } },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      return res.json({ user: sanitizeUser(user, { includeModeratedGames: true }) });
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
 
 module.exports = router;

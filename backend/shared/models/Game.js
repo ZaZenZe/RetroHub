@@ -35,16 +35,17 @@ const gameSchema = new Schema(
     },
     platform: {
       type: String,
-      required: true,
       enum: PLATFORM_ENUM,
+      default: 'Other',
     },
     releaseYear: {
       type: Number,
-      required: true,
+      default: null,
     },
     description: {
       type: String,
-      required: true,
+      default: '',
+      trim: true,
     },
     versionLabel: {
       type: String,
@@ -53,7 +54,7 @@ const gameSchema = new Schema(
     },
     coverImageUrl: {
       type: String,
-      required: true,
+      default: null,
       trim: true,
     },
     coverGifUrl: {
