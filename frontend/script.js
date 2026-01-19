@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const navBackdrop = document.querySelector('.nav-backdrop');
   const menuToggle = document.querySelector('.menu-toggle');
   const navLinks = Array.from(document.querySelectorAll('.nav-link[data-link]'));
+  const adminLink = document.getElementById('admin-link');
   const grid = $('#game-grid');
   const backBtn = $('#back-btn');
   const gameTitle = $('#game-title');
@@ -246,7 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateAuthUI() {
     if (!authBtn) return;
-    authBtn.textContent = authUser ? 'Sign out' : 'Sign in';
+    authBtn.textContent = authUser ? 'Signout' : 'Sign in';
+    if (adminLink) {
+      const role = authUser?.role || 'user';
+      if (role === 'admin') {
+        adminLink.textContent = 'Admin';
+        adminLink.style.display = '';
+      } else if (role === 'mod') {
+        adminLink.textContent = 'Moderator';
+        adminLink.style.display = '';
+      } else {
+        adminLink.style.display = 'none';
+      }
+    }
     if (authChip) {
       if (authUser) {
         authChip.textContent = `Hey, ${authUser.name || authUser.email}`;
