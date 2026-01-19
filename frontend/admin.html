@@ -20,22 +20,18 @@
     <div class="brand">
       <img class="logo" src="assets/pokeball.png" alt="Retro Hub" width="32" height="32" />
       <div class="titles">
-        <h1>Admin / Mod Panel</h1>
-        <p class="subtitle">Manage games, themes, content, and moderators</p>
+        <h1 id="panel-title">Admin / Mod Panel</h1>
+        <p class="subtitle" id="panel-subtitle">Manage games, content, and moderators</p>
       </div>
     </div>
     <nav class="admin-nav">
-      <button class="nav-btn active" data-view="games">
+      <button id="nav-games" class="nav-btn active" data-view="games">
         <span class="material-symbols-outlined">games</span>
         Games
       </button>
-      <button class="nav-btn" data-view="create">
+      <button id="nav-create" class="nav-btn" data-view="create">
         <span class="material-symbols-outlined">add_circle</span>
         Create Game
-      </button>
-      <button class="nav-btn" data-view="themes">
-        <span class="material-symbols-outlined">palette</span>
-        Themes
       </button>
     </nav>
     <div class="admin-user">
@@ -266,13 +262,6 @@
       </form>
     </section>
 
-    <!-- Themes View -->
-    <section id="themes-view" class="admin-view">
-      <div class="view-header">
-        <h2>Theme Presets</h2>
-      </div>
-      <div id="themes-grid" class="themes-grid"></div>
-    </section>
   </main>
 
   <!-- Upload Modal -->

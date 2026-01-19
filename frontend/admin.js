@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const views = $$('.admin-view');
   const logoutBtn = $('#logout-btn');
   const adminUsername = $('#admin-username');
+  const panelTitle = $('#panel-title');
+  const panelSubtitle = $('#panel-subtitle');
+  const navCreate = $('#nav-create');
   
   // Games view
   const gamesSearch = $('#games-search');
@@ -71,9 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const modLookupInput = $('#mod-lookup');
   const addModBtn = $('#add-mod-btn');
   
-  // Themes view
-  const themesGrid = $('#themes-grid');
-  
   // Upload modal
   const uploadModal = $('#upload-modal');
   const uploadForm = $('#upload-form');
@@ -84,15 +84,89 @@ document.addEventListener('DOMContentLoaded', () => {
   const notification = $('#notification');
   
   // State
+  const isAdmin = authUser.role === 'admin';
   let currentGameId = null;
   let uploadTarget = null;
   let tips = [];
   let faqs = [];
   let mods = [];
-  let themePresets = [];
+  const themePresets = [
+    {
+      name: 'retro',
+      label: 'Retro Classic',
+      colors: {
+        primary: '#ff7b00',
+        primaryAlt: '#ff9f1a',
+        accent: '#4fc3f7',
+        background: '#0d0e12',
+        card: '#1b1f29',
+        text: '#e6e6e9',
+        border: '#232734',
+      },
+    },
+    {
+      name: 'fire-red',
+      label: 'Fire Red',
+      colors: {
+        primary: '#ff5e3a',
+        primaryAlt: '#ff7452',
+        accent: '#ffd700',
+        background: '#1a0a0a',
+        card: '#2a1515',
+        text: '#ffe6e6',
+        border: '#3d1f1f',
+      },
+    },
+    {
+      name: 'emerald',
+      label: 'Emerald Green',
+      colors: {
+        primary: '#2ecc71',
+        primaryAlt: '#27ae60',
+        accent: '#a8e6cf',
+        background: '#0a1a0a',
+        card: '#152a15',
+        text: '#e6ffe6',
+        border: '#1f3d1f',
+      },
+    },
+    {
+      name: 'platinum',
+      label: 'Platinum Silver',
+      colors: {
+        primary: '#95a5a6',
+        primaryAlt: '#bdc3c7',
+        accent: '#3498db',
+        background: '#0f0f14',
+        card: '#1a1a24',
+        text: '#e8e8f0',
+        border: '#2a2a38',
+      },
+    },
+    {
+      name: 'heart-gold',
+      label: 'Heart Gold',
+      colors: {
+        primary: '#f39c12',
+        primaryAlt: '#f1c40f',
+        accent: '#e74c3c',
+        background: '#1a1410',
+        card: '#2a2218',
+        text: '#fff5e6',
+        border: '#3d3425',
+      },
+    },
+  ];
   
   // Initialize
   adminUsername.textContent = authUser.name || authUser.email || 'Admin';
+  panelTitle.textContent = isAdmin ? 'Admin Panel' : 'Moderator Panel';
+  panelSubtitle.textContent = isAdmin
+    ? 'Manage games, content, and moderators'
+    : 'Manage the games assigned to you';
+  if (!isAdmin && navCreate) {
+    navCreate.hidden = true;
+  }
   
   // API helper
   async function apiJson(path, options = {}) {
@@ -115,6 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const err = new Error((payload && payload.error) || resp.statusText || 'Request failed');
       err.status = resp.status;
       err.payload = payload;
+      if (resp.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+        window.location.href = '/index.html';
+        return;
+      }
       throw err;
     }
     
@@ -168,8 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
       loadGames();
     } else if (viewName === 'create') {
       resetForm();
-    } else if (viewName === 'themes') {
-      loadThemes();
     }
   }
   
@@ -373,6 +451,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         showNotification('Game updated successfully');
       } else {
+        if (!isAdmin) {
+          showNotification('Only admins can create new games', 'error');
+          return;
+        }
         // Create
         await apiJson(`${API_BASE}/games/admin/games`, {
           method: 'POST',
@@ -407,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Reset form
   function resetForm() {
     currentGameId = null;
-    formTitle.textContent = 'Create New Game';
+    formTitle.textContent = isAdmin ? 'Create New Game' : 'Select a game to edit';
     deleteGameBtn.hidden = true;
     gameForm.reset();
     tips = [];
@@ -744,38 +826,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     input.click();
   });
-  
-  // Load themes
-  async function loadThemes() {
-    try {
-      const data = await apiJson(`${API_BASE}/games/admin/themes`);
-      themePresets = data.themes || [];
-      
-      themesGrid.innerHTML = '';
-      themePresets.forEach(theme => {
-        const card = document.createElement('div');
-        card.className = 'theme-card';
-        card.innerHTML = `
-          <h3>${theme.label || theme.name}</h3>
-          <div class="theme-colors">
-            ${Object.values(theme.colors || {}).map(color => `
-              <div class="theme-color" style="background: ${color};" title="${color}"></div>
-            `).join('')}
-          </div>
-          <button class="cta secondary" onclick="applyThemePreset('${theme.name}')">Apply to Game</button>
-        `;
-        themesGrid.appendChild(card);
-      });
-    } catch (err) {
-      showNotification(`Failed to load themes: ${err.message}`, 'error');
-    }
-  }
-  
-  window.applyThemePreset = function(presetName) {
-    themePresetSelect.value = presetName;
-    themePresetSelect.dispatchEvent(new Event('change'));
-    switchView('create');
-  };
   
   // Initial load
   loadGames();

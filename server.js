@@ -65,7 +65,11 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.game,
-    pathRewrite: path => `/games${path}`, // /123 -> /games/123
+    pathRewrite: (path) => {
+      // Keep /admin routes intact, map everything else to /games/*
+      if (path.startsWith('/admin')) return path;
+      return `/games${path}`;
+    },
   })
 );
 
