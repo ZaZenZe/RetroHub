@@ -171,8 +171,11 @@ router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next
       'versionLabel',
       'description',
       'coverImageUrl',
+      'coverGifUrl',
       'heroImageUrl',
+      'gameplayGifUrl',
       'hoverImageUrl',
+      'hoverGifUrl',
       'screenshots',
       'theme',
     ];

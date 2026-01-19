@@ -69,13 +69,13 @@ app.use(
   })
 );
 
-// Community service: routes prefixed with /community, so /api/community/posts -> /community/posts
+// Community service: routes at root, so /api/community/games/123/posts -> /games/123/posts
 app.use(
   '/api/community',
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.community,
-    pathRewrite: path => `/community${path}`, // /... -> /community/...
+    pathRewrite: { '^/api/community': '' }, // strip /api/community prefix
   })
 );
 

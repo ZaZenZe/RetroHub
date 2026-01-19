@@ -7,6 +7,7 @@ const { connectWithRetry, connectionState } = require('./shared/db');
 const { corsOptions } = require('./shared/config/cors.config');
 const { errorHandler } = require('./shared/middleware/error.middleware');
 const gameRoutes = require('./routes/game.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const PORT = process.env.PORT || 3003;
 const app = express();
@@ -28,6 +29,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/', gameRoutes);
+app.use('/admin', adminRoutes);
 
 app.use(errorHandler);
 
