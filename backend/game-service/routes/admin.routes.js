@@ -44,10 +44,45 @@ function hasGamePermission(user, gameId) {
 // Apply auth to all admin routes
 router.use(verifyToken, loadCurrentUser);
 
+// Theme defaults reused for create/update responses
+const DEFAULT_THEME = {
+  name: 'retro',
+  colors: {
+    primary: '#ff7b00',
+    primaryAlt: '#ff9f1a',
+    accent: '#4fc3f7',
+    background: '#0d0e12',
+    card: '#1b1f29',
+    text: '#e6e6e9',
+    border: '#232734',
+  },
+};
+
+function normalizeTheme(input, fallback = DEFAULT_THEME) {
+  if (!input) return { ...DEFAULT_THEME, colors: { ...DEFAULT_THEME.colors } };
+  if (typeof input === 'string') {
+    return {
+      ...DEFAULT_THEME,
+      colors: { ...DEFAULT_THEME.colors },
+      name: input.trim() || DEFAULT_THEME.name,
+    };
+  }
+
+  const base = typeof fallback === 'object' ? fallback : DEFAULT_THEME;
+  const name = (input.name || base.name || DEFAULT_THEME.name || '').trim() || 'retro';
+  const colors = {
+    ...DEFAULT_THEME.colors,
+    ...(base.colors || {}),
+    ...(input.colors || {}),
+  };
+
+  return { name, colors };
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads');
+    const uploadDir = path.join(__dirname, '../uploads');
     try {
       await fs.mkdir(uploadDir, { recursive: true });
       cb(null, uploadDir);
@@ -88,6 +123,7 @@ function sanitizeGame(doc) {
   if (!doc) return null;
   const g = doc.toObject({ versionKey: false });
   g.id = g._id.toString();
+  g.theme = normalizeTheme(g.theme);
   return g;
 }
 
@@ -121,7 +157,11 @@ router.get('/games', async (req, res, next) => {
     ]);
 
     res.json({
-      games: games.map(g => ({ ...g, id: g._id?.toString() })),
+      games: games.map(g => ({
+        ...g,
+        id: g._id?.toString(),
+        theme: normalizeTheme(g.theme),
+      })),
       page: parseInt(page, 10),
       total,
       pages: Math.ceil(total / parseInt(limit, 10)),
@@ -162,9 +202,7 @@ router.post('/games', async (req, res, next) => {
     const { tips = [], faqs = [], ...gameData } = req.body;
 
     // Ensure theme has proper structure
-    if (gameData.theme && typeof gameData.theme === 'string') {
-      gameData.theme = { name: gameData.theme, colors: {} };
-    }
+    gameData.theme = normalizeTheme(gameData.theme);
 
     const game = await Game.create(gameData);
 
@@ -222,9 +260,13 @@ router.put('/games/:gameParam', async (req, res, next) => {
       'theme',
     ];
 
+    if (Object.prototype.hasOwnProperty.call(updates, 'theme')) {
+      updates.theme = normalizeTheme(updates.theme, game.theme);
+    }
+
     allowed.forEach(key => {
       if (Object.prototype.hasOwnProperty.call(updates, key)) {
-        game[key] = updates[key];
+        game[key] = key === 'theme' ? normalizeTheme(updates[key], game.theme) : updates[key];
       }
     });
 
@@ -284,7 +326,7 @@ router.post('/upload/bulk', upload.array('images', 10), async (req, res, next) =
     }
 
     const urls = req.files.map(file => ({
-      url: `/assets/uploads/${file.filename}`,
+      url: `/uploads/${file.filename}`,
       filename: file.filename,
       originalName: file.originalname,
       size: file.size,

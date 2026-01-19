@@ -12,6 +12,11 @@ These users are created automatically when you run `docker compose up` (the `see
 | user   | SpeedRunner    | speedrun@example.com  | SpeedRun@2024| Demo user |
 | user   | NostalgiaKid   | nostalgia@example.com | Nostalgia@90s| Demo user |
 
+EXTRA 
+- admin: mainadmin@example.com / Admin123!
+- mod: mod1@example.com / Mod123!
+- user: user1@example.com / User123!
+
 Content seeded:
 - Games: Fire Red, Emerald, Heart Gold, Platinum, Black 2, Y (from `seed-database.js`).
 - Tips/FAQs: Per game (from `seed-database.js`).

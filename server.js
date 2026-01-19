@@ -79,6 +79,7 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.game,
+    pathRewrite: path => `/uploads${path}`,
   })
 );
 
