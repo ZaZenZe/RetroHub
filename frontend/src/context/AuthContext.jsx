@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage on mount
     try {
       const storedUser = localStorage.getItem('authUser');
       if (storedUser && token) {
@@ -25,8 +24,10 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to parse stored user:', error);
+      localStorage.removeItem('authUser');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [token]);
 
   const login = async (email, password) => {

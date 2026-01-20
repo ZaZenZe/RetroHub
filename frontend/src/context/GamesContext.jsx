@@ -54,7 +54,8 @@ export const GamesProvider = ({ children }) => {
     setError(null);
     try {
       const data = await api.getGames();
-      const mapped = (data?.games || []).map(mapApiGame).filter(Boolean);
+      const rawGames = Array.isArray(data) ? data : data?.games || [];
+      const mapped = rawGames.map(mapApiGame).filter(Boolean);
       setGames(mapped);
 
       // Build index maps

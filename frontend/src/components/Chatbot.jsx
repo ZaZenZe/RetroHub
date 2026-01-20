@@ -68,11 +68,11 @@ const Chatbot = ({ currentGame = null }) => {
           }
         : null;
 
-      const response = await api.chat(text, gameContext);
+        const response = await api.chat(text, gameContext, currentGame?.dbId || null);
       
       const assistantMessage = {
         role: 'assistant',
-        content: response.reply || response.message || 'Sorry, I couldn\'t process that.',
+        content: response.text || response.reply || response.message || 'Sorry, I couldn\'t process that.',
         timestamp: new Date(),
       };
       

@@ -21,7 +21,7 @@ const GamesManagement = () => {
       if (platformFilter) params.append('platform', platformFilter);
       params.append('limit', '100');
 
-      const data = await api.request(`/games/admin/games?${params}`);
+        const data = await api.request(`/admin/games?${params.toString()}`);
       setGames(data.games || []);
     } catch (error) {
       console.error('Failed to load games:', error);

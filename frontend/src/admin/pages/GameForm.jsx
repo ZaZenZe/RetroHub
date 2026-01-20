@@ -45,7 +45,7 @@ const GameForm = () => {
   const loadGame = async () => {
     setLoading(true);
     try {
-      const data = await api.request(`/games/admin/games/${gameId}`);
+      const data = await api.request(`/admin/games/${gameId}`);
       const game = data.game;
 
       setFormData({

@@ -79,6 +79,16 @@ app.use(
   })
 );
 
+// Admin game routes: /api/admin/* -> /admin/* on game-service
+app.use(
+  '/api/admin',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.game,
+    pathRewrite: (path) => `/admin${path}`,
+  })
+);
+
 // Uploaded assets served by game-service
 app.use(
   '/uploads',

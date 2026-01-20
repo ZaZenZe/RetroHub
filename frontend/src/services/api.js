@@ -1,5 +1,9 @@
 // API Service Layer
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+const DEFAULT_TIMEOUT = 8000;
+const RETRYABLE_STATUS = new Set([502, 503, 504]);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class ApiService {
   constructor() {
@@ -25,29 +29,72 @@ class ApiService {
     return headers;
   }
 
-  async request(path, options = {}) {
+  async request(path, options = {}, config = {}) {
     const headers = this.getHeaders();
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: { ...headers, ...options.headers },
-    });
+    const method = (options.method || 'GET').toUpperCase();
+    const timeout = config.timeout || DEFAULT_TIMEOUT;
+    const retries =
+      typeof config.retries === 'number' ? config.retries : method === 'GET' ? 2 : 0;
 
-    let payload = null;
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      payload = await response.json();
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+
+      try {
+        const response = await fetch(`${API_BASE}${path}`, {
+          ...options,
+          headers: { ...headers, ...options.headers },
+          signal: controller.signal,
+        });
+
+        let payload = null;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          try {
+            payload = await response.json();
+          } catch (parseError) {
+            payload = null;
+          }
+        }
+
+        if (!response.ok) {
+          const err = new Error(
+            (payload && payload.error) || response.statusText || 'Request failed'
+          );
+          err.status = response.status;
+          err.response = payload;
+
+          if (response.status === 401) {
+            this.setToken('');
+          }
+
+          if (attempt < retries && RETRYABLE_STATUS.has(response.status)) {
+            await sleep(300 * (attempt + 1));
+            continue;
+          }
+
+          throw err;
+        }
+
+        return payload;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          err.message = 'Request timeout';
+        }
+
+        const isNetworkError = err instanceof TypeError || err.name === 'AbortError';
+        if (attempt < retries && isNetworkError) {
+          await sleep(300 * (attempt + 1));
+          continue;
+        }
+
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
-    if (!response.ok) {
-      const err = new Error(
-        (payload && payload.error) || response.statusText || 'Request failed'
-      );
-      err.status = response.status;
-      err.response = payload;
-      throw err;
-    }
-
-    return payload;
+    return null;
   }
 
   // Auth
@@ -137,10 +184,10 @@ class ApiService {
   }
 
   // AI Chat
-  async chat(message, gameContext = null) {
+  async chat(message, gameContext = null, gameId = null) {
     return this.request('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, gameContext }),
+      body: JSON.stringify({ message, gameContext, gameId }),
     });
   }
 
