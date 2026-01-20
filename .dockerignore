@@ -44,9 +44,3 @@ temp
 *.tmp
 *.log
 
-# Old backup files
-frontend/index-old.html
-frontend/admin-old.html
-frontend/script-old.js
-frontend/admin-old.js
-frontend/package-react.json
