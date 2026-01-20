@@ -73,9 +73,9 @@ const Header = ({ onAuthClick }) => {
         <Link to="/" className="nav-link">Home</Link>
         <Link to="/profile" className="nav-link">Profile</Link>
         {(isAdmin || isMod) && (
-          <a href="/admin.html" className="nav-link">
+          <Link to="/admin" className="nav-link">
             {isAdmin ? 'Admin' : 'Moderator'}
-          </a>
+          </Link>
         )}
         <Link to="/settings" className="nav-link">Settings</Link>
         <Link to="/about" className="nav-link">About</Link>

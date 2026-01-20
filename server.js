@@ -116,13 +116,8 @@ app.get('/api/health', (req, res) => {
 // Static files and SPA shell AFTER API routes
 app.use(express.static(FRONTEND_DIR));
 
-// Serve admin panel HTML directly
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, 'admin.html'));
-});
-
 // Serve SPA shell for any non-API, non-static file route
-app.get(/^(?!\/api|\/admin\.html).*/, (req, res) => {
+app.get(/^(?!\/api).*/, (req, res) => {
   // Check if requesting an actual file that exists
   const requestedFile = path.join(FRONTEND_DIR, req.path);
   if (req.path.includes('.') && fs.existsSync(requestedFile)) {

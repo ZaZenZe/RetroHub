@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '../context/AuthContext';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import AdminHeader from './components/AdminHeader';
 import GamesManagement from './pages/GamesManagement';
 import GameForm from './pages/GameForm';
@@ -15,8 +15,7 @@ const AdminRoutes = () => {
   }
 
   if (!user || (user.role !== 'admin' && user.role !== 'mod')) {
-    window.location.href = '/';
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -24,10 +23,10 @@ const AdminRoutes = () => {
       <AdminHeader />
       <main className="admin-main">
         <Routes>
-          <Route path="/" element={<GamesManagement />} />
-          <Route path="/games" element={<GamesManagement />} />
-          <Route path="/create" element={<GameForm />} />
-          <Route path="/edit/:gameId" element={<GameForm />} />
+          <Route index element={<GamesManagement />} />
+          <Route path="games" element={<GamesManagement />} />
+          <Route path="create" element={<GameForm />} />
+          <Route path="edit/:gameId" element={<GameForm />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </main>
@@ -42,13 +41,9 @@ function AdminApp() {
   }, []);
 
   return (
-    <Router basename="/admin">
-      <AuthProvider>
-        <div className="admin-app">
-          <AdminRoutes />
-        </div>
-      </AuthProvider>
-    </Router>
+    <div className="admin-app">
+      <AdminRoutes />
+    </div>
   );
 }
 

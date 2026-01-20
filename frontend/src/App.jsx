@@ -12,6 +12,7 @@ import GameDetail from './pages/GameDetail';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import About from './pages/About';
+import AdminApp from './admin/AdminApp';
 import '../style.css';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/admin/*" element={<AdminApp />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>
