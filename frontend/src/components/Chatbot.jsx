@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const Chatbot = ({ currentGame = null }) => {
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatboxRef = useRef(null);
 
-  const OAK_AVATAR = 'assets/PikPng.com_professor-oak-png_1480585.png';
+  const OAK_AVATAR = '/assets/PikPng.com_professor-oak-png_1480585.png';
 
   const welcomeMessages = [
     'Ah, a young trainer! What can I help you with today?',
@@ -59,6 +61,19 @@ const Chatbot = ({ currentGame = null }) => {
     setInputText('');
     setIsLoading(true);
 
+    if (!isAuthenticated) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Please sign in to use the AI assistant.',
+          timestamp: new Date(),
+        },
+      ]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const gameContext = currentGame
         ? {
@@ -103,7 +118,7 @@ const Chatbot = ({ currentGame = null }) => {
       <div className={`chatbot ${isOpen ? 'show' : ''}`} role="dialog" aria-labelledby="chatbot-header">
         <header id="chatbot-header">
           <h2>
-            <img src="assets/pixel/6Vww.gif" alt="RetroBot" className="chat-title-avatar" />
+            <img src="/assets/pixel/6Vww.gif" alt="RetroBot" className="chat-title-avatar" />
             RetroBot
           </h2>
           <p className="chat-subtitle" id="chat-subtitle">

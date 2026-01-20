@@ -22,16 +22,16 @@ const Profile = () => {
       setLoading(true);
       try {
         const [statsRes, achRes, gamesRes] = await Promise.all([
-          api.getUserStats(),
-          api.getUserAchievements(),
-          api.getUserGames(),
+          api.getUserStats(user?.id),
+          api.getUserAchievements(user?.id),
+          api.getUserGames(user?.id),
         ]);
 
         setStats(statsRes?.stats || null);
         setAchievements(achRes?.achievements || []);
         
         // Merge user games with game catalog
-        const userGamesList = gamesRes?.userGames || [];
+        const userGamesList = gamesRes?.games || [];
         const collection = buildCollection(userGamesList);
         setUserGames(collection);
       } catch (error) {
@@ -42,14 +42,28 @@ const Profile = () => {
     };
 
     loadProfileData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   const buildCollection = (userGamesList) => {
-    return games.map((g, idx) => ({
-      ...g,
-      status: ['Completed', 'In progress', 'Wishlist'][idx % 3],
-      progress: 42 + ((idx * 13) % 55),
-    }));
+    if (!Array.isArray(userGamesList) || userGamesList.length === 0) {
+      return [];
+    }
+
+    return userGamesList.map((entry) => {
+      const game = entry.gameId || entry.game || {};
+      const catalogMatch = games.find((g) => g.dbId === game._id || g.id === game.slug) || {};
+      return {
+        ...catalogMatch,
+        id: catalogMatch.id || game.slug || game._id,
+        dbId: catalogMatch.dbId || game._id,
+        title: catalogMatch.title || game.title || '',
+        platform: catalogMatch.platform || game.platform || '',
+        year: catalogMatch.year || game.releaseYear || '',
+        art: catalogMatch.art || game.coverImageUrl || game.media?.coverImage || '',
+        status: entry.status || 'BACKLOG',
+        progress: entry.progressPercentage || 0,
+      };
+    });
   };
 
   const filteredGames = userGames.filter((item) =>
@@ -84,7 +98,7 @@ const Profile = () => {
           <img
             id="profile-avatar"
             className="profile-avatar"
-            src="assets/pixel/6Vww.gif"
+            src="/assets/pixel/6Vww.gif"
             alt="Trainer avatar"
           />
           <div>
@@ -102,15 +116,15 @@ const Profile = () => {
             <>
               <div className="stat">
                 <span className="label">Games Played</span>
-                <span className="value">{stats.gamesPlayed || 0}</span>
+                <span className="value">{stats.totalGames || 0}</span>
               </div>
               <div className="stat">
                 <span className="label">Hours Logged</span>
-                <span className="value">{stats.hoursPlayed || 0}</span>
+                <span className="value">{stats.completedGames || 0}</span>
               </div>
               <div className="stat">
                 <span className="label">Achievements</span>
-                <span className="value">{stats.achievementsUnlocked || 0}</span>
+                <span className="value">{stats.achievementsCount || 0}</span>
               </div>
             </>
           )}

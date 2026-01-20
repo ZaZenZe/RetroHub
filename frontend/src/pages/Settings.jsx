@@ -7,7 +7,7 @@ const Settings = () => {
   const { user, updateUserData, isAuthenticated } = useAuth();
   const { settings, updateSettings } = useTheme();
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    username: user?.username || '',
     email: user?.email || '',
   });
   const [passwords, setPasswords] = useState({
@@ -20,7 +20,7 @@ const Settings = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        username: user.username || '',
         email: user.email || '',
       });
     }
@@ -33,8 +33,8 @@ const Settings = () => {
     setError('');
     
     try {
-      const result = await api.updateUser({
-        name: formData.name,
+      const result = await api.updateUser(user?.id, {
+        username: formData.username,
         email: formData.email,
       });
       updateUserData(result.user);
@@ -53,7 +53,7 @@ const Settings = () => {
     setError('');
     
     try {
-      await api.updatePassword(passwords.old, passwords.new);
+      await api.updatePassword(user?.id, passwords.old, passwords.new);
       setPasswords({ old: '', new: '' });
       setMessage('Password updated successfully!');
       setTimeout(() => setMessage(''), 3000);
@@ -118,13 +118,13 @@ const Settings = () => {
           <div className="settings-card">
             <h3>Account</h3>
             <label>
-              Display name
+              Username
               <input
-                id="settings-name"
+                id="settings-username"
                 type="text"
-                placeholder="Trainer"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="trainer"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               />
             </label>
             <label>

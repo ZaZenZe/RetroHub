@@ -125,6 +125,7 @@ app.get('/api/health', (req, res) => {
 
 // Static files and SPA shell AFTER API routes
 app.use(express.static(FRONTEND_DIR));
+app.use('/assets', express.static(path.join(__dirname, 'frontend', 'assets')));
 
 // Serve SPA shell for any non-API, non-static file route
 app.get(/^(?!\/api).*/, (req, res) => {

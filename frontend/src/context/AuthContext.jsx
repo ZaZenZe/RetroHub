@@ -63,8 +63,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUserData = (userData) => {
-    setUser((prev) => ({ ...prev, ...userData }));
-    localStorage.setItem('authUser', JSON.stringify({ ...user, ...userData }));
+    setUser((prev) => {
+      const next = { ...prev, ...userData };
+      localStorage.setItem('authUser', JSON.stringify(next));
+      return next;
+    });
   };
 
   const isAdmin = user?.role === 'admin';

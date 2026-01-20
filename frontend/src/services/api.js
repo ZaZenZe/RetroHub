@@ -29,6 +29,17 @@ class ApiService {
     return headers;
   }
 
+  getStoredUserId() {
+    try {
+      const raw = localStorage.getItem('authUser');
+      if (!raw) return '';
+      const parsed = JSON.parse(raw);
+      return parsed?.id || parsed?._id || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
   async request(path, options = {}, config = {}) {
     const headers = this.getHeaders();
     const method = (options.method || 'GET').toUpperCase();
@@ -105,42 +116,54 @@ class ApiService {
     });
   }
 
-  async register(name, email, password) {
+  async register(username, email, password) {
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ username, email, password }),
     });
   }
 
   // User
-  async getUser() {
-    return this.request('/users/me');
+  async getUser(userId) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}`);
   }
 
-  async updateUser(data) {
-    return this.request('/users/me', {
-      method: 'PATCH',
+  async updateUser(userId, data) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async updatePassword(oldPassword, newPassword) {
-    return this.request('/users/me/password', {
-      method: 'PATCH',
-      body: JSON.stringify({ oldPassword, newPassword }),
+  async updatePassword(userId, oldPassword, newPassword) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ password: newPassword }),
     });
   }
 
-  async getUserStats() {
-    return this.request('/users/me/stats');
+  async getUserStats(userId) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/stats`);
   }
 
-  async getUserAchievements() {
-    return this.request('/users/me/achievements');
+  async getUserAchievements(userId) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/achievements`);
   }
 
-  async getUserGames() {
-    return this.request('/users/me/games');
+  async getUserGames(userId) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/games`);
   }
 
   // Games

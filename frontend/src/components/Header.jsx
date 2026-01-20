@@ -5,20 +5,20 @@ import { useAuth } from '../context/AuthContext';
 const Header = ({ onAuthClick }) => {
   const { user, isAdmin, isMod, logout } = useAuth();
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [headerGif, setHeaderGif] = useState('assets/pokeball.png');
+  const [headerGif, setHeaderGif] = useState('/assets/pokeball.png');
   const location = useLocation();
 
   const pixelGifs = [
-    'assets/pixel/12c6a260613c6e51b16af016dd38c44e182fcd68_hq.gif',
-    'assets/pixel/36541a1369a2eec1894ebff1b9e4a948a78cea80_hq.gif',
-    'assets/pixel/3c06599306cca1e170ce8df10949cf91.gif',
-    'assets/pixel/4efee18cb06f3d2f8456a40d1e0460e7.gif',
-    'assets/pixel/6e7ebe7e86da8cb09f07c765f73efb29b8c0a97d_hq.gif',
-    'assets/pixel/6Vww.gif',
-    'assets/pixel/b695b53cae18d460881f51b037977b5b1cc261e9_hq.gif',
-    'assets/pixel/bdb1f2848d8546d50e82c4ffd43b786f.gif',
-    'assets/pixel/c740eb46064c338fc67c219b3df8792c0719ac38_hq.gif',
-    'assets/pixel/e938d18fc07a3ffd16b4864ef2f1308f.gif',
+    '/assets/pixel/12c6a260613c6e51b16af016dd38c44e182fcd68_hq.gif',
+    '/assets/pixel/36541a1369a2eec1894ebff1b9e4a948a78cea80_hq.gif',
+    '/assets/pixel/3c06599306cca1e170ce8df10949cf91.gif',
+    '/assets/pixel/4efee18cb06f3d2f8456a40d1e0460e7.gif',
+    '/assets/pixel/6e7ebe7e86da8cb09f07c765f73efb29b8c0a97d_hq.gif',
+    '/assets/pixel/6Vww.gif',
+    '/assets/pixel/b695b53cae18d460881f51b037977b5b1cc261e9_hq.gif',
+    '/assets/pixel/bdb1f2848d8546d50e82c4ffd43b786f.gif',
+    '/assets/pixel/c740eb46064c338fc67c219b3df8792c0719ac38_hq.gif',
+    '/assets/pixel/e938d18fc07a3ffd16b4864ef2f1308f.gif',
   ];
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const Header = ({ onAuthClick }) => {
       const randomIndex = Math.floor(Math.random() * pixelGifs.length);
       setHeaderGif(pixelGifs[randomIndex]);
     } else {
-      setHeaderGif('assets/pokeball.png');
+      setHeaderGif('/assets/pokeball.png');
     }
   }, [location.pathname]);
 
@@ -89,7 +89,7 @@ const Header = ({ onAuthClick }) => {
         </button>
         {user && (
           <span id="auth-chip" className="chip">
-            Hey, {user.name || user.email}
+            Hey, {user.username || user.email}
           </span>
         )}
       </nav>

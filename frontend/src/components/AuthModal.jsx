@@ -6,7 +6,7 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: '',
+    username: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ const AuthModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) {
       setError('');
-      setFormData({ email: '', password: '', name: '' });
+      setFormData({ email: '', password: '', username: '' });
       setActiveTab('login');
     }
   }, [isOpen]);
@@ -39,7 +39,7 @@ const AuthModal = ({ isOpen, onClose }) => {
       if (activeTab === 'login') {
         await login(formData.email, formData.password);
       } else {
-        await register(formData.name, formData.email, formData.password);
+        await register(formData.username, formData.email, formData.password);
       }
       onClose();
     } catch (err) {
@@ -142,16 +142,17 @@ const AuthModal = ({ isOpen, onClose }) => {
             aria-hidden={false}
           >
             <input
-              name="name"
+              name="username"
               type="text"
-              placeholder="Display name"
-              value={formData.name}
+              placeholder="Username (e.g., oak)"
+              value={formData.username}
               onChange={handleChange}
+              required
             />
             <input
               name="email"
               type="email"
-              placeholder="Email"
+              placeholder="Email (e.g., admin@retrohub.test)"
               value={formData.email}
               onChange={handleChange}
               required
@@ -172,8 +173,8 @@ const AuthModal = ({ isOpen, onClose }) => {
 
         <div className="map-hint">
           <div>Demo users:</div>
-          <div>• oak@lab / pikachu (admin)</div>
-          <div>• student@epita / rattata (student)</div>
+          <div>• admin@retrohub.test / Admin@123 (admin)</div>
+          <div>• mod@retrohub.test / Mod@123 (moderator)</div>
         </div>
       </div>
     </div>
