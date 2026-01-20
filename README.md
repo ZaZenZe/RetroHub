@@ -1,177 +1,151 @@
-# RetroHub
+# 🎮 RetroHub
 
-Retro gaming companion with AI assistance and a community hub for sharing tips, collections, and discussions.
+> Modern retro gaming companion with AI assistance and community features
 
-![Node.js](https://img.shields.io/badge/Node.js-20+-43853d?logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-6.0-646cff?logo=vite&logoColor=white)
-![Express](https://img.shields.io/badge/Express.js-Backend-000?logo=express&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-Database-4ea94b?logo=mongodb&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?logo=docker&logoColor=white)
-![Capacitor](https://img.shields.io/badge/Capacitor-Mobile-119eff?logo=capacitor&logoColor=white)
-
-## Roadmap
-<img width="2548" height="1435" alt="Roadmap" src="https://github.com/user-attachments/assets/4c6a2ae7-a435-4883-9492-2f8607b45217" />
+[![Node.js](https://img.shields.io/badge/Node.js-20+-43853d?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6-4ea94b?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white)](https://www.docker.com/)
 
 ## Features
 
-- 🔐 Authentication and user profiles
-- 🎮 Game collection tracking across GBA, DS, and 3DS
-- 💬 Community forums with posts, replies, and votes
-- 🤖 AI chatbot for hints and walkthrough help
-- ⚛️ **Modern React frontend** with hooks and Context API
-- 🚀 **Optimized production builds** with Vite
-- 🐳 **Full Docker integration** with multi-stage builds
-- 📱 Health endpoints for all services
+🎮 **Game Library** - Browse and track GBA, DS, and 3DS games  
+💬 **Community** - Share tips, strategies, and discussions  
+🤖 **AI Assistant** - Get hints and walkthroughs  
+👤 **User Profiles** - Track achievements and collections  
+🔐 **Authentication** - Secure user accounts with JWT  
+⚡ **Modern Stack** - React + Vite + Microservices
+
+## Quick Start
+
+**Prerequisites:** Docker & Docker Compose
+
+```bash
+# Clone and start
+git clone https://github.com/ZaZenZe/RetroHub.git
+cd RetroHub
+docker compose up
+
+# Access the app at http://localhost:5173
+```
+
+**Demo accounts:** `admin@test.com` / `password123` (see [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md))
 
 ## Project Structure
 
-- **frontend/** — React application (Vite + React Router)
-  - `src/` — React components, pages, contexts, services
-  - `dist/` — Production build output
-  - Main app + separate admin panel
-- **backend/** — Microservices architecture
-  - `auth-service/` — Authentication & JWT tokens
-  - `user-service/` — User profiles & stats
-  - `game-service/` — Game catalog & CRUD
-  - `community-service/` — Posts & community features
-  - `ai-service/` — AI chatbot integration
-  -Quick Start with Docker (Recommended)
-
-The easiest way to run RetroHub is with Docker:
-
-```bash
-# Clone repository
-git clone <repo-url>
-cd RetroHub
-
-# Start everything (React build + all services)
-docker compose up --build
-
-# Access the app
-# Main app: http://localhost:5173
-# Admin panel: http://localhost:5173/admin
-# Database UI: http://localhost:8081
+```
+RetroHub/
+├── frontend/              # React app (Vite + React Router)
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Route pages (Home, Profile, etc.)
+│   │   ├── admin/         # Admin panel (separate app)
+│   │   ├── context/       # State management (Auth, Games, Theme)
+│   │   └── services/      # API client
+│   ├── assets/            # Images, pixel art
+│   └── dist/              # Production build (created by Vite)
+│
+├── backend/               # Microservices
+│   ├── auth-service/      # Login, register, JWT (port 3001)
+│   ├── user-service/      # Profiles, stats (port 3002)
+│   ├── game-service/      # Game catalog, CRUD (port 3003)
+│   ├── community-service/ # Posts, comments (port 3004)
+│   ├── ai-service/        # AI chatbot (port 3005)
+│   └── shared/            # Database models, middleware
+│
+├── server.js              # API gateway (port 5173)
+├── docker-compose.yml     # Full stack orchestration
+└── docs/                  # Documentation
 ```
 
-**See [DOCKER_QUICK_REFERENCE.md](DOCKER_QUICK_REFERENCE.md) for detailed Docker commands**
+## Development
 
-## Local Development Setup
-
-1. **Prerequisites**: Node.js 20+, npm, MongoDB
-2. Clone the repository
-3. Copy `.env.example` to `.env`
-4. Install dependencies (see commands below)
-5. Start services individually or use Docker Compose
-
-## Install & Run
-
-### React Frontend (Development)
+### Local Development (Without Docker)
 
 ```bash
-cd frontend
+# Install dependencies
 npm install
-npm run dev  # Starts Vite dev server on port 3000 with hot reload
-```
+cd frontend && npm install && cd ..
 
-### React Frontend (Production Build)
+# Start MongoDB
+docker compose up mongodb -d
 
-```bash
-cd frontend
-npm install
-npm run build  # Creates optimized dist/ folder
-```
+# Terminal 1: Backend services
+npm run start:services
 
-### Gateway Server
+# Terminal 2: React dev server (with hot reload)
+npm run dev:frontend
 
-```bash
-npm install
-npm run dev  # Starts gateway on port 5173, proxies API calls
-```
-
-### Tooling Scripts
-
-- Lint (ESLint v9 flat config): `npm run lint`
-- Format (Prettier): `npm run format`
-- Full dev mode: `npm run dev:full` (starts both frontend dev + gateway)
-
-### Backend Microservices
-
-Each service runs independently with its own dependencies.
-
-| Service   | Path                      | Default Port | Purpose |
-| --------- | ------------------------- | ------------ | ------- |
-| Auth      | backend/auth-service      | 3001         | Login, register, JWT |
-| User      | backend/user-service      | 3002         | Profiles, stats, achievements |
-| Game      | backend/game-service      | 3003         | Game catalog, tips, FAQs |
-| Community | backend/community-service | 3004         | Posts, replies, votes |
-| AI        | backend/ai-service        | 3005         | Chatbot integration |
-
-**Per service:**
-```bash
-cd backend/<service>-service
-npm install
+# Terminal 3: Gateway
 npm start
 ```
 
-## Documentation
+### Docker Development
 
-- **[REACT_REFACTORING_COMPLETE.md](REACT_REFACTORING_COMPLETE.md)** — Quick start for React version
-- **[DOCKER_INTEGRATION.md](DOCKER_INTEGRATION.md)** — Complete Docker integration guide
-- **[DOCKER_QUICK_REFERENCE.md](DOCKER_QUICK_REFERENCE.md)** — Docker command cheat sheet
-- **[COMPONENT_ARCHITECTURE.md](COMPONENT_ARCHITECTURE.md)** — React component structure
-- **[frontend/README.md](frontend/README.md)** — React development guide
-- **[docs/](docs/)** — Additional architecture & setup docs
+```bash
+# Start everything
+docker compose up
 
-## Demo Accounts
+# Rebuild after code changes
+docker compose build gateway
+docker compose up gateway --force-recreate
 
-After seeding the database:
-- **Admin**: admin@test.com / password123
-- **Moderator**: mod@test.com / password123
-- **User**: user@test.com / password123
+# View logs
+docker compose logs -f gateway
 
-See [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md) for full list.
+# Clean restart
+docker compose down -v
+docker compose up
+```
+
+### Available Scripts
+
+```bash
+npm start              # Start gateway server
+npm run dev:frontend   # Start React dev server (port 3000)
+npm run build:frontend # Build React for production
+npm run dev:full       # Start everything locally
+npm run lint           # Run ESLint
+npm run format         # Format with Prettier
+```
 
 ## Tech Stack
 
-### Frontend
-- **React 18.3** — Component-based UI
-- **React Router 6** — Client-side routing
-- **Context API** — State management
-- **Vite 6** — Build tool with HMR
-
-### Backend
-- **Node.js 20** — Runtime
-- **Express 5.2** — Web framework
-- **MongoDB 6** — Database
-- **JWT** — Authentication
-- **Mongoose** — ODM
-
-### DevOps
-- **Docker Compose** — Container orchestration
-- **Multi-stage builds** — Optimized images
-- **Health checks** — Service monitoring
+**Frontend:** React 18, React Router 6, Context API, Vite 6  
+**Backend:** Node.js 20, Express 5, MongoDB 6, Mongoose, JWT  
+**DevOps:** Docker, Docker Compose, Multi-stage builds
 
 ## Architecture
 
-RetroHub uses a **microservices architecture** with:
-- **Gateway pattern**: Single entry point (server.js) proxies to backend services
-- **Service isolation**: Each microservice has independent deployment
-- **Shared models**: Common database models in backend/shared/
-- **React SPA**: Single-page application with client-side routing
-- **API-first design**: RESTful endpoints for all operations
+Microservices architecture with API gateway pattern:
+- Gateway (server.js) serves React app and proxies `/api/*` to backend services
+- Each microservice is independent with its own container
+- MongoDB with authentication and health checks
+- React uses Context API for state (Auth, Games, Theme)
+- Optimized production builds with code splitting
 
-## Contributing
+## Ports
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) for development guidelines.
-- Services:
-  - MongoDB at localhost:27017
-  - Mongo Express UI at http://localhost:8081
+| Service          | Port | URL                          |
+|------------------|------|------------------------------|
+| Gateway (React)  | 5173 | http://localhost:5173        |
+| Auth Service     | 3001 | Internal only                |
+| User Service     | 3002 | Internal only                |
+| Game Service     | 3003 | Internal only                |
+| Community Service| 3004 | Internal only                |
+| AI Service       | 3005 | Internal only                |
+| MongoDB          | 27017| mongodb://localhost:27017    |
+| Mongo Express    | 8081 | http://localhost:8081        |
 
-## Team
+## Demo Accounts
 
-- Mark
-- Sayan
+After running `docker compose up`, the database is seeded with:
+
+- **Admin:** admin@test.com / password123
+- **Moderator:** mod@test.com / password123
+- **User:** user@test.com / password123
+
+Full list in [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md)
 
 ## License
 
