@@ -3,16 +3,20 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { connectWithRetry, connectionState } = require('./shared/db');
-const { corsOptions } = require('./shared/config/cors.config');
-const { errorHandler } = require('./shared/middleware/error.middleware');
+const path = require('path');
+const sharedBase = path.join(__dirname, '../shared');
+const { connectWithRetry, connectionState } = require(path.join(sharedBase, 'db'));
+const { corsOptions } = require(path.join(sharedBase, 'config/cors.config'));
+const { errorHandler } = require(path.join(sharedBase, 'middleware/error.middleware'));
 const gameRoutes = require('./routes/game.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const PORT = process.env.PORT || 3003;
 const app = express();
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/health', (req, res) => {
   const dbStatus = connectionState();
@@ -28,6 +32,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/', gameRoutes);
+app.use('/admin', adminRoutes);
 
 app.use(errorHandler);
 

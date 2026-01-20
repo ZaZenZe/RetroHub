@@ -16,6 +16,7 @@
     "prepare": "husky",
     "health-check": "node scripts/health-check.js",
     "seed:db": "node scripts/seed-database.js",
+    "seed:production": "node scripts/seed-production.js",
     "check:docker": "node scripts/check-docker.js",
     "test:mongodb": "node scripts/test-mongodb.js",
     "test:services-db": "node scripts/test-services-db.js",

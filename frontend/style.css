@@ -182,6 +182,12 @@ body.theme-about #header-gif{ display: none !important; }
 .description{ color: #c6cbd2; line-height: 1.7; max-width: 60ch; }
 .quick-actions{ margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* Detail layout below hero: two-column grid for tips + blabbers */
+.detail-middle{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.section-head{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.faq-block{ margin-top: 12px; display: grid; gap: 6px; }
+.faq-block h4{ font-size: 13px; color: var(--muted); }
+
 .columns{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .panel{ background: var(--bg-elev-1); border: 1px solid var(--border); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); }
 .panel h3{ font-size: 18px; margin-bottom: 8px; }
@@ -193,10 +199,10 @@ body.theme-about #header-gif{ display: none !important; }
 
 /* Screenshot gallery panel */
 .shots-panel{ display: grid; gap: 10px; }
-.shots-strip{ display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.shots-strip{ display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-width: thin; align-items: stretch; }
 .shots-strip::-webkit-scrollbar{ height: 8px; }
 .shots-strip::-webkit-scrollbar-thumb{ background: #2a2f3d; border-radius: 10px; }
-.shot-thumb{ position: relative; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000; min-height: 160px; scroll-snap-align: start; cursor: pointer; }
+.shot-thumb{ position: relative; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000; scroll-snap-align: start; cursor: pointer; aspect-ratio: 16 / 9; min-height: 0; }
 .shot-thumb img{ width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s ease; }
 .shot-thumb:hover img{ transform: scale(1.02); }
 .map-hint{ color: var(--muted); font-size: 12px; }

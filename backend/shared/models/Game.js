@@ -35,16 +35,17 @@ const gameSchema = new Schema(
     },
     platform: {
       type: String,
-      required: true,
       enum: PLATFORM_ENUM,
+      default: 'Other',
     },
     releaseYear: {
       type: Number,
-      required: true,
+      default: null,
     },
     description: {
       type: String,
-      required: true,
+      default: '',
+      trim: true,
     },
     versionLabel: {
       type: String,
@@ -53,23 +54,53 @@ const gameSchema = new Schema(
     },
     coverImageUrl: {
       type: String,
-      required: true,
+      default: null,
+      trim: true,
+    },
+    coverGifUrl: {
+      type: String,
+      default: null,
+      trim: true,
     },
     heroImageUrl: {
       type: String,
       default: null,
+      trim: true,
+    },
+    gameplayGifUrl: {
+      type: String,
+      default: null,
+      trim: true,
     },
     hoverImageUrl: {
       type: String,
       default: null,
+      trim: true,
+    },
+    hoverGifUrl: {
+      type: String,
+      default: null,
+      trim: true,
     },
     screenshots: {
       type: [String],
       default: [],
     },
     theme: {
-      type: String,
-      default: 'theme-retro',
+      name: {
+        type: String,
+        default: 'retro',
+        trim: true,
+      },
+      colors: {
+        primary: { type: String, default: '#ff7b00' },
+        primaryAlt: { type: String, default: '#ff9f1a' },
+        accent: { type: String, default: '#4fc3f7' },
+        background: { type: String, default: '#0d0e12' },
+        card: { type: String, default: '#1b1f29' },
+        text: { type: String, default: '#e6e6e9' },
+        border: { type: String, default: '#232734' },
+      },
     },
   },
   { timestamps: true }

@@ -52,9 +52,14 @@ const userSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'mod', 'admin'],
     default: 'user',
   },
+  moderatedGames: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Game',
+    default: [],
+  }],
 });
 
 // Hash password when changed

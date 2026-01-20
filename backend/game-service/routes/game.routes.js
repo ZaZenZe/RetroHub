@@ -2,12 +2,43 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const Game = require('../shared/models/Game');
-const Tip = require('../shared/models/Tip');
-const FAQ = require('../shared/models/FAQ');
-const { verifyToken } = require('../shared/middleware/auth.middleware');
+const Game = require('../../shared/models/Game');
+const Tip = require('../../shared/models/Tip');
+const FAQ = require('../../shared/models/FAQ');
+const User = require('../../shared/models/User');
+const { verifyToken } = require('../../shared/middleware/auth.middleware');
 
 const router = express.Router();
+
+const DEFAULT_THEME = {
+  name: 'retro',
+  colors: {
+    primary: '#ff7b00',
+    primaryAlt: '#ff9f1a',
+    accent: '#4fc3f7',
+    background: '#0d0e12',
+    card: '#1b1f29',
+    text: '#e6e6e9',
+    border: '#232734',
+  },
+};
+
+function normalizeTheme(input, fallback = DEFAULT_THEME) {
+  if (!input) return { ...DEFAULT_THEME, colors: { ...DEFAULT_THEME.colors } };
+  if (typeof input === 'string') {
+    return { ...DEFAULT_THEME, colors: { ...DEFAULT_THEME.colors }, name: input.trim() || DEFAULT_THEME.name };
+  }
+
+  const base = typeof fallback === 'object' ? fallback : DEFAULT_THEME;
+  const name = (input.name || base.name || DEFAULT_THEME.name || '').trim() || 'retro';
+  const colors = {
+    ...DEFAULT_THEME.colors,
+    ...(base.colors || {}),
+    ...(input.colors || {}),
+  };
+
+  return { name, colors };
+}
 
 function isObjectId(value) {
   return Types.ObjectId.isValid(value);
@@ -25,10 +56,22 @@ function requireAdmin(req, res, next) {
   return next();
 }
 
+async function canModerateGame(userId, gameId) {
+  if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(gameId)) return false;
+  const user = await User.findById(userId).lean();
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'mod' && Array.isArray(user.moderatedGames)) {
+    return user.moderatedGames.some(id => id.toString() === gameId.toString());
+  }
+  return false;
+}
+
 function sanitizeGame(doc) {
   if (!doc) return null;
   const g = doc.toObject({ versionKey: false });
   g.id = g._id.toString();
+  g.theme = normalizeTheme(g.theme);
   return g;
 }
 
@@ -56,7 +99,15 @@ router.get('/games', async (req, res, next) => {
         .lean(),
       Game.countDocuments(filter),
     ]);
-    res.json({ games: games.map(g => ({ ...g, id: g._id?.toString() })), page, total });
+    res.json({
+      games: games.map(g => ({
+        ...g,
+        id: g._id?.toString(),
+        theme: normalizeTheme(g.theme),
+      })),
+      page,
+      total,
+    });
   } catch (err) {
     next(err);
   }
@@ -130,6 +181,7 @@ router.post('/games', verifyToken, requireAdmin, async (req, res, next) => {
   try {
     const payload = req.body || {};
     const { tips = [], faqs = [], ...gameInput } = payload;
+    gameInput.theme = normalizeTheme(gameInput.theme);
     const game = await Game.create(gameInput);
 
     const tipDocs = tips.map(t =>
@@ -158,10 +210,12 @@ router.post('/games', verifyToken, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next) => {
+router.put('/games/:gameParam', verifyToken, async (req, res, next) => {
   try {
     const game = await findGameByParam(req.params.gameParam);
     if (!game) return res.status(404).json({ error: 'Game not found' });
+    const canEdit = req.user.role === 'admin' || (req.user.role === 'mod' && (await canModerateGame(req.user.sub, game._id)));
+    if (!canEdit) return res.status(403).json({ error: 'Admin or assigned moderator required' });
     const updates = req.body || {};
     const allowed = [
       'title',
@@ -171,14 +225,21 @@ router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next
       'versionLabel',
       'description',
       'coverImageUrl',
+      'coverGifUrl',
       'heroImageUrl',
+      'gameplayGifUrl',
       'hoverImageUrl',
+      'hoverGifUrl',
       'screenshots',
       'theme',
     ];
+    if (Object.prototype.hasOwnProperty.call(updates, 'theme')) {
+      updates.theme = normalizeTheme(updates.theme, game.theme);
+    }
+
     allowed.forEach(key => {
       if (Object.prototype.hasOwnProperty.call(updates, key)) {
-        game[key] = updates[key];
+        game[key] = key === 'theme' ? normalizeTheme(updates[key], game.theme) : updates[key];
       }
     });
     await game.save();
@@ -188,10 +249,12 @@ router.put('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next
   }
 });
 
-router.delete('/games/:gameParam', verifyToken, requireAdmin, async (req, res, next) => {
+router.delete('/games/:gameParam', verifyToken, async (req, res, next) => {
   try {
     const game = await findGameByParam(req.params.gameParam);
     if (!game) return res.status(404).json({ error: 'Game not found' });
+    const canEdit = req.user.role === 'admin' || (req.user.role === 'mod' && (await canModerateGame(req.user.sub, game._id)));
+    if (!canEdit) return res.status(403).json({ error: 'Admin or assigned moderator required' });
     await Promise.all([
       Game.deleteOne({ _id: game._id }),
       Tip.deleteMany({ gameId: game._id }),

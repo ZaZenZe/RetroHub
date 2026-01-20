@@ -3,9 +3,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const sharedBase = path.join(__dirname, '../shared');
 
-const { corsOptions } = require('./shared/config/cors.config');
-const { errorHandler } = require('./shared/middleware/error.middleware');
+const { corsOptions } = require(path.join(sharedBase, 'config/cors.config'));
+const { errorHandler } = require(path.join(sharedBase, 'middleware/error.middleware'));
 const aiRoutes = require('./routes/ai.routes');
 
 const PORT = process.env.PORT || 3005;

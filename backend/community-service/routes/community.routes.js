@@ -2,11 +2,12 @@
 
 const express = require('express');
 const { Types } = require('mongoose');
-const { verifyToken } = require('../shared/middleware/auth.middleware');
-const Post = require('../shared/models/Post');
-const Reply = require('../shared/models/Reply');
-const Game = require('../shared/models/Game');
-const UserStats = require('../shared/models/UserStats');
+const { verifyToken } = require('../../shared/middleware/auth.middleware');
+const Post = require('../../shared/models/Post');
+const Reply = require('../../shared/models/Reply');
+const Game = require('../../shared/models/Game');
+const User = require('../../shared/models/User');
+const UserStats = require('../../shared/models/UserStats');
 
 const router = express.Router();
 
@@ -16,6 +17,17 @@ async function upsertStats(userId, inc = {}) {
     { $setOnInsert: { userId }, ...(Object.keys(inc).length ? { $inc: inc } : {}) },
     { upsert: true, setDefaultsOnInsert: true }
   );
+}
+
+async function canModerateGame(userId, gameId) {
+  if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(gameId)) return false;
+  const user = await User.findById(userId).lean();
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'mod' && Array.isArray(user.moderatedGames)) {
+    return user.moderatedGames.some(id => id.toString() === gameId.toString());
+  }
+  return false;
 }
 
 router.get('/games/:gameId/posts', async (req, res, next) => {
@@ -128,6 +140,58 @@ router.post('/posts/:postId/vote', verifyToken, async (req, res, next) => {
     }
     await post.applyVote(req.user.sub, direction);
     res.json({ upvotes: post.upvotes, downvotes: post.downvotes });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete a post (owner, admin, or moderator of the game)
+router.delete('/posts/:postId', verifyToken, async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    if (!Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post id' });
+    }
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    const isOwner = post.userId.toString() === req.user.sub;
+    const canMod = await canModerateGame(req.user.sub, post.gameId);
+    if (!(isOwner || canMod)) {
+      return res.status(403).json({ error: 'Not authorized to delete this post' });
+    }
+    await Promise.all([Post.deleteOne({ _id: postId }), Reply.deleteMany({ postId })]);
+    await upsertStats(req.user.sub, { forumPosts: isOwner ? -1 : 0 });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete a reply (owner, admin, or moderator of the game)
+router.delete('/replies/:replyId', verifyToken, async (req, res, next) => {
+  try {
+    const { replyId } = req.params;
+    if (!Types.ObjectId.isValid(replyId)) {
+      return res.status(400).json({ error: 'Invalid reply id' });
+    }
+    const reply = await Reply.findById(replyId);
+    if (!reply) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
+    const post = await Post.findById(reply.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Parent post not found' });
+    }
+    const isOwner = reply.userId.toString() === req.user.sub;
+    const canMod = await canModerateGame(req.user.sub, post.gameId);
+    if (!(isOwner || canMod)) {
+      return res.status(403).json({ error: 'Not authorized to delete this reply' });
+    }
+    await Reply.deleteOne({ _id: replyId });
+    await upsertStats(req.user.sub, { forumReplies: isOwner ? -1 : 0 });
+    res.json({ deleted: true });
   } catch (err) {
     next(err);
   }

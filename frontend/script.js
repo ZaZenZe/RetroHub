@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const navBackdrop = document.querySelector('.nav-backdrop');
   const menuToggle = document.querySelector('.menu-toggle');
   const navLinks = Array.from(document.querySelectorAll('.nav-link[data-link]'));
+  const adminLink = document.getElementById('admin-link');
   const grid = $('#game-grid');
   const backBtn = $('#back-btn');
   const gameTitle = $('#game-title');
   const gameArt = $('#game-art');
   const gamePlatform = $('#game-platform');
   const gameYear = $('#game-year');
-  const gameVersion = $('#game-version');
   const gameDescription = $('#game-description');
   const tipsList = $('#tips-list');
   const faqList = $('#faq-list');
@@ -23,12 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const forumEl = $('#forum');
   const postsEl = $('#posts');
   const postForm = $('#post-form');
-  const postName = $('#post-name');
   const postText = $('#post-text');
-  // Tabs
-  const tabsHost = document.getElementById('game-tabs');
-  const tabButtons = tabsHost ? Array.from(tabsHost.querySelectorAll('[data-tab]')) : [];
-  const tabPanels = tabsHost ? Array.from(tabsHost.querySelectorAll('[data-panel]')) : [];
   // Screenshots panel
   const shotsStrip = document.getElementById('shots-strip');
   const shotModal = document.getElementById('shot-modal');
@@ -252,7 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateAuthUI() {
     if (!authBtn) return;
-    authBtn.textContent = authUser ? 'Sign out' : 'Sign in';
+    authBtn.textContent = authUser ? 'Signout' : 'Sign in';
+    if (adminLink) {
+      const role = authUser?.role || 'user';
+      if (role === 'admin') {
+        adminLink.textContent = 'Admin';
+        adminLink.style.display = '';
+      } else if (role === 'mod') {
+        adminLink.textContent = 'Moderator';
+        adminLink.style.display = '';
+      } else {
+        adminLink.style.display = 'none';
+      }
+    }
     if (authChip) {
       if (authUser) {
         authChip.textContent = `Hey, ${authUser.name || authUser.email}`;
@@ -390,8 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
       year: g.releaseYear || g.year,
       version: g.versionLabel || g.region || 'Retro',
       art: g.coverImageUrl,
-      banner: g.heroImageUrl || g.coverImageUrl,
-      hover: g.hoverImageUrl || g.coverImageUrl,
+      banner: g.gameplayGifUrl || g.heroImageUrl || g.coverImageUrl,
+      hover: g.coverGifUrl || g.hoverGifUrl || g.hoverImageUrl || g.coverImageUrl,
       description: g.description,
       screenshots: Array.isArray(g.screenshots) ? g.screenshots : [],
       theme: g.theme,
@@ -554,36 +561,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Map gameId -> correct GIF path based on actual assets folder structure
   const gameGifMap = {
-    'fire-red': 'assets/game/fire-red.gif',
-    emerald: 'assets/game/pokemon-emerald.gif',
-    'heart-gold': 'assets/game/heart-gold.gif',
-    platinum: 'assets/game/platinum.gif',
-    'black-2': 'assets/game/black2.gif',
-    y: 'assets/game/y.gif',
+    'pokemon-fire-red': 'assets/game/fire-red.gif',
+    'pokemon-emerald': 'assets/game/pokemon-emerald.gif',
+    'pokemon-heart-gold': 'assets/game/heart-gold.gif',
+    'pokemon-platinum': 'assets/game/platinum.gif',
+    'pokemon-black-2': 'assets/game/black2.gif',
+    'pokemon-y': 'assets/game/y.gif',
   };
-
-  function activateTab(id) {
-    tabButtons.forEach(btn => {
-      const active = btn.dataset.tab === id;
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-selected', active ? 'true' : 'false');
-      btn.tabIndex = active ? 0 : -1;
-    });
-    tabPanels.forEach(panel => {
-      const active = panel.dataset.panel === id;
-      panel.classList.toggle('active', active);
-      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
-    });
-  }
 
   // New: gameplay GIFs for the hero area (inside pages)
   const gameplayGifMap = {
-    'fire-red': 'assets/gameplay/pokemon-fire-red.gif',
-    emerald: 'assets/gameplay/emerald.gif',
-    'heart-gold': 'assets/gameplay/heartgold.gif',
-    platinum: 'assets/gameplay/platinum.gif',
-    'black-2': 'assets/gameplay/black2.gif',
-    y: 'assets/gameplay/y.gif',
+    'pokemon-fire-red': 'assets/gameplay/pokemon-fire-red.gif',
+    'pokemon-emerald': 'assets/gameplay/emerald.gif',
+    'pokemon-heart-gold': 'assets/gameplay/heartgold.gif',
+    'pokemon-platinum': 'assets/gameplay/platinum.gif',
+    'pokemon-black-2': 'assets/gameplay/black2.gif',
+    'pokemon-y': 'assets/gameplay/y.gif',
   };
 
   function setHomeLoading(isLoading) {
@@ -597,7 +590,76 @@ document.addEventListener('DOMContentLoaded', () => {
       .split(' ')
       .filter(c => !c.startsWith('theme-'))
       .join(' ');
+    // Remove any dynamic CSS variables
+    const dynamicStyle = document.getElementById('dynamic-theme-style');
+    if (dynamicStyle) dynamicStyle.remove();
   };
+
+  function applyDynamicTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    
+    // If theme is just a string (old format), use static theme classes
+    if (typeof theme === 'string') {
+      clearThemes();
+      document.body.classList.add(`theme-${theme}`);
+      return;
+    }
+    
+    // Reset any previous theme classes/styles before applying new dynamic tokens
+    clearThemes();
+
+    // Apply dynamic colors from theme.colors
+    const colors = theme.colors || {};
+    const themeName = theme.name || 'retro';
+
+    const primary = colors.primary || '#ff7b00';
+    const primaryAlt = colors.primaryAlt || colors.primary || '#ff9f1a';
+    const accent = colors.accent || primaryAlt;
+    const background = colors.background || '#0d0e12';
+    const bgElev1 = colors.bgElev1 || background;
+    const bgElev2 = colors.bgElev2 || background;
+    const card = colors.card || background;
+    const text = colors.text || '#e6e6e9';
+    const muted = colors.muted || '#b3bac4';
+    const border = colors.border || '#232734';
+    const ring = colors.ring || 'rgba(255,155,40,0.45)';
+    const shadow = colors.shadow || '0 8px 28px rgba(0,0,0,0.45)';
+    const headerFrom = colors.headerFrom || background;
+    const headerTo = colors.headerTo || background;
+    
+    // Create or update dynamic style element
+    let dynamicStyle = document.getElementById('dynamic-theme-style');
+    if (!dynamicStyle) {
+      dynamicStyle = document.createElement('style');
+      dynamicStyle.id = 'dynamic-theme-style';
+      document.head.appendChild(dynamicStyle);
+    }
+    
+    // Generate CSS with theme colors
+    const css = `
+      :root {
+        --primary: ${primary};
+        --primary-2: ${primaryAlt};
+        --accent: ${accent};
+        --bg: ${background};
+        --bg-elev-1: ${bgElev1};
+        --bg-elev-2: ${bgElev2};
+        --card: ${card};
+        --text: ${text};
+        --muted: ${muted};
+        --border: ${border};
+        --ring: ${ring};
+        --shadow: ${shadow};
+        --header-from: ${headerFrom};
+        --header-to: ${headerTo};
+      }
+    `;
+    
+    dynamicStyle.textContent = css;
+    
+    // Add theme class for additional styling hooks
+    document.body.classList.add(`theme-${themeName}`);
+  }
   function openNav() {
     document.body.classList.add('nav-open');
   }
@@ -718,27 +780,33 @@ document.addEventListener('DOMContentLoaded', () => {
   async function renderGame(game) {
     currentGameId = game.slug || game.id;
     currentGameDbId = game.dbId || game.id;
-    // Apply per-game theme (fallback to platform-based coloring)
-    const themeMapId = {
-      'fire-red': 'theme-fire-red',
-      emerald: 'theme-emerald',
-      'heart-gold': 'theme-heart-gold',
-      platinum: 'theme-platinum',
-      'black-2': 'theme-black-2',
-      y: 'theme-y',
-    };
-    const themeMapPlatform = {
-      gba: 'theme-fire-red',
-      ds: 'theme-platinum',
-      '3ds': 'theme-y',
-      snes: 'theme-emerald',
-      playstation: 'theme-heart-gold',
-    };
-    const platformKey = (game.platform || '').toLowerCase();
-    const themeClass =
-      themeMapId[game.id] || themeMapId[game.slug] || themeMapPlatform[platformKey];
-    clearThemes();
-    document.body.classList.add(themeClass || 'theme-home');
+    
+    // Apply dynamic theme from game data
+    if (game.theme) {
+      applyDynamicTheme(game.theme);
+    } else {
+      // Fallback to platform-based theming (old behavior)
+      const themeMapId = {
+        'fire-red': 'theme-fire-red',
+        emerald: 'theme-emerald',
+        'heart-gold': 'theme-heart-gold',
+        platinum: 'theme-platinum',
+        'black-2': 'theme-black-2',
+        y: 'theme-y',
+      };
+      const themeMapPlatform = {
+        gba: 'theme-fire-red',
+        ds: 'theme-platinum',
+        '3ds': 'theme-y',
+        snes: 'theme-emerald',
+        playstation: 'theme-heart-gold',
+      };
+      const platformKey = (game.platform || '').toLowerCase();
+      const themeClass =
+        themeMapId[game.id] || themeMapId[game.slug] || themeMapPlatform[platformKey];
+      clearThemes();
+      document.body.classList.add(themeClass || 'theme-home');
+    }
 
     gameTitle.textContent = game.title;
     // Prefer gameplay GIF if available, then banner, then art
@@ -758,7 +826,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     gamePlatform.textContent = textOrFallback(game.platform, 'Platform TBA');
     gameYear.textContent = textOrFallback(game.year, 'Year TBA');
-    gameVersion.textContent = textOrFallback(game.version || game.region, 'Version TBA');
     gameDescription.textContent = textOrFallback(game.description);
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
@@ -830,7 +897,6 @@ document.addEventListener('DOMContentLoaded', () => {
         faqList.appendChild(d);
       });
     }
-    activateTab('tips');
 
     // Forum posts
     await renderPosts();
@@ -1014,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const text = postText.value.trim();
     if (!text || !currentGameDbId) return;
     if (!authToken) {
-      promptSignInWithRetroBot();
+      promptSignInWithOak();
       return;
     }
     try {
@@ -1024,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await renderPosts();
     } catch (err) {
       if (err.status === 401) {
-        promptSignInWithRetroBot();
+        promptSignInWithOak();
         return;
       }
       alert(err.message || 'Could not publish post.');
@@ -1221,11 +1287,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   scrollForum.addEventListener('click', () => {
-    activateTab('community');
     forumEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     postText?.focus({ preventScroll: true });
   });
-  tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
 
   // Chatbot logic (Google Gemini API)
   const inputInitHeight = chatInput.scrollHeight;

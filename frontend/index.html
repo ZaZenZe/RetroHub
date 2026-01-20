@@ -38,10 +38,11 @@
     </div>
     <nav class="main-nav" aria-label="Primary">
       <a href="#/" class="nav-link" data-link>Home</a>
-      <a href="#/about" class="nav-link" data-link>About</a>
       <a href="#/profile" class="nav-link" data-link>Profile</a>
+      <a href="admin.html" id="admin-link" class="nav-link" style="display:none;">Admin</a>
       <a href="#/settings" class="nav-link" data-link>Settings</a>
-      <button id="auth-btn" class="nav-link" type="button">Sign in</button>
+      <a href="#/about" class="nav-link" data-link>About</a>
+      <button id="auth-btn" class="nav-link" type="button">Signout</button>
       <span id="auth-chip" class="chip" style="display:none;">Signed in</span>
     </nav>
     <button class="menu-toggle" aria-label="Toggle navigation">
@@ -123,122 +124,114 @@
           <div class="chips">
             <span class="chip" id="game-platform"></span>
             <span class="chip" id="game-year"></span>
-            <span class="chip" id="game-version"></span>
           </div>
           <p id="game-description" class="description"></p>
           <div class="quick-actions">
-            <a class="cta" id="open-chat">Chat about this game</a>
-            <a class="cta secondary" id="scroll-forum">Go to forum</a>
+            <a class="cta" id="open-chat">Ask help from AI</a>
+            <a class="cta secondary" id="scroll-forum">Blab about it in community</a>
           </div>
         </div>
       </div>
 
+      <div class="detail-middle" aria-label="Game details">
+        <section class="panel" aria-labelledby="tips-title">
+          <div class="section-head">
+            <h3 id="tips-title">Quick Tips</h3>
+          </div>
+          <ul id="tips-list" class="tips-list"></ul>
+        </section>
+        <section class="panel" aria-labelledby="faq-title">
+          <div class="section-head">
+            <h3 id="faq-title">Popular Questions</h3>
+          </div>
+          <div class="faq" id="faq-list"></div>
+        </section>
+      </div>
+
       <div class="panel shots-panel" aria-labelledby="shots-title">
-        <h3 id="shots-title">Additional Screenshots</h3>
+        <h3 id="shots-title">Screenshots</h3>
         <div class="shots-strip" id="shots-strip" role="list"></div>
         <p class="map-hint">Swipe or scroll horizontally. Tap a screenshot to expand.</p>
       </div>
-      <div class="tabbed" id="game-tabs">
-        <div class="tab-list" role="tablist" aria-label="Game panels">
-          <button class="tab active" role="tab" aria-selected="true" aria-controls="tab-tips" data-tab="tips">Tips</button>
-          <button class="tab" role="tab" aria-selected="false" aria-controls="tab-faq" data-tab="faq">FAQs</button>
-          <button class="tab" role="tab" aria-selected="false" aria-controls="tab-community" data-tab="community">Community</button>
-        </div>
-        <div class="tab-panels">
-          <div id="tab-tips" class="tab-panel active" role="tabpanel" aria-labelledby="tips-title" data-panel="tips">
-            <div class="panel" aria-labelledby="tips-title">
-              <h3 id="tips-title">Quick Tips</h3>
-              <ul id="tips-list" class="tips-list"></ul>
-            </div>
-          </div>
-          <div id="tab-faq" class="tab-panel" role="tabpanel" aria-labelledby="faq-title" data-panel="faq">
-            <div class="panel" aria-labelledby="faq-title">
-              <h3 id="faq-title">Popular Questions</h3>
-              <div class="faq" id="faq-list"></div>
-            </div>
-          </div>
-          <div id="tab-community" class="tab-panel" role="tabpanel" aria-labelledby="forum-title" data-panel="community">
-            <div class="panel forum" id="forum" aria-labelledby="forum-title">
-              <h3 id="forum-title">Community Thread</h3>
-              <form id="post-form" class="post-form" autocomplete="off">
-                <input type="text" id="post-name" placeholder="Your name (optional)" aria-label="Your name">
-                <textarea id="post-text" placeholder="Share a tip, ask a question…" aria-label="Your message" required></textarea>
-                <button type="submit" class="cta">Post</button>
-              </form>
-              <ul id="posts" class="posts" role="list"></ul>
-            </div>
-          </div>
-        </div>
-      </div>
+
+      <section class="panel forum" id="forum" aria-labelledby="forum-title">
+        <h3 id="forum-title">Blabbers</h3>
+        <form id="post-form" class="post-form" autocomplete="off">
+          <textarea id="post-text" placeholder="Share a tip, ask a question…" aria-label="Your message" required></textarea>
+          <button type="submit" class="cta">Blab</button>
+        </form>
+        <ul id="posts" class="posts" role="list"></ul>
+      </section>
     </section>
+
     <!-- Profile View -->
     <section id="profile-view" class="view" aria-labelledby="profile-title">
-    <div class="panel profile-hero">
-      <div class="profile-card">
-        <img id="profile-avatar" class="profile-avatar" src="assets/pixel/6Vww.gif" alt="Trainer avatar" />
-        <div>
-          <h2 id="profile-title">Trainer Profile</h2>
-          <p id="profile-tagline" class="map-hint">Retro collector and walkthrough writer.</p>
-          <div class="chips" id="profile-tags"></div>
+      <div class="panel profile-hero">
+        <div class="profile-card">
+          <img id="profile-avatar" class="profile-avatar" src="assets/pixel/6Vww.gif" alt="Trainer avatar" />
+          <div>
+            <h2 id="profile-title">Trainer Profile</h2>
+            <p id="profile-tagline" class="map-hint">Retro collector and walkthrough writer.</p>
+            <div class="chips" id="profile-tags"></div>
+          </div>
         </div>
+        <div class="profile-stats" id="profile-stats"></div>
       </div>
-      <div class="profile-stats" id="profile-stats"></div>
-    </div>
-    <div class="panel" aria-labelledby="collection-title">
-      <div class="section-head">
-        <div>
-          <h3 id="collection-title">Collection</h3>
-          <p class="map-hint">Filter by platform or completion.</p>
+      <div class="panel" aria-labelledby="collection-title">
+        <div class="section-head">
+          <div>
+            <h3 id="collection-title">Collection</h3>
+            <p class="map-hint">Filter by platform or completion.</p>
+          </div>
+          <div class="filter-group compact">
+            <label for="collection-filter">Platform</label>
+            <select id="collection-filter">
+              <option value="">All</option>
+              <option value="GBA">GBA</option>
+              <option value="DS">DS</option>
+              <option value="3DS">3DS</option>
+            </select>
+          </div>
         </div>
-        <div class="filter-group compact">
-          <label for="collection-filter">Platform</label>
-          <select id="collection-filter">
-            <option value="">All</option>
-            <option value="GBA">GBA</option>
-            <option value="DS">DS</option>
-            <option value="3DS">3DS</option>
-          </select>
-        </div>
+        <div id="collection-grid" class="collection-grid"></div>
       </div>
-      <div id="collection-grid" class="collection-grid"></div>
-    </div>
-    <div class="panel" aria-labelledby="achievements-title">
-      <h3 id="achievements-title">Achievements</h3>
-      <div id="achievements-grid" class="achievements-grid"></div>
-    </div>
+      <div class="panel" aria-labelledby="achievements-title">
+        <h3 id="achievements-title">Achievements</h3>
+        <div id="achievements-grid" class="achievements-grid"></div>
+      </div>
     </section>
 
     <!-- Settings View -->
     <section id="settings-view" class="view" aria-labelledby="settings-title">
-    <div class="panel" aria-labelledby="settings-title">
-      <h2 id="settings-title">Settings</h2>
-      <div class="settings-grid">
-        <div class="settings-card">
-          <h3>Account</h3>
-          <label>Display name<input id="settings-name" type="text" placeholder="Trainer" /></label>
-          <label>Email<input id="settings-email" type="email" placeholder="trainer@example.com" /></label>
-          <button class="cta secondary" type="button" id="save-account">Save account</button>
+      <div class="panel" aria-labelledby="settings-title">
+        <h2 id="settings-title">Settings</h2>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>Account</h3>
+            <label>Display name<input id="settings-name" type="text" placeholder="Trainer" /></label>
+            <label>Email<input id="settings-email" type="email" placeholder="trainer@example.com" /></label>
+            <button class="cta secondary" type="button" id="save-account">Save account</button>
+          </div>
+          <div class="settings-card">
+            <h3>Password</h3>
+            <label>Current password<input id="settings-pass-old" type="password" placeholder="••••••" /></label>
+            <label>New password<input id="settings-pass-new" type="password" placeholder="••••••" /></label>
+            <button class="cta secondary" type="button" id="save-password">Update password</button>
+          </div>
+          <div class="settings-card">
+            <h3>Preferences</h3>
+            <label class="switch"><input id="pref-chat" type="checkbox" checked /><span>Keep chatbot open per game</span></label>
+            <label class="switch"><input id="pref-badge" type="checkbox" checked /><span>Show achievement pings</span></label>
+            <label class="switch"><input id="pref-analytics" type="checkbox" /><span>Opt into anonymized analytics</span></label>
+            <button class="cta secondary" type="button" id="save-preferences">Save preferences</button>
+          </div>
+          <div class="settings-card danger">
+            <h3>Danger Zone</h3>
+            <p class="map-hint">Clear local data or sign out everywhere.</p>
+            <button class="cta" type="button" id="clear-storage">Clear local data</button>
+            <button class="cta secondary" type="button" id="revoke-sessions">Revoke all sessions</button>
+          </div>
         </div>
-        <div class="settings-card">
-          <h3>Password</h3>
-          <label>Current password<input id="settings-pass-old" type="password" placeholder="••••••" /></label>
-          <label>New password<input id="settings-pass-new" type="password" placeholder="••••••" /></label>
-          <button class="cta secondary" type="button" id="save-password">Update password</button>
-        </div>
-        <div class="settings-card">
-          <h3>Preferences</h3>
-          <label class="switch"><input id="pref-chat" type="checkbox" checked /><span>Keep chatbot open per game</span></label>
-          <label class="switch"><input id="pref-badge" type="checkbox" checked /><span>Show achievement pings</span></label>
-          <label class="switch"><input id="pref-analytics" type="checkbox" /><span>Opt into anonymized analytics</span></label>
-          <button class="cta secondary" type="button" id="save-preferences">Save preferences</button>
-        </div>
-        <div class="settings-card danger">
-          <h3>Danger Zone</h3>
-          <p class="map-hint">Clear local data or sign out everywhere.</p>
-          <button class="cta" type="button" id="clear-storage">Clear local data</button>
-          <button class="cta secondary" type="button" id="revoke-sessions">Revoke all sessions</button>
-        </div>
-      </div>
       </div>
     </section>
   </main>

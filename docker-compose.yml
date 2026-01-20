@@ -68,6 +68,7 @@ services:
           node -e \"const net=require('net'); const s=net.connect(27017,'mongodb'); s.on('connect',()=>{console.log('mongo up'); s.end(); process.exit(0);}); s.on('error',()=>process.exit(1));\" && break || { echo 'waiting for mongo...'; sleep 2; }; done;
         npm ci --omit=dev;
         node scripts/seed-database.js;
+        node scripts/seed-users-posts.js;
         echo 'seed complete';
       "
     restart: "no"

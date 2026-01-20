@@ -65,17 +65,31 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.game,
-    pathRewrite: path => `/games${path}`, // /123 -> /games/123
+    pathRewrite: (path) => {
+      // Keep /admin routes intact, map everything else to /games/*
+      if (path.startsWith('/admin')) return path;
+      return `/games${path}`;
+    },
   })
 );
 
-// Community service: routes prefixed with /community, so /api/community/posts -> /community/posts
+// Uploaded assets served by game-service
+app.use(
+  '/uploads',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.game,
+    pathRewrite: path => `/uploads${path}`,
+  })
+);
+
+// Community service: routes at root, so /api/community/games/123/posts -> /games/123/posts
 app.use(
   '/api/community',
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.community,
-    pathRewrite: path => `/community${path}`, // /... -> /community/...
+    pathRewrite: { '^/api/community': '' }, // strip /api/community prefix
   })
 );
 
