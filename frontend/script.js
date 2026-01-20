@@ -605,9 +605,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
+    // Reset any previous theme classes/styles before applying new dynamic tokens
+    clearThemes();
+
     // Apply dynamic colors from theme.colors
     const colors = theme.colors || {};
     const themeName = theme.name || 'retro';
+
+    const primary = colors.primary || '#ff7b00';
+    const primaryAlt = colors.primaryAlt || colors.primary || '#ff9f1a';
+    const accent = colors.accent || primaryAlt;
+    const background = colors.background || '#0d0e12';
+    const bgElev1 = colors.bgElev1 || background;
+    const bgElev2 = colors.bgElev2 || background;
+    const card = colors.card || background;
+    const text = colors.text || '#e6e6e9';
+    const muted = colors.muted || '#b3bac4';
+    const border = colors.border || '#232734';
+    const ring = colors.ring || 'rgba(255,155,40,0.45)';
+    const shadow = colors.shadow || '0 8px 28px rgba(0,0,0,0.45)';
+    const headerFrom = colors.headerFrom || background;
+    const headerTo = colors.headerTo || background;
     
     // Create or update dynamic style element
     let dynamicStyle = document.getElementById('dynamic-theme-style');
@@ -620,20 +638,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Generate CSS with theme colors
     const css = `
       :root {
-        ${colors.primary ? `--primary: ${colors.primary};` : ''}
-        ${colors.primaryAlt ? `--primary-2: ${colors.primaryAlt};` : ''}
-        ${colors.accent ? `--accent: ${colors.accent};` : ''}
-        ${colors.background ? `--bg: ${colors.background};` : ''}
-        ${colors.card ? `--card: ${colors.card};` : ''}
-        ${colors.text ? `--text: ${colors.text};` : ''}
-        ${colors.border ? `--border: ${colors.border};` : ''}
+        --primary: ${primary};
+        --primary-2: ${primaryAlt};
+        --accent: ${accent};
+        --bg: ${background};
+        --bg-elev-1: ${bgElev1};
+        --bg-elev-2: ${bgElev2};
+        --card: ${card};
+        --text: ${text};
+        --muted: ${muted};
+        --border: ${border};
+        --ring: ${ring};
+        --shadow: ${shadow};
+        --header-from: ${headerFrom};
+        --header-to: ${headerTo};
       }
     `;
     
     dynamicStyle.textContent = css;
     
     // Add theme class for additional styling hooks
-    clearThemes();
     document.body.classList.add(`theme-${themeName}`);
   }
   function openNav() {
