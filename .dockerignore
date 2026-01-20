@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+**/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+frontend/dist
+frontend/build
+**/dist
+**/build
+
+# Development files
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+**/*.test.js
+**/*.spec.js
+coverage
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.log
+
+# Old backup files
+frontend/index-old.html
+frontend/admin-old.html
+frontend/script-old.js
+frontend/admin-old.js
+frontend/package-react.json

@@ -11,6 +11,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "concurrently \"npm:start:*\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:full": "npm run docker:up && concurrently \"npm run start:services\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
     "lint": "eslint backend/**/*.js",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "prepare": "husky",
@@ -66,7 +69,7 @@
   ],
   "license": "MIT",
   "lint-staged": {
-    "*.js": "eslint",
-    "*.{js,json,md}": "prettier --write"
+    "*.js": "npx eslint",
+    "*.{js,json,md}": "npx prettier --write"
   }
 }
