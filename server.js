@@ -99,7 +99,9 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.ai,
-    pathRewrite: path => `/chat${path}`, // /... -> /chat/...
+    // Preserve the /api/chat prefix so the AI service sees the expected route
+    // Example: incoming /api/chat/init -> forwarded /api/chat/init
+    pathRewrite: path => `/api/chat${path}`,
   })
 );
 
