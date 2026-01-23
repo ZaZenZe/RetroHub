@@ -115,7 +115,7 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.ai,
-    pathRewrite: path => `/chat${path}`, // /... -> /chat/...
+    pathRewrite: path => `/api/chat${path}`,
   })
 );
 

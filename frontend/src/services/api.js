@@ -207,10 +207,24 @@ class ApiService {
   }
 
   // AI Chat
-  async chat(message, gameContext = null, gameId = null) {
-    return this.request('/chat', {
+  async chatInit(gameInfo = {}) {
+    return this.request('/chat/init', {
       method: 'POST',
-      body: JSON.stringify({ message, gameContext, gameId }),
+      body: JSON.stringify(gameInfo),
+    });
+  }
+
+  async chatSelectCharacter(payload = {}) {
+    return this.request('/chat/select-character', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async chatMessage(payload = {}) {
+    return this.request('/chat/message', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     });
   }
 

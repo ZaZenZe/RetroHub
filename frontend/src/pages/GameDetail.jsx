@@ -4,7 +4,7 @@ import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
-const GameDetail = ({ onChatOpen }) => {
+const GameDetail = ({ onChatOpen, onGameChange }) => {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { getGameById, fetchGameFull, loadPosts, createPost } = useGames();
@@ -50,7 +50,13 @@ const GameDetail = ({ onChatOpen }) => {
     };
 
     loadGame();
-  }, [gameId]);
+  }, [gameId, getGameById, fetchGameFull, applyTheme]);
+
+  useEffect(() => {
+    if (onGameChange) {
+      onGameChange(game || null);
+    }
+  }, [game, onGameChange]);
 
   const loadGamePosts = async (gameDbId) => {
     setPostsLoading(true);

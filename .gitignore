@@ -20,6 +20,7 @@ pnpm-debug.log*
 # Env/Secrets (do not commit API keys)
 .env
 .env.*
+!.env.example
 .env.local
 .env.*.local
 secrets.*

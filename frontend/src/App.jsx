@@ -37,7 +37,7 @@ function App() {
                   <Route path="/" element={<Home />} />
                   <Route 
                     path="/game/:gameId" 
-                    element={<GameDetail onChatOpen={handleChatOpen} />} 
+                    element={<GameDetail onChatOpen={handleChatOpen} onGameChange={setCurrentGame} />} 
                   />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/settings" element={<Settings />} />
@@ -48,7 +48,11 @@ function App() {
               </main>
 
               <Footer />
-              <Chatbot currentGame={currentGame} />
+              <Chatbot
+                currentGame={currentGame}
+                isOpen={isChatbotOpen}
+                onOpenChange={setIsChatbotOpen}
+              />
               <AuthModal 
                 isOpen={isAuthModalOpen} 
                 onClose={() => setIsAuthModalOpen(false)} 

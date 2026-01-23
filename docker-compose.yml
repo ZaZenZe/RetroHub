@@ -1,5 +1,3 @@
-version: '3.9'
-
 networks:
   retrohub-network:
     driver: bridge
@@ -183,9 +181,12 @@ services:
       - retrohub-network
     ports:
       - '3005:3005'
+    env_file:
+      - ./backend/ai-service/.env
     environment:
       PORT: 3005
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
       NODE_ENV: production
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3005/health"]
