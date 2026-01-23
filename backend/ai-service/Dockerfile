@@ -7,7 +7,7 @@ ENV NODE_PATH=/app/node_modules
 COPY ai-service/package.json ai-service/package-lock.json* ./
 
 # Install service dependencies + shared required dependencies
-RUN npm ci --omit=dev || npm install --omit=dev mongoose jsonwebtoken
+RUN npm ci --omit=dev || npm install --omit=dev mongoose jsonwebtoken @google/genai
 
 # Copy shared modules so imports work (e.g., '../../shared/...')
 COPY shared /shared

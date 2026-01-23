@@ -12,8 +12,6 @@ const {
   generateChatReply,
 } = require('../utils/gemini');
 
-const router = express.Router();
-
 const HISTORY_LIMIT = 12;
 const sessions = new Map();
 const FALLBACK_NOTICE = 'Using RetroHub assistant instead.';
@@ -81,13 +79,14 @@ function ensureGemini(res) {
   return true;
 }
 
+const router = express.Router();
+
 router.post('/api/chat/init', verifyToken, async (req, res, next) => {
   try {
     if (!ensureGemini(res)) return;
 
     const gameInfo = normalizeGameInfo(req.body || {});
     clearSessionForGame(req.user?.sub, gameInfo);
-
     const isHome = !gameInfo.gameName;
 
     if (isHome) {
@@ -120,7 +119,6 @@ router.post('/api/chat/init', verifyToken, async (req, res, next) => {
     }
 
     const genericMessage = `Welcome! 🌟 I'm initialized for ${gameInfo.gameName}. Shall we summon a guide from the game world, or would you prefer a chat with our resident experts?`;
-
     return res.json({
       success: true,
       needsCharacterSelection: true,
@@ -142,7 +140,6 @@ router.post('/api/chat/select-character', verifyToken, async (req, res, next) =>
     if (choice !== 'in-game' && choice !== 'assistant') {
       return res.status(400).json({ error: 'choice must be "in-game" or "assistant"' });
     }
-
     if (choice === 'in-game' && !gameInfo.gameName) {
       return res.status(400).json({ error: 'gameName is required for in-game choice' });
     }
@@ -152,7 +149,6 @@ router.post('/api/chat/select-character', verifyToken, async (req, res, next) =>
     let character = null;
     let usedFallback = false;
     let inGameAvailable = true;
-
     const assistantName = normalizeString(req.body?.assistantName);
 
     if (choice === 'in-game') {
@@ -243,7 +239,6 @@ router.post('/api/chat/message', verifyToken, async (req, res, next) => {
     if (!message) {
       return res.status(400).json({ error: 'message is required' });
     }
-
     if (!incomingCharacter.name) {
       return res.status(400).json({ error: 'character.name is required' });
     }
@@ -251,7 +246,6 @@ router.post('/api/chat/message', verifyToken, async (req, res, next) => {
     const key = sessionKey(req.user?.sub, gameInfo, incomingCharacter.name);
     const session = sessions.get(key) || { character: incomingCharacter, gameInfo, messages: [] };
     const history = trimHistory(session.messages);
-
     const personaPrompt = incomingCharacter.isInGame
       ? buildCharacterPersona({
           characterName: incomingCharacter.name,
@@ -298,7 +292,6 @@ router.post('/api/chat/message', verifyToken, async (req, res, next) => {
         gameInfo,
         messages: [{ role: 'assistant', text: fallbackResponse }],
       });
-
       return res.json({
         success: true,
         response: fallbackResponse,

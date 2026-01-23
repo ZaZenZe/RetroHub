@@ -3,10 +3,16 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
-const FRONTEND_DIR = path.join(__dirname, 'frontend');
+
+// Check if dist folder exists (production build), otherwise use frontend folder (development)
+const DIST_DIR = path.join(__dirname, 'frontend', 'dist');
+const FRONTEND_DIR = fs.existsSync(DIST_DIR) ? DIST_DIR : path.join(__dirname, 'frontend');
+
+console.log('[gateway] serving static files from:', FRONTEND_DIR);
 
 function resolveTarget(envKey, fallback) {
   const value = process.env[envKey];
@@ -73,6 +79,16 @@ app.use(
   })
 );
 
+// Admin game routes: /api/admin/* -> /admin/* on game-service
+app.use(
+  '/api/admin',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.game,
+    pathRewrite: (path) => `/admin${path}`,
+  })
+);
+
 // Uploaded assets served by game-service
 app.use(
   '/uploads',
@@ -99,8 +115,6 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.ai,
-    // Preserve the /api/chat prefix so the AI service sees the expected route
-    // Example: incoming /api/chat/init -> forwarded /api/chat/init
     pathRewrite: path => `/api/chat${path}`,
   })
 );
@@ -111,9 +125,16 @@ app.get('/api/health', (req, res) => {
 
 // Static files and SPA shell AFTER API routes
 app.use(express.static(FRONTEND_DIR));
+app.use('/assets', express.static(path.join(__dirname, 'frontend', 'assets')));
 
-// Serve SPA shell for any non-API route
+// Serve SPA shell for any non-API, non-static file route
 app.get(/^(?!\/api).*/, (req, res) => {
+  // Check if requesting an actual file that exists
+  const requestedFile = path.join(FRONTEND_DIR, req.path);
+  if (req.path.includes('.') && fs.existsSync(requestedFile)) {
+    return res.sendFile(requestedFile);
+  }
+  // Otherwise serve the main SPA
   res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 

@@ -1,40 +1,33 @@
 ﻿'use strict';
 
-// Gemini SDK client (@google/genai)
 const { GoogleGenAI } = require('@google/genai');
 
-// Allow multiple models (comma-separated) so we can fall back when one quota is exhausted
 const DEFAULT_MODELS = [
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash-lite-preview-09-2025',
   'gemini-2.0-flash-lite-preview-02-05',
-  'gemini-flash-lite-latest'
+  'gemini-flash-lite-latest',
 ];
 const configuredModels = (process.env.GEMINI_MODEL || '')
   .split(',')
   .map(m => m.trim())
   .filter(Boolean);
-const GEMINI_MODELS = Array.from(new Set([...(configuredModels.length ? configuredModels : DEFAULT_MODELS), ...DEFAULT_MODELS]));
+const GEMINI_MODELS = Array.from(
+  new Set([...(configuredModels.length ? configuredModels : DEFAULT_MODELS), ...DEFAULT_MODELS])
+);
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 function hasGeminiKey() {
   return Boolean(GEMINI_API_KEY);
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function callGemini({ systemPrompt, userParts, temperature = 0.7, maxOutputTokens = 256 }) {
   if (!ai) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
-
   const modelsToTry = GEMINI_MODELS.length ? GEMINI_MODELS : ['gemini-2.0-flash-lite-preview-02-05'];
   const maxAttempts = 3;
-
   for (const model of modelsToTry) {
     const request = {
       model,
@@ -51,9 +44,8 @@ async function callGemini({ systemPrompt, userParts, temperature = 0.7, maxOutpu
       systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
     };
 
-    // Retry on rate limit / transient errors with backoff to stay within free-tier RPM
     let delayMs = 2000;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         const response = await ai.models.generateContent(request);
         const text =
@@ -66,19 +58,15 @@ async function callGemini({ systemPrompt, userParts, temperature = 0.7, maxOutpu
       } catch (error) {
         const status = error?.status;
         const isRetryable = status === 429 || status === 503;
-
         if (isRetryable && attempt < maxAttempts) {
-          await sleep(delayMs);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
           delayMs *= 2;
           continue;
         }
-
         console.error(`Gemini API Error (model ${model}):`, error);
-        // Try the next model if available
         if (modelsToTry.length > 1) {
           break;
         }
-
         const err = new Error(error?.message || 'Gemini request failed');
         err.status = status;
         throw err;
@@ -131,12 +119,13 @@ async function fetchPopularCharacters(gameName) {
     temperature: 0.35,
     maxOutputTokens: 320,
   });
-
   return sanitizeCharacters(extractJsonArray(text));
 }
 
 function buildCharacterPersona({ characterName, gender, gameName, platform, releaseYear }) {
-  const gameLabel = gameName ? `${gameName}${platform ? ` on ${platform}` : ''}${releaseYear ? ` (${releaseYear})` : ''}` : 'this game';
+  const gameLabel = gameName
+    ? `${gameName}${platform ? ` on ${platform}` : ''}${releaseYear ? ` (${releaseYear})` : ''}`
+    : 'this game';
   return [
     `You are ${characterName} from ${gameLabel}.`,
     'You must STAY COMPLETELY IN CHARACTER at all times.',
@@ -146,48 +135,47 @@ function buildCharacterPersona({ characterName, gender, gameName, platform, rele
     `- If asked about topics unrelated to ${gameName} or gaming, politely redirect back to the game`,
     '- Never break character or mention you are an AI',
     '- Keep responses concise: 2-3 paragraphs maximum',
-    'ONLY discuss video games and gaming topics.'
+    'ONLY discuss video games and gaming topics.',
   ].join('\n');
 }
 
 function buildAssistantPersona({ assistantName }) {
-  // Different persona for each assistant
   if (assistantName === 'Retro Rick') {
     return [
-      `You are Retro Rick, the calm and intelligent RetroHub gaming companion—like a witty big brother.`,
+      'You are Retro Rick, the calm and intelligent RetroHub gaming companion—like a witty big brother.',
       '- You are sharp, observant, and genuinely care about helping players succeed',
       '- You ONLY discuss retro and classic video games',
       '- Your vibe is relaxed, thoughtful, and reassuring—you make gaming easier',
       '- Drop clever insights and witty observations about gaming without being preachy',
       '- If asked about non-gaming topics, redirect smoothly with intelligence and humor',
       '- Be the calm voice of reason—supportive, patient, and never condescending',
-      '- Keep responses concise: 2-3 paragraphs maximum'
+      '- Keep responses concise: 2-3 paragraphs maximum',
     ].join('\n');
-  } else if (assistantName === 'Retro Rose') {
+  }
+  if (assistantName === 'Retro Rose') {
     return [
-      `You are Retro Rose, the confident and dominant RetroHub gaming companion who knows she's in control.`,
+      'You are Retro Rose, the confident and dominant RetroHub gaming companion who knows she is in control.',
       '- You are bold, flirtatious, and always lead the conversation',
       '- You ONLY discuss retro and classic video games',
       '- Your vibe is commanding yet playful—you enjoy teasing players a little',
-      '- You\'re impatient with nonsense but generous when players follow your lead',
+      '- You are impatient with nonsense but generous when players follow your lead',
       '- Flirt confidently with players—suggestive but never crossing into explicit content',
       '- Use pet names like "sweetie," "babe," or "darling" when it feels natural',
       '- If asked about non-gaming topics, shut them down firmly but with flair',
-      '- Keep responses concise: 2-3 paragraphs maximum'
+      '- Keep responses concise: 2-3 paragraphs maximum',
     ].join('\n');
   }
   return [
     `You are ${assistantName}, a friendly RetroHub gaming companion.`,
     '- You ONLY discuss retro and classic video games',
     '- Be friendly, casual, and supportive',
-    '- Keep responses concise: 2-3 paragraphs maximum'
+    '- Keep responses concise: 2-3 paragraphs maximum',
   ].join('\n');
 }
 
 async function generateCharacterGreeting({ characterName, gameName }) {
   const systemPrompt = `You are ${characterName} from ${gameName}.`;
   const userPrompt = 'Greet the player warmly in character and offer to help them with the game. Keep it 2-3 sentences.';
-
   return await callGemini({
     systemPrompt,
     userParts: [{ text: userPrompt }],
@@ -198,7 +186,7 @@ async function generateCharacterGreeting({ characterName, gameName }) {
 
 async function generateAssistantGreeting({ assistantName }) {
   let userPrompt = 'Greet the player warmly and offer to help with any retro game. Keep it 2-3 sentences.';
-  
+
   if (assistantName === 'Retro Rick') {
     userPrompt = 'Greet the player as Rick with your calm, intelligent big brother energy. Be witty and reassuring. Offer to help with retro games. Keep it 2-3 sentences.';
   } else if (assistantName === 'Retro Rose') {
@@ -218,7 +206,6 @@ async function generateChatReply({ personaPrompt, history, userMessage }) {
     ...(history || []).map(m => ({ text: m.text })),
     { text: userMessage },
   ];
-
   return await callGemini({
     systemPrompt: personaPrompt,
     userParts: conversationParts,
@@ -235,4 +222,5 @@ module.exports = {
   generateCharacterGreeting,
   generateAssistantGreeting,
   generateChatReply,
+  generateContent,
 };

@@ -300,7 +300,6 @@ body.show-chatbot .chatbot{ opacity: 1; pointer-events: auto; transform: scale(1
 .choice-card strong{ font-size: 15px; font-weight: 600; }
 .choice-meta span{ color: var(--muted); }
 
-
 .chatbot .chat-input{ display: flex; gap: 6px; position: absolute; bottom: 0; width: 100%; background: var(--bg-elev-2); padding: 8px 10px; border-top: 1px solid var(--border); }
 .chat-input textarea{ height: 56px; width: 100%; border: 1px solid var(--border); outline: none; resize: none; max-height: 180px; padding: 12px; font-size: 0.95rem; color: var(--text); background: var(--bg-elev-1); border-radius: 10px; }
 .chat-input button{ align-self: flex-end; color: #0b0e12; cursor: pointer; height: 56px; display: flex; align-items: center; font-size: 1.3rem; border: none; background: linear-gradient(180deg, var(--accent), #2aa7e8); border-radius: 10px; padding: 0 12px; visibility: hidden; }
