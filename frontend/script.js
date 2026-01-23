@@ -210,14 +210,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Gemini API config (nothing yet)
-  // Gemini API via local server proxy; no API key in client
+  // AI service API (proxied by gateway)
   const API_URL = '/api/chat';
   const API_BASE = '/api';
-  // Chat avatar asset (Professor Oak)
-  const OAK_AVATAR = 'assets/PikPng.com_professor-oak-png_1480585.png';
-  // Persona toggle: when true, the bot speaks as Prof. Oak
-  const OAK_PERSONA = true;
+  // Chat avatars
+  const AVATAR_DEFAULT = 'assets/pokeball.png';
+  const AVATAR_MALE = 'assets/pixel/male.jpg';
+  const AVATAR_FEMALE = 'assets/pixel/female.jpg';
+  const ASSISTANT_CHOICES = [
+    { name: 'Retro Rick', gender: 'male', avatar: AVATAR_MALE, vibe: 'Arcade tactician' },
+    { name: 'Retro Rose', gender: 'female', avatar: AVATAR_FEMALE, vibe: 'Cozy lore keeper' },
+  ];
   const NO_INFO_LINE = "It's dangerous to go alone! No info yet.";
   const textOrFallback = (value, fallback = NO_INFO_LINE) => {
     const str = (value ?? '').toString().trim();
@@ -490,57 +493,42 @@ document.addEventListener('DOMContentLoaded', () => {
     return posts;
   }
 
-  // Per-game randomized welcome messages
+  // Neutral welcome messages (no hardcoded game/IP flavor)
   const welcomePool = {
     generic: [
-      'Hi there! Select a game to get tailored help.',
-      'Welcome! Pick a game and ask for tips or a walkthrough.',
-      'Need guidance? Choose a game and start asking questions!',
-    ],
-    'fire-red': [
-      'Welcome to Kanto! Ask about gyms, routes, or items like the VS Seeker.',
-      'Fire Red tips ready—starters, Brock & Misty strats, or where to find Flash.',
-      'Got questions for Kanto? Teams, badges, or leveling—ask away!',
-    ],
-    emerald: [
-      'Hoenn time! Ask about gyms, Team Aqua/Magma, or the Battle Frontier.',
-      'Emerald tips: double battles, good early team picks, or EXP spots.',
-      'Want Battle Frontier pointers or story progression help?',
-    ],
-    'heart-gold': [
-      'Johto awaits! Ask about Whitney’s Miltank or where to get Exp. Share.',
-      'Need help with Johto gyms or Kanto post-game?',
-      'Heart Gold tips—routes, items, and gym strategies.',
-    ],
-    platinum: [
-      'Sinnoh tips here! Distortion World, team ideas, or leveling routes.',
-      'Platinum help: gym counters, Giratina path, or dex variety.',
-      'Ask about Sinnoh travel, items, or story beats.',
-    ],
-    'black-2': [
-      'Unova guidance: Join Avenue, EXP farming, or story routes.',
-      'Black 2 tips—Habitat List, Lucky Egg, or team balance.',
-      'Need help with challenge modes or gym plans?',
-    ],
-    y: [
-      'Kalos help ready! Mega Ring, team comps, or gym counters.',
-      'Pokémon Y tips—Exp. Share pacing, Megas, or early-game teams.',
-      'Ask about routes, items, or where to go next in Kalos.',
+      'Hey there! I’m your RetroHub gaming companion. Open the chat to pick who you want to talk to.',
+      'Welcome! I can help with any game here. Tap the AI chat to get tips or walkthroughs.',
+      'Let\'s get this nostalgia party started! Pick a guide to help you out.',
     ],
   };
 
-  function randomWelcome(id) {
-    const arr = welcomePool[id] || welcomePool.generic;
+  function randomWelcome(gameId, gameTitle) {
+    if (gameTitle) {
+      const tailored = [
+        `Ready to conquer ${gameTitle}?`,
+        `Let's make ${gameTitle} legendary.`,
+        `${gameTitle} awaits—pick your guide!`,
+      ];
+      return tailored[Math.floor(Math.random() * tailored.length)];
+    }
+    const arr = welcomePool[gameId] || welcomePool.generic;
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  function resetChatWithWelcome(gameId) {
+  function resetChatWithWelcome(gameId, gameTitle) {
+    currentCharacter = null;
+    chatSessionPrimed = false;
+    selectionPending = false;
+    initMessageShown = false;
+    if (pendingChoiceLi) {
+      pendingChoiceLi.remove();
+      pendingChoiceLi = null;
+    }
     chatbox.innerHTML = '';
-    const greeting = randomWelcome(gameId);
+    const greeting = randomWelcome(gameId, gameTitle);
     const li = document.createElement('li');
     li.className = 'chat incoming';
-    const opening = 'Hello there! Welcome to the world of Pokémon!\n\n';
-    li.innerHTML = `<img src="${OAK_AVATAR}" alt="Professor Oak" class="chat-avatar" /><p>${opening}${greeting}</p>`;
+    li.innerHTML = `<img src="${AVATAR_DEFAULT}" alt="RetroHub" class="chat-avatar" /><p>${greeting}</p>`;
     chatbox.appendChild(li);
     chatbox.scrollTo(0, chatbox.scrollHeight);
   }
@@ -697,7 +685,10 @@ document.addEventListener('DOMContentLoaded', () => {
     clearThemes();
     document.body.classList.add('theme-home');
     // Reset chatbot with generic welcome on Home
-    resetChatWithWelcome(null);
+    resetChatWithWelcome(null, null);
+    if (chatSubtitle) {
+      chatSubtitle.textContent = 'Ask about any retro game.';
+    }
     const filtered = filterGameList(games);
     if (!filtered.length) {
       if (homeEmpty) homeEmpty.hidden = false;
@@ -829,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
     gameDescription.textContent = textOrFallback(game.description);
     chatSubtitle.textContent = `Chatting about: ${game.title}`;
     // Reset chatbot with a per-game randomized welcome
-    resetChatWithWelcome(game.slug || game.id);
+    resetChatWithWelcome(game.slug || game.id, game.title);
 
     // Additional Screenshots (temporary: reuse region map image until backend provides real screenshots)
     const screenshots = (() => {
@@ -1262,10 +1253,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Back and Jump actions
   backBtn.addEventListener('click', () => go('#/'));
-  openChat.addEventListener('click', () => {
+  openChat.addEventListener('click', async () => {
     document.body.classList.add('show-chatbot');
     if (!authToken && !authPromptShown) {
-      promptSignInWithOak();
+      promptSignIn();
+    }
+    try {
+      await ensureChatSession();
+    } catch (err) {
+      const li = createChatLi(err.message || 'Unable to start chat.', 'incoming');
+      chatbox.appendChild(li);
     }
     chatInput.focus();
   });
@@ -1291,10 +1288,33 @@ document.addEventListener('DOMContentLoaded', () => {
     postText?.focus({ preventScroll: true });
   });
 
-  // Chatbot logic (Google Gemini API)
+  // Chatbot logic (RetroHub AI service)
   const inputInitHeight = chatInput.scrollHeight;
   let userMessage = '';
   let authPromptShown = false;
+  let currentCharacter = null;
+  let chatSessionPrimed = false;
+  let selectionPending = false;
+  let initMessageShown = false;
+  let pendingChoiceLi = null;
+
+  const normalizeCharacterAvatar = character => {
+    if (!character) return null;
+    const normalizedGender = character.gender === 'female' ? 'female' : 'male';
+    character.gender = normalizedGender;
+    if (!character.avatar) {
+      character.avatar = normalizedGender === 'female' ? AVATAR_FEMALE : AVATAR_MALE;
+    }
+    return character;
+  };
+
+  const currentAvatar = () => {
+    if (!currentCharacter) return AVATAR_DEFAULT;
+    if (currentCharacter.avatar) return currentCharacter.avatar;
+    if (currentCharacter.gender === 'female') return AVATAR_FEMALE;
+    if (currentCharacter.gender === 'male') return AVATAR_MALE;
+    return AVATAR_DEFAULT;
+  };
 
   const createChatLi = (message, className) => {
     const chatLi = document.createElement('li');
@@ -1302,26 +1322,14 @@ document.addEventListener('DOMContentLoaded', () => {
     chatLi.innerHTML =
       className === 'outgoing'
         ? `<p>${message}</p>`
-        : `<img src="${OAK_AVATAR}" alt="Professor Oak" class="chat-avatar" /><p>${message}</p>`;
+        : `<img src="${currentAvatar()}" alt="RetroHub assistant" class="chat-avatar" /><p>${message}</p>`;
     return chatLi;
   };
 
-  // Randomized Oak persona messages to prompt sign-in
-  function getOakSignInMessage() {
-    const options = [
-      "Ah! You'll need to sign in at my lab before we can chat.",
-      'Hold on, Trainer! Please sign in so I can assist you properly.',
-      "Hm! Access denied—sign in first, then I'll help you out.",
-      "Aha! I recognize keen curiosity—sign in, and let's begin.",
-      'Patience! Sign in to sync your Trainer Card, then ask away.',
-      'Safety first! Please sign in so I can share proper guidance.',
-    ];
-    return options[Math.floor(Math.random() * options.length)];
-  }
+  const promptSignInWithOak = promptSignIn; // legacy hook
 
-  // Show an Oak-styled sign-in prompt and open the login modal
-  function promptSignInWithOak(replaceEl) {
-    const msg = getOakSignInMessage();
+  function promptSignIn(replaceEl) {
+    const msg = 'Please sign in to use the AI companion.';
     if (replaceEl) {
       const p = replaceEl.querySelector('p');
       if (p) p.textContent = msg;
@@ -1335,84 +1343,218 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => authEmail?.focus(), 50);
   }
 
-  // Build a strong domain-constrained prompt with per-game context
-  function buildPrompt(userText) {
+  function appendIncomingMessage(text) {
+    if (!text) return null;
+    const li = createChatLi(text, 'incoming');
+    chatbox.appendChild(li);
+    chatbox.scrollTo(0, chatbox.scrollHeight);
+    return li;
+  }
+
+  function getCurrentGameMeta() {
     const game =
       gamesById.get(currentGameId) ||
       gamesByDbId.get(currentGameDbId) ||
       games.find(g => g.id === currentGameId || g.dbId === currentGameDbId);
-    const title = game?.title || 'Pokémon (series)';
-    const platform = game?.platform || 'Various';
-    const year = game?.year || '';
-    const version = game?.version || '';
-    const description = game?.description || '';
-    const tipsArr = tipsCache.get(currentGameDbId || currentGameId) || [];
-    const faqsArr = faqCache.get(currentGameDbId || currentGameId) || [];
-    const tips = tipsArr.map(t => `- ${t.content || t}`).join('\n');
-    const faqs = faqsArr.map(f => `- Q: ${f.question || f.q}\n  A: ${f.answer || f.a}`).join('\n');
+    return {
+      gameName: game?.title || '',
+      platform: game?.platform || '',
+      releaseYear: game?.year || '',
+      gameId: game?.dbId || game?._id || null,
+    };
+  }
 
-    const persona = OAK_PERSONA
-      ? 'You are Professor Oak speaking to the player. Keep a warm, mentor-like tone. Use first-person briefly when helpful ("I"/"my lab"), but stay concise and practical. Do not roleplay long monologues.'
-      : 'You are Pokémon Helper Bot.';
-    return `
-${persona} Your purpose is to answer ONLY Pokémon game questions. If the user asks about anything non-Pokémon (news, politics, code, math, etc.), refuse briefly and steer them back to Pokémon gameplay, tips, items, routes, gyms, or strategies.
+  async function callJson(url, payload) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify(payload || {}),
+    });
 
-When the user opens a specific game, you MUST tailor your answers strictly to that title. Keep responses concise and actionable. Prefer steps or bullet points. Include route/town names, items, or NPCs when useful. If you don't know, say so briefly and suggest an in-game direction.
+    const text = await res.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = null;
+    }
 
-Game context:
-- Title: ${title}
-- Platform: ${platform}
-- Year: ${year}
-- Version/Region: ${version}
-- Description: ${description}
-- Quick Tips:\n${tips || '- (none)'}
-- Popular Q&A:\n${faqs || '- (none)'}
+    if (!res.ok) {
+      // If the token is missing/expired/invalid, clear stale auth to avoid repeated 403s
+      if (res.status === 401 || res.status === 403) {
+        setAuth(null, '');
+        authPromptShown = false;
+      }
+      const err = new Error((data && (data.error || data.message)) || res.statusText || 'Request failed');
+      err.status = res.status;
+      throw err;
+    }
+    return data || {};
+  }
 
-User question:
-${userText}
+  async function handleCharacterChoice(choice, hostLi, meta, assistantName) {
+    const buttons = hostLi?.querySelectorAll('button[data-choice]');
+    buttons?.forEach(btn => (btn.disabled = true));
+    try {
+      const pick = await callJson(`${API_URL}/select-character`, {
+        ...meta,
+        choice,
+        assistantName,
+      });
+      selectionPending = false;
+      pendingChoiceLi = null;
+      currentCharacter = normalizeCharacterAvatar(pick.character);
 
-Constraints:
-- Stay Pokémon-only. Politely refuse unrelated topics.
-- Be specific to ${title}. If the question is about another game, ask the user to open that game from Home.
-- Be brief; use bullets or short steps when appropriate.
-`.trim();
+      if (pick.notice) {
+        appendIncomingMessage(pick.notice);
+      }
+      if (choice === 'in-game' && pick.inGameAvailable === false) {
+        appendIncomingMessage('Game not recognized by AI yet. Switching to RetroHub assistant.');
+      }
+
+      // Hard-coded post-selection lines for the two RetroHub assistants
+      const personaIntros = {
+        'Retro Rick': "Retro Rick here. Take a breath—I've got this. Tell me what's got you stuck and we'll figure it out together, nice and easy.",
+        'Retro Rose': "Retro Rose here, sweetie. I'm in charge and you're going to love it. Tell me what you need... if you can keep up with me.",
+      };
+
+      const greeting = pick.character?.greeting;
+      const isAssistantChoice = choice === 'assistant';
+      const assistantIntro = isAssistantChoice && assistantName ? personaIntros[assistantName] : null;
+      const characterName = pick.character?.name || 'your guide';
+      const gameLabel = meta.gameName || 'this world';
+
+      let finalGreeting = greeting;
+
+      if (assistantIntro) {
+        // Always show the hard-coded persona line for RetroHub assistants
+        finalGreeting = assistantIntro;
+      } else if (isAssistantChoice && greeting) {
+        finalGreeting = greeting;
+      } else if (isAssistantChoice) {
+        finalGreeting = `I'm ${assistantName || 'your RetroHub guide'}. Tell me what you need and I will take it from here.`;
+      } else if (choice === 'in-game') {
+        finalGreeting = greeting || `${characterName} here from ${gameLabel}. Tell me what you need and I will handle it in my own style.`;
+      }
+
+      appendIncomingMessage(finalGreeting || 'Ready to help. What do you need?');
+    } catch (err) {
+      selectionPending = false;
+      buttons?.forEach(btn => (btn.disabled = false));
+      const li = appendIncomingMessage(err.message || 'Could not select a character. Try again.');
+      if (li) li.classList.add('error');
+      throw err;
+    }
+  }
+
+  function renderCharacterChoice(meta, customText) {
+    if (pendingChoiceLi) pendingChoiceLi.remove();
+    const li = document.createElement('li');
+    li.className = 'chat incoming';
+    const text = customText || `Pick your guide for ${meta.gameName || 'this adventure'}:`;
+    const assistantCards = ASSISTANT_CHOICES.map(
+      a => `
+        <button type="button" class="choice-card" data-choice="assistant" data-assistant-name="${a.name}">
+          <img src="${a.avatar}" alt="${a.name}" class="choice-avatar" />
+          <strong>${a.name}</strong>
+        </button>`
+    ).join('');
+
+    li.innerHTML = `
+      <img src="${AVATAR_DEFAULT}" alt="RetroHub" class="chat-avatar" />
+      <div class="chat-choice">
+        <p>${text}</p>
+        <div class="chat-choice-grid">
+          <button type="button" class="choice-card prominent" data-choice="in-game">
+            <div class="choice-icon">🎮</div>
+            <strong>In-Game</strong>
+          </button>
+          ${assistantCards}
+        </div>
+      </div>`;
+    chatbox.appendChild(li);
+    pendingChoiceLi = li;
+    chatbox.scrollTo(0, chatbox.scrollHeight);
+    li.querySelectorAll('button[data-choice]')?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        handleCharacterChoice(btn.dataset.choice, li, meta, btn.dataset.assistantName).catch(err => console.error(err));
+      });
+    });
+  }
+
+  async function ensureChatSession() {
+    if (selectionPending) return;
+    if (chatSessionPrimed && currentCharacter) return;
+
+    const meta = getCurrentGameMeta();
+    const init = await callJson(`${API_URL}/init`, meta);
+    chatSessionPrimed = true;
+
+    if (init.needsCharacterSelection) {
+      selectionPending = true;
+      currentCharacter = null;
+      renderCharacterChoice(meta, init.message);
+      return;
+    }
+
+    if (init.message && !initMessageShown) {
+      appendIncomingMessage(init.message);
+      initMessageShown = true;
+    }
+
+    if (init.character) {
+      currentCharacter = normalizeCharacterAvatar(init.character);
+      const greeting = init.character.greeting || init.message;
+      if (greeting && (!initMessageShown || greeting !== init.message)) {
+        appendIncomingMessage(greeting);
+        initMessageShown = true;
+      }
+    }
   }
 
   const generateResponse = async chatElement => {
+    const meta = getCurrentGameMeta();
     const messageElement = chatElement.querySelector('p');
-    const requestOptions = {
-      method: 'POST',
-      headers: Object.assign(
-        { 'Content-Type': 'application/json' },
-        authToken ? { Authorization: `Bearer ${authToken}` } : {}
-      ),
-      body: JSON.stringify({ prompt: buildPrompt(userMessage) }),
-    };
     try {
-      const response = await fetch(API_URL, requestOptions);
-      if (response.status === 401) {
-        promptSignInWithOak(chatElement);
+      if (selectionPending) {
+        messageElement.textContent = 'Pick an in-game character or the RetroHub assistant to start.';
         return;
       }
-      const data = await response.json();
-      if (!response.ok) {
-        const msg = data?.error?.message || response.statusText || 'Request failed';
-        throw new Error(msg);
+      if (!currentCharacter) {
+        await ensureChatSession();
       }
-      const text = (data?.text || '').replace(/\*\*(.*?)\*\*/g, '$1');
-      messageElement.textContent = text || 'No response received. Try again.';
-      // After rendering the answer, go to the TOP of this message (not the bottom)
+      if (selectionPending) {
+        messageElement.textContent = 'Pick an in-game character or the RetroHub assistant to start.';
+        return;
+      }
+      if (!currentCharacter) {
+        messageElement.textContent = 'Choose a character to start chatting.';
+        return;
+      }
+      const payload = {
+        message: userMessage,
+        character: currentCharacter,
+        gameInfo: meta,
+      };
+      const data = await callJson(`${API_URL}/message`, payload);
+      currentCharacter = normalizeCharacterAvatar(data.character || currentCharacter);
+      messageElement.textContent = data.response || 'No response received. Try again.';
       try {
         chatElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch {
         chatbox.scrollTop = Math.max(0, chatElement.offsetTop - 8);
       }
     } catch (error) {
+      if (error.status === 401 || error.status === 403) {
+        promptSignIn(chatElement);
+        return;
+      }
       messageElement.classList.add('error');
-      const hint =
-        'If you are running locally, ensure the server is started and GEMINI_API_KEY is set in .env';
-      messageElement.textContent = (error.message || 'Error contacting Gemini API') + '\n' + hint;
-      // Ensure the user sees the start of the error message
+      const hint = 'If you are running locally, ensure the AI service is running and GEMINI_API_KEY is set.';
+      messageElement.textContent = (error.message || 'Error contacting AI service') + '\n' + hint;
       try {
         chatElement.scrollIntoView({ behavior: 'auto', block: 'start' });
       } catch {
@@ -1421,20 +1563,35 @@ Constraints:
     }
   };
 
-  function handleChat() {
+  async function handleChat() {
     userMessage = chatInput.value.trim();
     if (!userMessage) return;
+    if (selectionPending) {
+      appendIncomingMessage('Choose an in-game character or the RetroHub assistant to start chatting.');
+      chatInput.value = '';
+      chatInput.style.height = `${inputInitHeight}px`;
+      return;
+    }
     if (!authToken) {
-      // Append the user's message, then have Oak respond with a sign-in prompt
       chatInput.value = '';
       chatInput.style.height = `${inputInitHeight}px`;
       chatbox.appendChild(createChatLi(userMessage, 'outgoing'));
       chatbox.scrollTo(0, chatbox.scrollHeight);
-      const incoming = createChatLi(getOakSignInMessage(), 'incoming');
-      chatbox.appendChild(incoming);
-      chatbox.scrollTo(0, chatbox.scrollHeight);
-      openAuthModal();
-      setTimeout(() => authEmail?.focus(), 50);
+      promptSignIn();
+      return;
+    }
+    try {
+      await ensureChatSession();
+    } catch (err) {
+      appendIncomingMessage(err.message || 'Unable to start the chat session.');
+      chatInput.value = '';
+      chatInput.style.height = `${inputInitHeight}px`;
+      return;
+    }
+    if (selectionPending) {
+      appendIncomingMessage('Choose an in-game character or the RetroHub assistant to start chatting.');
+      chatInput.value = '';
+      chatInput.style.height = `${inputInitHeight}px`;
       return;
     }
     chatInput.value = '';
@@ -1442,12 +1599,12 @@ Constraints:
     chatbox.appendChild(createChatLi(userMessage, 'outgoing'));
     chatbox.scrollTo(0, chatbox.scrollHeight);
 
-    setTimeout(() => {
-      const incomingChatLi = createChatLi('Thinking…', 'incoming');
+    setTimeout(async () => {
+      const incomingChatLi = createChatLi('On it…', 'incoming');
       chatbox.appendChild(incomingChatLi);
       chatbox.scrollTo(0, chatbox.scrollHeight);
-      generateResponse(incomingChatLi);
-    }, 300);
+      await generateResponse(incomingChatLi);
+    }, 200);
   }
 
   chatInput.addEventListener('input', () => {
@@ -1455,7 +1612,7 @@ Constraints:
     chatInput.style.height = `${chatInput.scrollHeight}px`;
     if (!authToken && chatInput.value.trim() && !authPromptShown) {
       document.body.classList.add('show-chatbot');
-      promptSignInWithOak();
+      promptSignIn();
     }
   });
   chatInput.addEventListener('keydown', e => {
@@ -1466,10 +1623,19 @@ Constraints:
   });
   sendChatBtn.addEventListener('click', handleChat);
   closeBtn.addEventListener('click', () => document.body.classList.remove('show-chatbot'));
-  chatbotToggler.addEventListener('click', () => {
+  chatbotToggler.addEventListener('click', async () => {
+    const willOpen = !document.body.classList.contains('show-chatbot');
     document.body.classList.toggle('show-chatbot');
-    if (document.body.classList.contains('show-chatbot') && !authToken && !authPromptShown) {
-      promptSignInWithOak();
+    if (willOpen) {
+      if (!authToken && !authPromptShown) {
+        promptSignIn();
+      }
+      try {
+        await ensureChatSession();
+      } catch (err) {
+        const li = createChatLi(err.message || 'Unable to start chat.', 'incoming');
+        chatbox.appendChild(li);
+      }
     }
   });
 
