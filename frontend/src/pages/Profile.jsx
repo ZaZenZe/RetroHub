@@ -93,7 +93,7 @@ const Profile = () => {
 
   return (
     <section id="profile-view" className="view active" aria-labelledby="profile-title">
-      <div className="panel profile-hero">
+      <div className="panel profile-hero tech-card">
         <div className="profile-card">
           <img
             id="profile-avatar"
@@ -131,7 +131,7 @@ const Profile = () => {
         </div>
       </div>
 
-      <div className="panel" aria-labelledby="collection-title">
+      <div className="panel tech-card" aria-labelledby="collection-title">
         <div className="section-head">
           <div>
             <h3 id="collection-title">Collection</h3>
@@ -180,14 +180,14 @@ const Profile = () => {
         </div>
       </div>
 
-      <div className="panel" aria-labelledby="achievements-title">
-        <h3 id="achievements-title">Achievements</h3>
+      <div className="panel tech-card" aria-labelledby="achievements-title">
+        <h3 id="achievements-title">ACHIEVEMENTS</h3>
         <div className="achievements-grid">
           {achievements.length === 0 ? (
             <p className="map-hint">No achievements yet.</p>
           ) : (
             achievements.map((a) => (
-              <div key={a._id} className="achievement-card">
+              <div key={a._id} className="achievement-card tech-card">
                 <div className="icon">{a.icon || '🏆'}</div>
                 <div className="name">{a.name}</div>
               </div>

@@ -1,8 +1,9 @@
 const Footer = () => {
   return (
-    <footer className="app-footer" role="contentinfo">
-      <p>Retro Hub — fan-made project for showcasing and discussing classic games.</p>
-      <p>Made by the RetroHub team</p>
+    <footer className="app-footer hud-footer" role="contentinfo">
+      <span>MEM: 64KB OK</span>
+      <span className="hud-copy">COPYRIGHT 199X-202X RETRO_HUB INC.</span>
+      <span className="hud-coin">_INSERT COIN</span>
     </footer>
   );
 };

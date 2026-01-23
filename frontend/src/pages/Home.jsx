@@ -52,120 +52,135 @@ const Home = () => {
   };
 
   return (
-    <section id="home-view" className="view active" aria-labelledby="home-title">
-      <div className="hero">
-        <h2 id="home-title">Featured Retro Games</h2>
-        <p>Browse the library. Open a game to see info, community notes, and chat with the built-in guide.</p>
-      </div>
-      
-      <div className="filters" aria-label="Game filters">
-        <div className="filter-group">
-          <label htmlFor="filter-platform">Platform</label>
-          <select
-            id="filter-platform"
-            value={filters.platform}
-            onChange={(e) => setFilters({ ...filters, platform: e.target.value })}
-          >
-            <option value="">All</option>
-            <option value="GBA">GBA</option>
-            <option value="DS">DS</option>
-            <option value="3DS">3DS</option>
-          </select>
-        </div>
-        <div className="filter-group">
-          <label htmlFor="filter-year">Release</label>
-          <select
-            id="filter-year"
-            value={filters.year}
-            onChange={(e) => setFilters({ ...filters, year: e.target.value })}
-          >
-            <option value="">Any</option>
-            <option value="2004">2004</option>
-            <option value="2005">2005</option>
-            <option value="2008">2008</option>
-            <option value="2009">2009</option>
-            <option value="2012">2012</option>
-            <option value="2013">2013</option>
-          </select>
-        </div>
-        <div className="filter-group search">
-          <label htmlFor="filter-search">Search</label>
-          <input
-            id="filter-search"
-            type="search"
-            placeholder="Search by title, region, or platform"
-            value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-          />
-        </div>
-        <div className="filter-actions">
-          <button id="filter-reset" className="cta secondary" type="button" onClick={handleReset}>
-            Reset
-          </button>
+    <section id="home-view" className="view active home-view" aria-labelledby="home-title">
+      <div className="home-hero tech-card">
+        <h2 id="home-title" className="glitch-text">WELCOME TO RETRO_HUB</h2>
+        <p className="hero-copy">
+          Browse the database. Open a game to view intel, community notes, and summon the AI guide.
+        </p>
+        <div className="hero-terminal" aria-hidden="true">
+          <span>INITIALIZING DATABASE... CONNECTED.</span>
         </div>
       </div>
 
-      {loading && (
-        <div id="home-loading" className="loading-grid" aria-hidden="false">
-          <div className="skeleton card"></div>
-          <div className="skeleton card"></div>
-          <div className="skeleton card"></div>
-          <div className="skeleton card"></div>
-          <div className="skeleton card"></div>
-          <div className="skeleton card"></div>
-        </div>
-      )}
+      <div className="home-layout">
+        <aside className="filters tech-card" aria-label="Game filters">
+          <div className="panel-title">SEARCH_PARAMS</div>
+          <div className="filter-group">
+            <label htmlFor="filter-platform">Platform</label>
+            <select
+              id="filter-platform"
+              value={filters.platform}
+              onChange={(e) => setFilters({ ...filters, platform: e.target.value })}
+            >
+              <option value="">All</option>
+              <option value="GBA">GBA</option>
+              <option value="DS">DS</option>
+              <option value="3DS">3DS</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label htmlFor="filter-year">Release</label>
+            <select
+              id="filter-year"
+              value={filters.year}
+              onChange={(e) => setFilters({ ...filters, year: e.target.value })}
+            >
+              <option value="">Any</option>
+              <option value="2004">2004</option>
+              <option value="2005">2005</option>
+              <option value="2008">2008</option>
+              <option value="2009">2009</option>
+              <option value="2012">2012</option>
+              <option value="2013">2013</option>
+            </select>
+          </div>
+          <div className="filter-group search">
+            <label htmlFor="filter-search">Search</label>
+            <input
+              id="filter-search"
+              type="search"
+              placeholder="Search by title, region, or platform"
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            />
+          </div>
+          <div className="filter-actions">
+            <button id="filter-reset" className="btn-cyber" type="button" onClick={handleReset}>
+              Reset
+            </button>
+          </div>
+          <div className="filter-status">
+            <span>DB_SIZE:</span>
+            <span>42TB</span>
+          </div>
+          <div className="filter-bar" aria-hidden="true" />
+        </aside>
 
-      {!loading && filteredGames.length === 0 && (
-        <div id="home-empty" className="empty-state" role="status" aria-live="polite">
-          <p>No games match your filters. Clear filters or try another keyword.</p>
-        </div>
-      )}
+        <div className="home-main">
+          {loading && (
+            <div id="home-loading" className="loading-grid" aria-hidden="false">
+              <div className="skeleton card"></div>
+              <div className="skeleton card"></div>
+              <div className="skeleton card"></div>
+              <div className="skeleton card"></div>
+              <div className="skeleton card"></div>
+              <div className="skeleton card"></div>
+            </div>
+          )}
 
-      {!loading && filteredGames.length > 0 && (
-        <div id="game-grid" className="game-grid" role="list">
-          {filteredGames.map((game) => {
-            const isHovered = hoveredGame === game.id;
-            const displayImage = isHovered && game.hover ? game.hover : game.art;
-            const platformClass = getPlatformClass(game.platform);
+          {!loading && filteredGames.length === 0 && (
+            <div id="home-empty" className="empty-state tech-card" role="status" aria-live="polite">
+              <p>No games match your filters. Clear filters or try another keyword.</p>
+            </div>
+          )}
 
-            return (
-              <article
-                key={game.id}
-                className="card"
-                role="listitem"
-                tabIndex={0}
-                onMouseEnter={() => setHoveredGame(game.id)}
-                onMouseLeave={() => setHoveredGame(null)}
-                onFocus={() => setHoveredGame(game.id)}
-                onBlur={() => setHoveredGame(null)}
-                onClick={() => handleCardClick(game)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleCardClick(game);
-                  }
-                }}
-              >
-                <div
-                  className="thumb"
-                  style={{ backgroundImage: displayImage ? `url('${displayImage}')` : '' }}
-                />
-                <div className="body">
-                  <div className="title">{game.title}</div>
-                  <div className="chips">
-                    <span className={`chip chip-platform ${platformClass}`}>{game.platform}</span>
-                    <span className="chip">{game.year || 'TBA'}</span>
-                  </div>
-                  <button className="cta" onClick={() => handleCardClick(game)}>
-                    Open
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+          {!loading && filteredGames.length > 0 && (
+            <div id="game-grid" className="game-grid" role="list">
+              {filteredGames.map((game) => {
+                const isHovered = hoveredGame === game.id;
+                const displayImage = isHovered && game.hover ? game.hover : game.art;
+                const platformClass = getPlatformClass(game.platform);
+
+                return (
+                  <article
+                    key={game.id}
+                    className="card tech-card"
+                    role="listitem"
+                    tabIndex={0}
+                    onMouseEnter={() => setHoveredGame(game.id)}
+                    onMouseLeave={() => setHoveredGame(null)}
+                    onFocus={() => setHoveredGame(game.id)}
+                    onBlur={() => setHoveredGame(null)}
+                    onClick={() => handleCardClick(game)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCardClick(game);
+                      }
+                    }}
+                  >
+                    <div
+                      className="thumb crt-screen"
+                      style={{ backgroundImage: displayImage ? `url('${displayImage}')` : '' }}
+                    />
+                    <div className="body">
+                      <div className="title">{game.title}</div>
+                      <div className="chips">
+                        <span className={`chip chip-platform ${platformClass}`}>{game.platform}</span>
+                        <span className="chip">{game.year || 'TBA'}</span>
+                      </div>
+                      <button className="btn-cyber" onClick={() => handleCardClick(game)}>
+                        OPEN
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 };

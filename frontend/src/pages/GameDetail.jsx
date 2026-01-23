@@ -161,39 +161,43 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
     : [];
 
   return (
-    <section id="game-view" className="view active" aria-live="polite" aria-labelledby="game-title">
+    <section id="game-view" className="view active game-view" aria-live="polite" aria-labelledby="game-title">
+      <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to Home">
+        <span className="material-symbols-sharp">arrow_back</span>
+        <span>RETURN_TO_ROOT</span>
+      </button>
+
       <div className="game-hero">
-        <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to Home">
-          <span className="material-symbols-outlined">arrow_back</span>
-          <span>Back</span>
-        </button>
-        <div
-          className={`art ${heroUrl ? '' : 'no-image'}`}
-          style={{ backgroundImage: heroUrl ? `url('${heroUrl}')` : '' }}
-          aria-hidden="true"
-        />
-        <div className="meta">
-          <h2 id="game-title">{game.title}</h2>
+        <div className="game-art tech-card">
+          <div
+            className={`art crt-screen ${heroUrl ? '' : 'no-image'}`}
+            style={{ backgroundImage: heroUrl ? `url('${heroUrl}')` : '' }}
+            aria-hidden="true"
+          />
+          <div className="art-label">IMG_SRC_01</div>
+        </div>
+        <div className="meta tech-card">
+          <h2 id="game-title" className="game-title">{game.title}</h2>
           <div className="chips">
             <span className="chip">{game.platform || 'Platform TBA'}</span>
             <span className="chip">{game.year || 'Year TBA'}</span>
           </div>
           <p className="description">{game.description || NO_INFO}</p>
           <div className="quick-actions">
-            <button className="cta" onClick={() => onChatOpen && onChatOpen()}>
-              Ask help from AI
+            <button className="btn-cyber" onClick={() => onChatOpen && onChatOpen()}>
+              LAUNCH_AI
             </button>
-            <button className="cta secondary" onClick={handleScrollToForum}>
-              Blab about it in community
+            <button className="btn-cyber secondary" onClick={handleScrollToForum}>
+              OPEN_COMMUNITY
             </button>
           </div>
         </div>
       </div>
 
       <div className="detail-middle" aria-label="Game details">
-        <section className="panel" aria-labelledby="tips-title">
+        <section className="panel tech-card" aria-labelledby="tips-title">
           <div className="section-head">
-            <h3 id="tips-title">Quick Tips</h3>
+            <h3 id="tips-title">HACK_TIPS</h3>
           </div>
           <ul className="tips-list">
             {tips.map((tip, idx) => (
@@ -202,9 +206,9 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
           </ul>
         </section>
         
-        <section className="panel" aria-labelledby="faq-title">
+        <section className="panel tech-card" aria-labelledby="faq-title">
           <div className="section-head">
-            <h3 id="faq-title">Popular Questions</h3>
+            <h3 id="faq-title">POPULAR_QUESTIONS</h3>
           </div>
           <div className="faq">
             {!faqs ? (
@@ -222,8 +226,8 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
       </div>
 
       {screenshots.length > 0 && (
-        <div className="panel shots-panel" aria-labelledby="shots-title">
-          <h3 id="shots-title">Screenshots</h3>
+        <div className="panel shots-panel tech-card" aria-labelledby="shots-title">
+          <h3 id="shots-title">MEDIA_FILES</h3>
           <div className="shots-strip" role="list">
             {screenshots.map((shot, idx) => (
               <button
@@ -242,8 +246,8 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
         </div>
       )}
 
-      <section className="panel forum" id="forum" aria-labelledby="forum-title">
-        <h3 id="forum-title">Blabbers</h3>
+      <section className="panel forum tech-card" id="forum" aria-labelledby="forum-title">
+        <h3 id="forum-title">GLOBAL_CHAT_STREAM</h3>
         {isAuthenticated ? (
           <form className="post-form" onSubmit={handlePostSubmit} autoComplete="off">
             <textarea
@@ -253,8 +257,8 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
               aria-label="Your message"
               required
             />
-            <button type="submit" className="cta">
-              Blab
+            <button type="submit" className="btn-cyber">
+              BLAB
             </button>
           </form>
         ) : (

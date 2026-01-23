@@ -30,6 +30,8 @@ function App() {
         <GamesProvider>
           <ThemeProvider>
             <div className="app">
+              <div className="cyber-grid" aria-hidden="true" />
+              <div className="vignette" aria-hidden="true" />
               <Header onAuthClick={() => setIsAuthModalOpen(true)} />
               
               <main className="app-main" role="main">

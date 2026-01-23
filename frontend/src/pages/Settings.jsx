@@ -99,8 +99,8 @@ const Settings = () => {
 
   return (
     <section id="settings-view" className="view active" aria-labelledby="settings-title">
-      <div className="panel" aria-labelledby="settings-title">
-        <h2 id="settings-title">Settings</h2>
+      <div className="panel tech-card" aria-labelledby="settings-title">
+        <h2 id="settings-title" className="glitch-text">SYSTEM_CONFIG</h2>
         
         {message && (
           <div style={{ padding: '12px', background: 'var(--success)', borderRadius: '8px', marginBottom: '16px' }}>
@@ -115,8 +115,8 @@ const Settings = () => {
         )}
         
         <div className="settings-grid">
-          <div className="settings-card">
-            <h3>Account</h3>
+          <div className="settings-card tech-card">
+            <h3>ACCOUNT</h3>
             <label>
               Username
               <input
@@ -137,17 +137,13 @@ const Settings = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </label>
-            <button
-              className="cta secondary"
-              type="button"
-              onClick={handleAccountSave}
-            >
-              Save account
+            <button className="btn-cyber" type="button" onClick={handleAccountSave}>
+              SAVE_ACCOUNT
             </button>
           </div>
 
-          <div className="settings-card">
-            <h3>Password</h3>
+          <div className="settings-card tech-card">
+            <h3>PASSWORD</h3>
             <label>
               Current password
               <input
@@ -168,17 +164,13 @@ const Settings = () => {
                 onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
               />
             </label>
-            <button
-              className="cta secondary"
-              type="button"
-              onClick={handlePasswordSave}
-            >
-              Update password
+            <button className="btn-cyber" type="button" onClick={handlePasswordSave}>
+              UPDATE_PASSWORD
             </button>
           </div>
 
-          <div className="settings-card">
-            <h3>Preferences</h3>
+          <div className="settings-card tech-card">
+            <h3>PREFERENCES</h3>
             <label className="switch">
               <input
                 id="pref-chat"
@@ -206,27 +198,19 @@ const Settings = () => {
               />
               <span>Opt into anonymized analytics</span>
             </label>
-            <button
-              className="cta secondary"
-              type="button"
-              onClick={handlePreferencesSave}
-            >
-              Save preferences
+            <button className="btn-cyber" type="button" onClick={handlePreferencesSave}>
+              SAVE_PREFS
             </button>
           </div>
 
-          <div className="settings-card danger">
-            <h3>Danger Zone</h3>
+          <div className="settings-card danger tech-card">
+            <h3>DANGER_ZONE</h3>
             <p className="map-hint">Clear local data or sign out everywhere.</p>
-            <button className="cta" type="button" onClick={handleClearStorage}>
-              Clear local data
+            <button className="btn-cyber secondary" type="button" onClick={handleClearStorage}>
+              PURGE_CACHE
             </button>
-            <button
-              className="cta secondary"
-              type="button"
-              onClick={handleRevokeSessions}
-            >
-              Revoke all sessions
+            <button className="btn-cyber" type="button" onClick={handleRevokeSessions}>
+              REVOKE_SESSIONS
             </button>
           </div>
         </div>
