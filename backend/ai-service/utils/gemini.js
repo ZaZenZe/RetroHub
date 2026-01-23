@@ -3,7 +3,18 @@
 // Gemini SDK client (@google/genai)
 const { GoogleGenAI } = require('@google/genai');
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+// Allow multiple models (comma-separated) so we can fall back when one quota is exhausted
+const DEFAULT_MODELS = [
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash-lite-preview-09-2025',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-flash-lite-latest'
+];
+const configuredModels = (process.env.GEMINI_MODEL || '')
+  .split(',')
+  .map(m => m.trim())
+  .filter(Boolean);
+const GEMINI_MODELS = Array.from(new Set([...(configuredModels.length ? configuredModels : DEFAULT_MODELS), ...DEFAULT_MODELS]));
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
@@ -12,36 +23,72 @@ function hasGeminiKey() {
   return Boolean(GEMINI_API_KEY);
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function callGemini({ systemPrompt, userParts, temperature = 0.7, maxOutputTokens = 256 }) {
   if (!ai) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const request = {
-    model: GEMINI_MODEL,
-    contents: [
-      {
-        role: 'user',
-        parts: userParts,
-      },
-    ],
-    generationConfig: {
-      temperature,
-      maxOutputTokens,
-    },
-    systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
-  };
+  const modelsToTry = GEMINI_MODELS.length ? GEMINI_MODELS : ['gemini-2.0-flash-lite-preview-02-05'];
+  const maxAttempts = 3;
 
-  try {
-    const response = await ai.models.generateContent(request);
-    const text = response?.text ? response.text() : '';
-    return text || '';
-  } catch (error) {
-    console.error('Gemini API Error:', error);
-    const err = new Error(error?.message || 'Gemini request failed');
-    err.status = error?.status;
-    throw err;
+  for (const model of modelsToTry) {
+    const request = {
+      model,
+      contents: [
+        {
+          role: 'user',
+          parts: userParts,
+        },
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens,
+      },
+      systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
+    };
+
+    // Retry on rate limit / transient errors with backoff to stay within free-tier RPM
+    let delayMs = 2000;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const response = await ai.models.generateContent(request);
+        const text =
+          typeof response?.text === 'function'
+            ? response.text()
+            : (response?.candidates?.[0]?.content?.parts || [])
+                .map(part => part?.text || '')
+                .join('\n');
+        return text || '';
+      } catch (error) {
+        const status = error?.status;
+        const isRetryable = status === 429 || status === 503;
+
+        if (isRetryable && attempt < maxAttempts) {
+          await sleep(delayMs);
+          delayMs *= 2;
+          continue;
+        }
+
+        console.error(`Gemini API Error (model ${model}):`, error);
+        // Try the next model if available
+        if (modelsToTry.length > 1) {
+          break;
+        }
+
+        const err = new Error(error?.message || 'Gemini request failed');
+        err.status = status;
+        throw err;
+      }
+    }
   }
+
+  const err = new Error('Gemini request failed across all configured models');
+  err.status = 503;
+  throw err;
 }
 
 function extractJsonArray(text) {
