@@ -76,7 +76,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         >
           close
         </button>
-        <h3 style={{ marginBottom: '6px' }}>Welcome back</h3>
+        <h3 className="glitch-text" style={{ marginBottom: '6px' }}>ACCESS GRANTED</h3>
         <p className="map-hint" style={{ marginBottom: '8px' }}>
           Demo only — use one of the sample accounts below.
         </p>
@@ -129,8 +129,8 @@ const AuthModal = ({ isOpen, onClose }) => {
               onChange={handleChange}
               required
             />
-            <button type="submit" className="cta" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
+            <button type="submit" className="btn-cyber" disabled={loading}>
+              {loading ? 'SIGNING_IN...' : 'SIGN_IN'}
             </button>
           </form>
         ) : (
@@ -165,8 +165,8 @@ const AuthModal = ({ isOpen, onClose }) => {
               onChange={handleChange}
               required
             />
-            <button type="submit" className="cta" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account'}
+            <button type="submit" className="btn-cyber" disabled={loading}>
+              {loading ? 'CREATING...' : 'CREATE_ACCOUNT'}
             </button>
           </form>
         )}
