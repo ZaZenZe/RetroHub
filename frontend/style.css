@@ -98,16 +98,64 @@ body {
 .menu-toggle span:last-child{ display: none; }
 body.nav-open .menu-toggle span:first-child{ display: none; }
 body.nav-open .menu-toggle span:last-child{ display: inline; }
-.mobile-menu{ position: fixed; inset: 0; background: rgba(0,0,0,0.96); padding: 84px 24px 24px; transform: translateY(-100%); transition: transform .25s ease; z-index: 25; display: none; gap: 16px; align-content: start; }
-.mobile-menu.show{ display: grid; transform: translateY(0); }
-.mobile-menu::before{ content: ''; position: absolute; inset: 70px 18px auto; height: 1px; background: rgba(255,123,0,0.4); }
-.mobile-menu::after{ content: ''; position: absolute; left: 18px; top: 84px; bottom: 24px; width: 2px; background: rgba(255,123,0,0.4); }
-.mobile-nav-item{ font-family: 'Press Start 2P', cursive; color: #fff; text-decoration: none; font-size: 14px; background: none; border: none; text-align: left; padding: 8px 0; }
-.mobile-nav-item:hover{ color: var(--primary); text-shadow: 0 0 10px rgba(255,123,0,0.6); }
+
+/* Mobile navigation overlay (rich, centered layout) */
+.mobile-menu{
+  display:none;
+  position:fixed;
+  top:0;right:0;bottom:0;left:0;
+  z-index:1200;
+  background-color:#060606fa;
+  background-image:linear-gradient(180deg,#030303fa,#0a0a0afa);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  color:#fff;
+  min-height:100vh;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:20px;
+  padding:48px 16px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .26s var(--ease-out),transform .26s var(--ease-out);
+  transform:translateY(-6px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  box-shadow:inset 0 4px 40px #0009,0 10px 60px #0009;
+}
+.mobile-menu.show{ display:flex; opacity:1; pointer-events:auto; transform:translateY(0); }
+
+.mobile-nav-item{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:min(540px,92%);
+  padding:14px 20px;
+  text-align:center;
+  font-family:"Press Start 2P",cursive;
+  font-size:16px;
+  color:#fff;
+  background:#ffffff08;
+  border:1px solid rgba(255,255,255,.04);
+  border-radius:10px;
+  text-decoration:none;
+  transition:transform .18s ease,background .18s ease,color .18s ease;
+}
+.mobile-nav-item:hover,.mobile-nav-item:focus{ background:var(--primary); color:#000; transform:translateY(-2px); outline:none; }
+.mobile-nav-item:active{ transform:translateY(0); }
+.mobile-nav-item+.mobile-nav-item{ margin-top:12px; }
+.mobile-nav-item[type=button]{ background:linear-gradient(180deg,var(--primary),var(--primary-dim)); color:#000; font-weight:700; }
+
+.nav-backdrop{ position:fixed; top:0; right:0; bottom:0; left:0; background:#0009; z-index:1190; display:none; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+.mobile-menu.show+.nav-backdrop{ display:block; opacity:1; pointer-events:auto; }
+
+body.nav-open{ overflow:hidden; }
+body.nav-open .chatbot, body.nav-open .chatbot.active{ display:none!important; z-index:0!important; pointer-events:none!important; opacity:0!important; transform:none!important; }
+body.nav-open .chatbot-toggler, body.nav-open .chat-input-area, body.nav-open .chatbox, body.nav-open .chatbot .avatar-frame{ display:none!important; }
+
 .mobile-menu .user-tag{ margin-top: 8px; font-size: 11px; color: var(--primary); }
 .user-tag{ color: var(--primary); font-size: 10px; }
-.nav-backdrop{ display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20; }
-body.nav-open .nav-backdrop{ display: block; }
 
 /* Layout */
 .app-main{ max-width: 1240px; margin: 0 auto; padding: 100px 20px 80px; color: var(--text); }
@@ -160,14 +208,16 @@ body.nav-open .nav-backdrop{ display: block; }
 
 /* Home layout */
 .home-view{ display: block; }
-.home-hero{ padding: 36px; margin: 16px auto 32px; text-align: center; max-width: 1020px; }
-.home-hero h2{ font-size: 30px; margin-bottom: 12px; }
+.home-hero{ grid-column: 1 / -1; position: relative; padding: 80px 40px; background: linear-gradient(90deg,#000c,#0006), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80') center/cover; border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,.1); margin-bottom: 40px; overflow: hidden; box-shadow: 0 20px 50px #00000080; text-align: left; }
+.home-hero h2{ font-family: "Press Start 2P", cursive; font-size: 3rem; max-width: 800px; text-shadow: 0 0 20px rgba(0,0,0,.8); margin-bottom: 20px; line-height: 1.2; color: #fff; }
+.home-hero p{ font-size: 1.1rem; max-width: 600px; color: #ddd; text-shadow: 0 2px 4px rgba(0,0,0,.8); margin-bottom: 30px; }
 .hero-copy{ color: #bbb; font-size: 18px; }
-.hero-terminal{ margin-top: 18px; font-family: 'VT323', monospace; font-size: 24px; color: #ffa64c; }
+.hero-terminal{ margin-top: 18px; font-family: 'VT323', monospace; font-size: 20px; color: #ffa64c; }
+.hero-terminal span{ display: inline-block; border-bottom: 1px solid rgba(255,123,0,0.3); padding-bottom: 4px; }
 .home-layout{ display: grid; grid-template-columns: minmax(260px, 300px) 1fr; gap: 32px; align-items: start; }
 
 /* Filters Sidebar - Reworked */
-.filters {
+.filters, .filters-panel {
   background: var(--bg-elev-1);
   border: 1px solid var(--border);
   padding: 24px;
@@ -180,9 +230,9 @@ body.nav-open .nav-backdrop{ display: block; }
   /* Reset potentially conflicting tech-card styles */
   clip-path: none !important;
 }
-.filters.tech-card::before { display: none; }
+.filters.tech-card::before, .filters-panel.tech-card::before { display: none; }
 
-.filters .panel-title {
+.filters .panel-title, .filters-panel .panel-title {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
   color: var(--primary);
@@ -192,14 +242,17 @@ body.nav-open .nav-backdrop{ display: block; }
   letter-spacing: 1px;
 }
 
-.filters .filter-group {
+.filters .filter-group, .filters-panel .filter-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  /* Allow children to shrink inside flexible layouts */
+  min-width: 0;
+  align-items: stretch;
 }
 
-.filters .filter-group label {
+.filters .filter-group label, .filters-panel .filter-group label {
   font-size: 11px;
   color: #8a8a8a;
   text-transform: uppercase;
@@ -209,7 +262,9 @@ body.nav-open .nav-backdrop{ display: block; }
 }
 
 .filters .filter-group select, 
-.filters .filter-group input {
+.filters .filter-group input,
+.filters-panel .filter-group select,
+.filters-panel .filter-group input {
   width: 100%;
   height: 48px;
   background: #050505;
@@ -220,18 +275,52 @@ body.nav-open .nav-backdrop{ display: block; }
   font-size: 20px;
   outline: none;
   box-sizing: border-box; /* Critical for sizing */
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 44px; /* room for custom arrow */
+  background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.06) 50%), linear-gradient(to right, rgba(255,255,255,0.03), rgba(255,255,255,0.03));
+  background-repeat: no-repeat, repeat;
+  background-position: calc(100% - 22px) center, 0 0;
 }
 
+/* hide native arrow in IE */
+.filters .filter-group select::-ms-expand, .filters-panel .filter-group select::-ms-expand { display: none; }
+
 /* Specific fix for search input to ensure text doesn't clip */
-.filters .filter-group input[type="search"] {
+.filters .filter-group input[type="search"], .filters-panel .filter-group input[type="search"] {
   padding: 12px 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box; /* ensures padding counted in width */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0; /* allow it to shrink inside the flex column */
+}
+
+/* Ensure selects and other inputs can also shrink to their parent */
+.filters .filter-group input,
+.filters .filter-group select,
+.filters-panel .filter-group input,
+.filters-panel .filter-group select {
+  min-width: 0;
+}
+/* Extra guard: ensure all filter controls cannot overflow their container */
+.filters .filter-group input,
+.filters .filter-group select,
+.filters-panel .filter-group input,
+.filters-panel .filter-group select {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .filters .filter-group select:focus, 
-.filters .filter-group input:focus {
+.filters .filter-group input:focus,
+.filters-panel .filter-group select:focus,
+.filters-panel .filter-group input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 15px rgba(255,123,0,0.15);
-}
+} 
 
 .filter-actions {
   margin-top: 8px;
