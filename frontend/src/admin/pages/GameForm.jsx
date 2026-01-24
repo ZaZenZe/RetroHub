@@ -247,10 +247,17 @@ const GameForm = () => {
                   <option value="">Select platform</option>
                   <option value="NES">NES</option>
                   <option value="SNES">SNES</option>
+                  <option value="GB">GB</option>
+                  <option value="GBC">GBC</option>
                   <option value="N64">N64</option>
                   <option value="GBA">GBA</option>
+                  <option value="GC">GameCube</option>
                   <option value="DS">DS</option>
+                  <option value="Wii">Wii</option>
                   <option value="3DS">3DS</option>
+                  <option value="Switch">Switch</option>
+                  <option value="PS1">PS1</option>
+                  <option value="PS2">PS2</option>
                 </select>
               </div>
               <div className="form-group">

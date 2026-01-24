@@ -10,7 +10,8 @@ const Home = () => {
   
   const [filters, setFilters] = useState({
     platform: '',
-    year: '',
+    minYear: '', 
+    maxYear: '',
     search: '',
   });
   const [hoveredGame, setHoveredGame] = useState(null);
@@ -26,14 +27,18 @@ const Home = () => {
       const platformMatch = filters.platform
         ? (g.platform || '').toLowerCase().includes(filters.platform.toLowerCase())
         : true;
-        
-      let yearMatch = true;
-      if (filters.year) {
-        const y = (g.year || g.releaseYear || '').toString();
-        // Loose comparison to handle number/string differences
-        yearMatch = y === filters.year.toString();
-      }
       
+      const gYear = parseInt(g.year || g.releaseYear || 0, 10);
+      let yearMatch = true;
+
+      // Min/Max Year Range Logic
+      if (filters.minYear) {
+        if (!gYear || gYear < parseInt(filters.minYear, 10)) yearMatch = false;
+      }
+      if (yearMatch && filters.maxYear) {
+        if (!gYear || gYear > parseInt(filters.maxYear, 10)) yearMatch = false;
+      }
+
       const searchTerms = filters.search.toLowerCase().trim();
       let searchMatch = true;
       if (searchTerms) {
@@ -56,7 +61,7 @@ const Home = () => {
   const filteredGames = filterGameList(games);
 
   const handleReset = () => {
-    setFilters({ platform: '', year: '', search: '' });
+    setFilters({ platform: '', minYear: '', maxYear: '', search: '' });
   };
 
   const getPlatformClass = (platform) => {
@@ -93,34 +98,58 @@ const Home = () => {
               value={filters.platform}
               onChange={(e) => setFilters({ ...filters, platform: e.target.value })}
             >
-              <option value="">All</option>
-              <option value="GBA">GBA</option>
-              <option value="DS">DS</option>
-              <option value="3DS">3DS</option>
+              <option value="">All Systems</option>
+              <optgroup label="Nintendo">
+                <option value="NES">NES</option>
+                <option value="SNES">SNES</option>
+                <option value="GB">GB</option>
+                <option value="GBC">GBC</option>
+                <option value="GBA">GBA</option>
+                <option value="N64">N64</option>
+                <option value="GC">GameCube</option>
+                <option value="DS">DS</option>
+                <option value="3DS">3DS</option>
+                <option value="Wii">Wii</option>
+                <option value="Switch">Switch</option>
+              </optgroup>
+              <optgroup label="PlayStation">
+                <option value="PS1">PS1</option>
+                <option value="PS2">PS2</option>
+                <option value="PSP">PSP</option>
+              </optgroup>
             </select>
           </div>
+          
           <div className="filter-group">
-            <label htmlFor="filter-year">Release</label>
-            <select
-              id="filter-year"
-              value={filters.year}
-              onChange={(e) => setFilters({ ...filters, year: e.target.value })}
-            >
-              <option value="">Any</option>
-              <option value="2004">2004</option>
-              <option value="2005">2005</option>
-              <option value="2008">2008</option>
-              <option value="2009">2009</option>
-              <option value="2012">2012</option>
-              <option value="2013">2013</option>
-            </select>
+            <label>Release Year Range</label>
+            <div className="year-range-inputs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <input
+                type="number"
+                placeholder="From"
+                min="1980"
+                max={new Date().getFullYear()}
+                value={filters.minYear}
+                onChange={(e) => setFilters({ ...filters, minYear: e.target.value })}
+                aria-label="Minimum Year"
+              />
+              <input
+                type="number"
+                placeholder="To"
+                min="1980"
+                max={new Date().getFullYear()}
+                value={filters.maxYear}
+                onChange={(e) => setFilters({ ...filters, maxYear: e.target.value })}
+                aria-label="Maximum Year"
+              />
+            </div>
           </div>
+
           <div className="filter-group search">
             <label htmlFor="filter-search">Search</label>
             <input
               id="filter-search"
               type="search"
-              placeholder="Search by title, region, or platform"
+              placeholder="Title, region, or keyword..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             />
