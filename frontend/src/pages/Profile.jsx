@@ -120,7 +120,7 @@ const Profile = () => {
               </div>
               <div className="stat">
                 <span className="label">Hours Logged</span>
-                <span className="value">{stats.completedGames || 0}</span>
+                <span className="value">{stats.totalPlayTime || 0}</span>
               </div>
               <div className="stat">
                 <span className="label">Achievements</span>

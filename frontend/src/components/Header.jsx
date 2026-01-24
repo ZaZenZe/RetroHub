@@ -30,46 +30,87 @@ const Header = ({ onAuthClick }) => {
   };
 
   const navItems = [
-    { to: '/', label: 'DATABASE' },
-    { to: '/profile', label: 'USER_LOGS' },
-    { to: '/settings', label: 'CONFIG' },
+    { to: '/', label: 'HOME' },
+    { to: '/profile', label: 'PROFILE' },
+    { to: '/settings', label: 'SETTINGS' },
     { to: '/about', label: 'ABOUT' },
   ];
+
+  // Random pixel GIF logic for logo (ported from legacy script)
+  const [logoSrc, setLogoSrc] = useState('/assets/pokeball.png');
+  const pixelGifs = [
+    '/assets/pixel/12c6a260613c6e51b16af016dd38c44e182fcd68_hq.gif',
+    '/assets/pixel/36541a1369a2eec1894ebff1b9e4a948a78cea80_hq.gif',
+    '/assets/pixel/3c06599306cca1e170ce8df10949cf91.gif',
+    '/assets/pixel/4efee18cb06f3d2f8456a40d1e0460e7.gif',
+    '/assets/pixel/6e7ebe7e86da8cb09f07c765f73efb29b8c0a97d_hq.gif',
+    '/assets/pixel/6Vww.gif',
+    '/assets/pixel/b695b53cae18d460881f51b037977b5b1cc261e9_hq.gif',
+    '/assets/pixel/bdb1f2848d8546d50e82c4ffd43b786f.gif',
+    '/assets/pixel/c740eb46064c338fc67c219b3df8792c0719ac38_hq.gif',
+    '/assets/pixel/e938d18fc07a3ffd16b4864ef2f1308f.gif',
+  ];
+
+  const handleLogoInteract = (active) => {
+    if (!active) {
+      setLogoSrc('/assets/pokeball.png');
+      return;
+    }
+    const idx = Math.floor(Math.random() * pixelGifs.length);
+    setLogoSrc(pixelGifs[idx]);
+  };
 
   return (
     <header className="app-header hud-header" role="banner">
       <div className="hud-wrap">
-        <Link to="/" className="brand">
-          <span className="brand-icon">
-            <span className="material-symbols-sharp">terminal</span>
-          </span>
+        <Link 
+          to="/" 
+          className="brand"
+          onMouseEnter={() => handleLogoInteract(true)}
+          onMouseLeave={() => handleLogoInteract(false)}
+        >
+          <img 
+            src={logoSrc} 
+            alt="Retro Hub icon" 
+            className="brand-icon-img"
+            style={{ width: '34px', height: '34px', objectFit: 'contain', imageRendering: 'pixelated' }}
+          />
           <div className="titles">
             <h1>
               RETRO<span>HUB</span>
             </h1>
-            <p className="subtitle">SYS.VER.3.0</p>
+            <p className="subtitle">EXPLORE • DISCUSS • PLAY</p>
           </div>
         </Link>
-
-        <nav className="main-nav" aria-label="Primary">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`nav-item ${location.pathname === item.to ? 'active' : ''}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-          {(isAdmin || isMod) && (
-            <Link to="/admin" className="nav-item">
-              {isAdmin ? 'ADMIN' : 'MOD_PANEL'}
-            </Link>
+        
+        <div className="hud-right" style={{ display: 'flex', alignItems: 'center', gap: '24px', marginLeft: 'auto' }}>
+          {user && (
+            <div id="auth-chip" className="chip auth-chip-inline">
+              Hey, {user.name || user.email.split('@')[0]}
+            </div>
           )}
-          <button className="nav-item" type="button" onClick={handleAuthClick}>
-            {user ? 'SIGNOUT' : 'SIGNIN'}
-          </button>
-        </nav>
+
+          <nav className="main-nav" aria-label="Primary">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`nav-item ${location.pathname === item.to ? 'active' : ''}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            {(isAdmin || isMod) && (
+              <Link to="/admin" className="nav-item">
+                {isAdmin ? 'ADMIN' : 'MOD_PANEL'}
+              </Link>
+            )}
+            
+            <button className="nav-item" type="button" onClick={handleAuthClick}>
+              {user ? 'SIGNOUT' : 'SIGNIN'}
+            </button>
+          </nav>
+        </div>
 
         <div className="hud-status">
           <span className="label">NET_STATUS</span>

@@ -19,6 +19,31 @@ class ApiService {
     }
   }
 
+  async uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Direct fetch to avoid JSON headers
+    const response = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+       let error = 'Upload failed';
+       try {
+         const data = await response.json();
+         error = data.error || error;
+       } catch (e) {}
+       throw new Error(error);
+    }
+    
+    return response.json();
+  }
+
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',

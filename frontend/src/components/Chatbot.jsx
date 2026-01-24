@@ -27,8 +27,8 @@ const Chatbot = ({ currentGame = null, isOpen: isOpenProp, onOpenChange }) => {
   const chatboxRef = useRef(null);
 
   const AVATAR_DEFAULT = '/assets/pokeball.png';
-  const AVATAR_MALE = '/assets/pixel/6Vww.gif';
-  const AVATAR_FEMALE = '/assets/pixel/3c06599306cca1e170ce8df10949cf91.gif';
+  const AVATAR_MALE = '/assets/pixel/male.jpg';
+  const AVATAR_FEMALE = '/assets/pixel/female.jpg';
 
   const ASSISTANT_CHOICES = [
     { name: 'Retro Rick', gender: 'male', avatar: AVATAR_MALE, vibe: 'Arcade tactician' },

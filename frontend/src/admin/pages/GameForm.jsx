@@ -75,6 +75,24 @@ const GameForm = () => {
     }
   };
 
+  const handleFileUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const res = await api.uploadFile(file);
+      if (res.url) {
+        setFormData(prev => ({ ...prev, [field]: res.url }));
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Upload failed: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -275,26 +293,39 @@ const GameForm = () => {
 
           <div className="form-section">
             <h3>Media</h3>
-            <div className="form-group">
-              <label htmlFor="coverImageUrl">Cover Image URL</label>
-              <input
-                type="url"
-                id="coverImageUrl"
-                name="coverImageUrl"
-                value={formData.coverImageUrl}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="heroImageUrl">Hero Image URL</label>
-              <input
-                type="url"
-                id="heroImageUrl"
-                name="heroImageUrl"
-                value={formData.heroImageUrl}
-                onChange={handleChange}
-              />
-            </div>
+            {[
+              { label: 'Cover Image', name: 'coverImageUrl' },
+              { label: 'Hero Image (Background)', name: 'heroImageUrl' },
+              { label: 'Gameplay GIF', name: 'gameplayGifUrl' },
+              { label: 'Hover GIF', name: 'hoverGifUrl' }
+            ].map(field => (
+              <div className="form-group" key={field.name}>
+                <label htmlFor={field.name}>{field.label}</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="url"
+                    id={field.name}
+                    name={field.name}
+                    value={formData[field.name] || ''}
+                    onChange={handleChange}
+                    style={{ flex: 1 }}
+                  />
+                  <label className="cta secondary" style={{ cursor: 'pointer', margin: 0 }}>
+                    Upload
+                    <input 
+                      type="file" 
+                      hidden 
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, field.name)} 
+                    />
+                  </label>
+                </div>
+                {formData[field.name] && (
+                  <img src={formData[field.name]} alt="Preview" style={{ height: '40px', marginTop: '5px' }} />
+                )}
+              </div>
+            ))}
+            
             <div className="form-group">
               <label htmlFor="screenshots">Screenshots (one per line)</label>
               <textarea
@@ -303,8 +334,44 @@ const GameForm = () => {
                 value={formData.screenshots}
                 onChange={handleChange}
                 rows="4"
-                placeholder="https://example.com/screenshot1.png&#10;https://example.com/screenshot2.png"
+                placeholder="https://example.com/s1.png"
               />
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Theme Configuration</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Theme Name</label>
+                <input 
+                  type="text" 
+                  name="theme.name" 
+                  value={formData.theme.name} 
+                  onChange={handleChange} 
+                />
+              </div>
+            </div>
+            <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
+              {Object.entries(formData.theme.colors).map(([key, val]) => (
+                <div className="form-group" key={key}>
+                  <label style={{ fontSize: '11px' }}>{key}</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <input 
+                      type="color" 
+                      value={val} 
+                      onChange={(e) => handleChange({ target: { name: `theme.colors.${key}`, value: e.target.value } })}
+                      style={{ padding: 0, width: '30px', height: '30px', border: 'none' }}
+                    />
+                    <input 
+                      type="text" 
+                      value={val} 
+                      onChange={(e) => handleChange({ target: { name: `theme.colors.${key}`, value: e.target.value } })}
+                      style={{ fontSize: '11px', padding: '4px' }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

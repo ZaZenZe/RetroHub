@@ -201,7 +201,9 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
           </div>
           <ul className="tips-list">
             {tips.map((tip, idx) => (
-              <li key={idx}>{tip}</li>
+              <li key={idx}>
+                {typeof tip === 'string' ? tip : (tip.content || tip.text || JSON.stringify(tip))}
+              </li>
             ))}
           </ul>
         </section>

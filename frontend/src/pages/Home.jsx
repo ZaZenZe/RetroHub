@@ -26,9 +26,29 @@ const Home = () => {
       const platformMatch = filters.platform
         ? (g.platform || '').toLowerCase().includes(filters.platform.toLowerCase())
         : true;
-      const yearMatch = filters.year ? (g.year || '').toString() === filters.year : true;
-      const text = `${g.title || ''} ${g.platform || ''} ${g.version || ''}`.toLowerCase();
-      const searchMatch = filters.search ? text.includes(filters.search.toLowerCase()) : true;
+        
+      let yearMatch = true;
+      if (filters.year) {
+        const y = (g.year || g.releaseYear || '').toString();
+        // Loose comparison to handle number/string differences
+        yearMatch = y === filters.year.toString();
+      }
+      
+      const searchTerms = filters.search.toLowerCase().trim();
+      let searchMatch = true;
+      if (searchTerms) {
+        // Broad search across multiple fields
+        const text = [
+          g.title,
+          g.platform,
+          g.year || g.releaseYear,
+          g.region || g.version || '',
+          g.developer,
+          g.publisher
+        ].filter(Boolean).join(' ').toLowerCase();
+        searchMatch = text.includes(searchTerms);
+      }
+      
       return platformMatch && yearMatch && searchMatch;
     });
   };

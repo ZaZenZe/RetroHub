@@ -54,10 +54,22 @@ body.theme-admin {
 }
 
 .cta.danger {
-  background: #ff5c5c;
-  color: #000;
-  border-color: #c94747;
+  background: #ff5c5c !important;
+  color: #000 !important;
+  border-color: #c94747 !important;
 }
+
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(0,0,0,0.95);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 14px 20px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
 }
 
 .admin-header .subtitle {
