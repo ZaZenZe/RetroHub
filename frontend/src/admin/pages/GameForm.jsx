@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const GameForm = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -35,6 +37,9 @@ const GameForm = () => {
   });
   const [tips, setTips] = useState([]);
   const [faqs, setFaqs] = useState([]);
+  const [mods, setMods] = useState([]);
+  const [modQuery, setModQuery] = useState('');
+  const [modsLoading, setModsLoading] = useState(false);
 
   useEffect(() => {
     if (gameId) {
@@ -65,8 +70,28 @@ const GameForm = () => {
         theme: game.theme || formData.theme,
       });
 
-      setTips(data.tips || []);
-      setFaqs(data.faqs || []);
+      setTips(
+        (data.tips || []).map((t) =>
+          typeof t === 'string'
+            ? { content: t, category: 'gameplay' }
+            : {
+                id: t.id || t._id,
+                content: t.content || '',
+                category: t.category || 'gameplay',
+              }
+        )
+      );
+      setFaqs(
+        (data.faqs || []).map((f) => ({
+          id: f.id || f._id,
+          question: f.question || '',
+          answer: f.answer || '',
+        }))
+      );
+
+      if (isAdmin) {
+        await loadMods(game._id || game.id);
+      }
     } catch (error) {
       console.error('Failed to load game:', error);
       alert('Failed to load game');
@@ -98,14 +123,25 @@ const GameForm = () => {
     setLoading(true);
 
     try {
+      const normalizedTips = tips
+        .map((t) =>
+          typeof t === 'string'
+            ? { content: t, category: 'gameplay' }
+            : { content: t.content, category: t.category || 'gameplay' }
+        )
+        .filter((t) => t.content);
+      const normalizedFaqs = faqs
+        .map((f) => ({ question: f.question, answer: f.answer }))
+        .filter((f) => f.question && f.answer);
+
       const payload = {
         ...formData,
         screenshots: formData.screenshots
           .split('\n')
           .map((s) => s.trim())
           .filter(Boolean),
-        tips: tips.map((t) => t.content || t).filter(Boolean),
-        faqs: faqs.filter((f) => f.question && f.answer),
+        tips: normalizedTips,
+        faqs: normalizedFaqs,
       };
 
       if (gameId) {
@@ -167,12 +203,12 @@ const GameForm = () => {
   };
 
   const addTip = () => {
-    setTips([...tips, { content: '' }]);
+    setTips([...tips, { content: '', category: 'gameplay' }]);
   };
 
-  const updateTip = (index, content) => {
+  const updateTip = (index, field, value) => {
     const newTips = [...tips];
-    newTips[index] = { content };
+    newTips[index] = { ...newTips[index], [field]: value };
     setTips(newTips);
   };
 
@@ -192,6 +228,43 @@ const GameForm = () => {
 
   const removeFaq = (index) => {
     setFaqs(faqs.filter((_, i) => i !== index));
+  };
+
+  const loadMods = async (gameParam) => {
+    if (!gameParam) return;
+    setModsLoading(true);
+    try {
+      const data = await api.getGameMods(gameParam);
+      setMods(data.mods || []);
+    } catch (error) {
+      console.error('Failed to load moderators:', error);
+      setMods([]);
+    } finally {
+      setModsLoading(false);
+    }
+  };
+
+  const handleAddMod = async () => {
+    if (!gameId || !modQuery.trim()) return;
+    try {
+      await api.addGameMod(gameId, modQuery.trim());
+      setModQuery('');
+      await loadMods(gameId);
+    } catch (error) {
+      console.error('Failed to add moderator:', error);
+      alert(`Failed to add moderator: ${error.message}`);
+    }
+  };
+
+  const handleRemoveMod = async (userId) => {
+    if (!gameId || !userId) return;
+    try {
+      await api.removeGameMod(gameId, userId);
+      await loadMods(gameId);
+    } catch (error) {
+      console.error('Failed to remove moderator:', error);
+      alert(`Failed to remove moderator: ${error.message}`);
+    }
   };
 
   if (loading && gameId) {
@@ -382,17 +455,78 @@ const GameForm = () => {
             </div>
           </div>
 
+          {isAdmin && (
+            <div className="form-section">
+              <h3>Moderators</h3>
+              <div className="form-group">
+                <label htmlFor="mod-lookup">Add moderator (email or username)</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    id="mod-lookup"
+                    type="text"
+                    placeholder="mod@retrohub.test"
+                    value={modQuery}
+                    onChange={(e) => setModQuery(e.target.value)}
+                    disabled={!gameId || modsLoading}
+                  />
+                  <button
+                    type="button"
+                    className="cta secondary"
+                    onClick={handleAddMod}
+                    disabled={!gameId || !modQuery.trim() || modsLoading}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <div className="content-list">
+                {modsLoading && <div className="map-hint">Loading moderators...</div>}
+                {!modsLoading && mods.length === 0 && (
+                  <div className="map-hint">No moderators assigned to this game yet.</div>
+                )}
+                {mods.map((mod) => (
+                  <div key={mod.id || mod._id} className="content-item">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                      <div style={{ display: 'grid', gap: '4px' }}>
+                        <strong>{mod.username || 'Moderator'}</strong>
+                        <small style={{ color: 'var(--admin-muted)' }}>{mod.email}</small>
+                      </div>
+                      <button
+                        type="button"
+                        className="cta danger"
+                        onClick={() => handleRemoveMod(mod.id || mod._id)}
+                        disabled={modsLoading}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="form-section">
             <h3>Tips</h3>
             <div id="tips-list">
               {tips.map((tip, index) => (
-                <div key={index} className="tip-item form-group">
+                <div key={index} className="content-item">
                   <input
                     type="text"
-                    value={tip.content || tip}
-                    onChange={(e) => updateTip(index, e.target.value)}
+                    value={tip.content || ''}
+                    onChange={(e) => updateTip(index, 'content', e.target.value)}
                     placeholder="Enter tip..."
                   />
+                  <select
+                    value={tip.category || 'gameplay'}
+                    onChange={(e) => updateTip(index, 'category', e.target.value)}
+                  >
+                    <option value="gameplay">Gameplay</option>
+                    <option value="story">Story</option>
+                    <option value="collectibles">Collectibles</option>
+                    <option value="secrets">Secrets</option>
+                  </select>
                   <button
                     type="button"
                     className="cta danger"
@@ -412,15 +546,15 @@ const GameForm = () => {
             <h3>FAQs</h3>
             <div id="faqs-list">
               {faqs.map((faq, index) => (
-                <div key={index} className="faq-item form-group">
+                <div key={index} className="content-item">
                   <input
                     type="text"
-                    value={faq.question}
+                    value={faq.question || ''}
                     onChange={(e) => updateFaq(index, 'question', e.target.value)}
                     placeholder="Question..."
                   />
                   <textarea
-                    value={faq.answer}
+                    value={faq.answer || ''}
                     onChange={(e) => updateFaq(index, 'answer', e.target.value)}
                     placeholder="Answer..."
                     rows="2"

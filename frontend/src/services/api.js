@@ -21,10 +21,10 @@ class ApiService {
 
   async uploadFile(file) {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
     
     // Direct fetch to avoid JSON headers
-    const response = await fetch(`${API_BASE}/upload`, {
+    const response = await fetch(`${API_BASE}/admin/upload`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -210,6 +210,36 @@ class ApiService {
 
   async getFaqs(gameId) {
     return this.request(`/games/${encodeURIComponent(gameId)}/faqs`);
+  }
+
+  // Admin - users & moderators
+  async getAdminUsers(query = '') {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    return this.request(`/admin/users?${params.toString()}`);
+  }
+
+  async getGameMods(gameId) {
+    return this.request(`/admin/games/${encodeURIComponent(gameId)}/mods`);
+  }
+
+  async addGameMod(gameId, identifier) {
+    const payload = {};
+    if (identifier?.includes('@')) {
+      payload.email = identifier;
+    } else {
+      payload.username = identifier;
+    }
+    return this.request(`/admin/games/${encodeURIComponent(gameId)}/mods`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async removeGameMod(gameId, userId) {
+    return this.request(`/admin/games/${encodeURIComponent(gameId)}/mods/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    });
   }
 
   // Community

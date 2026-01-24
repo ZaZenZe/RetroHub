@@ -25,8 +25,12 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
         let gameData = getGameById(gameId);
         if (!gameData) {
           gameData = await fetchGameFull(gameId);
-        } else if (!gameData.tips || !gameData.faq) {
-          gameData = await fetchGameFull(gameId);
+        } else {
+          const tipsMissing = !Array.isArray(gameData.tips) || gameData.tips.length === 0;
+          const faqMissing = !Array.isArray(gameData.faq) || gameData.faq.length === 0;
+          if (tipsMissing || faqMissing) {
+            gameData = await fetchGameFull(gameId);
+          }
         }
         
         if (gameData) {

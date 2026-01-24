@@ -108,10 +108,16 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'email and password are required' });
+    const identifier = typeof email === 'string' ? email.trim() : '';
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'email/username and password are required' });
     }
-    const user = await User.findByEmail(email);
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier },
+      ],
+    });
     if (!user) {
       return res.status(401).json({ error: 'invalid credentials' });
     }
