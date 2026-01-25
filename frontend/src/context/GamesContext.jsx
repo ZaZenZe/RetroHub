@@ -159,6 +159,61 @@ export const GamesProvider = ({ children }) => {
     return result;
   }, []);
 
+  // Optimistic post operations — keep UI in sync immediately and notify other tabs
+  const deletePost = useCallback(async (gameDbId, postId) => {
+    if (!gameDbId || !postId) throw new Error('gameId and postId required');
+
+    setPostsCache((prev) => {
+      const newCache = new Map(prev);
+      const existing = Array.isArray(newCache.get(gameDbId)) ? newCache.get(gameDbId) : [];
+      newCache.set(gameDbId, existing.filter(p => (p._id || p.id) !== postId));
+      return newCache;
+    });
+
+    try {
+      const res = await api.deletePost(postId);
+      try { localStorage.setItem(`retrohub:posts:update:${gameDbId}`, Date.now().toString()); } catch (e) {}
+      return res;
+    } catch (err) {
+      await loadPosts(gameDbId).catch(() => {});
+      throw err;
+    }
+  }, [loadPosts]);
+
+  const togglePostSpoiler = useCallback(async (gameDbId, postId, isSpoiler) => {
+    if (!gameDbId || !postId) throw new Error('gameId and postId required');
+
+    setPostsCache((prev) => {
+      const newCache = new Map(prev);
+      const existing = Array.isArray(newCache.get(gameDbId)) ? newCache.get(gameDbId) : [];
+      newCache.set(gameDbId, existing.map(p => ((p._id === postId || p.id === postId) ? { ...p, isSpoiler, spoilerMarkedBy: isSpoiler ? { username: 'You' } : null } : p)));
+      return newCache;
+    });
+
+    try {
+      const res = await api.togglePostSpoiler(postId, isSpoiler);
+      await loadPosts(gameDbId).catch(() => {});
+      try { localStorage.setItem(`retrohub:posts:update:${gameDbId}`, Date.now().toString()); } catch (e) {}
+      return res;
+    } catch (err) {
+      await loadPosts(gameDbId).catch(() => {});
+      throw err;
+    }
+  }, [loadPosts]);
+
+  useEffect(() => {
+    const handler = (ev) => {
+      try {
+        if (!ev.key || !ev.key.startsWith('retrohub:posts:update:')) return;
+        const gameId = ev.key.replace('retrohub:posts:update:', '');
+        if (!gameId) return;
+        loadPosts(gameId).catch(() => {});
+      } catch (e) {}
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [loadPosts]);
+
   const createGame = useCallback(async (gameData) => {
     const result = await api.createGame(gameData);
     const newGame = result?.game;
@@ -244,6 +299,8 @@ export const GamesProvider = ({ children }) => {
       loadFaqs,
       loadPosts,
       createPost,
+      deletePost,
+      togglePostSpoiler,
       createGame,
       updateGame,
       deleteGame,
@@ -263,6 +320,8 @@ export const GamesProvider = ({ children }) => {
       loadFaqs,
       loadPosts,
       createPost,
+      deletePost,
+      togglePostSpoiler,
       createGame,
       updateGame,
       deleteGame,

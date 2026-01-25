@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+
 
 const GameDetail = ({ onChatOpen, onGameChange }) => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { getGameById, fetchGameFull, loadPosts, createPost, postsCache } = useGames();
+  const { getGameById, fetchGameFull, loadPosts, createPost, deletePost, togglePostSpoiler, postsCache } = useGames();
   const { applyTheme } = useTheme();
   const { isAuthenticated, user, isAdmin, isMod } = useAuth();
   
@@ -31,8 +31,7 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
   const handleToggleSpoiler = async (post) => {
     if (!post || !game || !post._id) return;
     try {
-      await api.togglePostSpoiler(post._id, !post.isSpoiler);
-      await loadPosts(game.dbId);
+      await togglePostSpoiler(game.dbId, post._id, !post.isSpoiler);
     } catch (err) {
       console.error('Failed to toggle spoiler:', err);
       // If server reports the post no longer exists, refresh UI silently
@@ -338,8 +337,7 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
                             if (!post || !post._id) return;
                             if (!confirm('Delete this post?')) return;
                             try {
-                              await api.deletePost(post._id);
-                              await loadPosts(game.dbId);
+                              await deletePost(game.dbId, post._id);
                             } catch (err) {
                               console.error('Failed to delete post:', err);
                               if (err && (err.status === 404 || /post not found/i.test(err.message || ''))) {
