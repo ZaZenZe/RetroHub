@@ -15,12 +15,27 @@ const Home = () => {
     search: '',
   });
   const [hoveredGame, setHoveredGame] = useState(null);
+  const [currentBanner, setCurrentBanner] = useState(0);
+
+  const bannerImages = [
+    '/assets/AP_Steam_Banner_2.gif',
+    '/assets/AP_Steam_Banner_3.gif',
+    '/assets/AP_Steam_Banner_4.gif'
+  ];
 
   useEffect(() => {
     clearTheme();
     document.body.classList.add('theme-home');
     return () => document.body.classList.remove('theme-home');
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % bannerImages.length);
+    }, 4000); // Change banner every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [bannerImages.length]);
 
   const filterGameList = (gamesList) => {
     return gamesList.filter((g) => {
@@ -78,13 +93,41 @@ const Home = () => {
 
   return (
     <section id="home-view" className="view active home-view" aria-labelledby="home-title">
-      <div className="home-hero tech-card">
-        <h2 id="home-title" className="glitch-text">WELCOME TO RETRO_HUB</h2>
-        <p className="hero-copy">
-          Browse the database. Open a game to view intel, community notes, and summon the AI guide.
-        </p>
-        <div className="hero-terminal" aria-hidden="true">
-          <span>INITIALIZING DATABASE... CONNECTED.</span>
+      <div 
+        className="home-hero tech-card"
+        style={{
+          backgroundImage: `url(${bannerImages[currentBanner]})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          transition: 'background-image 0.5s ease-in-out',
+          position: 'relative',
+          minHeight: '200px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '30px 15px'
+        }}
+      >
+        {/* Dark overlay for text readability */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 1
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: '100%', overflow: 'hidden' }}>
+          <h2 id="home-title" className="glitch-text" style={{ marginBottom: '10px', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', lineHeight: '1.1' }}>WELCOME TO RETRO_HUB</h2>
+          <p className="hero-copy" style={{ marginBottom: '10px', fontSize: 'clamp(0.8rem, 2.5vw, 1rem)', lineHeight: '1.4' }}>
+            Browse the database. Open a game to view intel, community notes, and summon the AI guide.
+          </p>
+          <div className="hero-terminal" aria-hidden="true" style={{ fontSize: 'clamp(0.7rem, 2vw, 0.9rem)' }}>
+            <span>INITIALIZING DATABASE... CONNECTED.</span>
+          </div>
         </div>
       </div>
 
