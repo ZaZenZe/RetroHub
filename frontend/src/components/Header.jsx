@@ -101,7 +101,10 @@ const Header = ({ onAuthClick }) => {
               </Link>
             ))}
             {(isAdmin || isMod) && (
-              <Link to="/admin" className="nav-item">
+              <Link
+                to="/admin"
+                className={`nav-item ${location.pathname.startsWith('/admin') ? 'active' : ''}`}
+              >
                 {isAdmin ? 'ADMIN' : 'MOD_PANEL'}
               </Link>
             )}

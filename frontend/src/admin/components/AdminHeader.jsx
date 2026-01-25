@@ -1,9 +1,12 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminHeader = () => {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname.startsWith(path);
 
   const handleLogout = () => {
     logout();
@@ -26,14 +29,14 @@ const AdminHeader = () => {
       </div>
       <nav className="admin-nav">
         <button
-          className="nav-btn active"
+          className={`nav-btn ${isActive('/admin/games') ? 'active' : ''}`}
           onClick={() => navigate('/admin/games')}
         >
           <span className="material-symbols-outlined">games</span>
           Games
         </button>
         <button
-          className="nav-btn"
+          className={`nav-btn ${isActive('/admin/create') ? 'active' : ''}`}
           onClick={() => navigate('/admin/create')}
         >
           <span className="material-symbols-outlined">add_circle</span>
