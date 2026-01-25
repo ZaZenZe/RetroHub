@@ -100,7 +100,7 @@ const GamesManagement = () => {
           {games.map((game) => (
             <div key={game.dbId || game._id} className="game-item">
               <img
-                src={game.coverImageUrl || '/assets/pokeball.png'}
+                src={game.art || game.coverImageUrl || '/assets/pokeball.png'}
                 alt={game.title}
                 className="game-thumb"
               />
@@ -108,7 +108,7 @@ const GamesManagement = () => {
                 <h3>{game.title}</h3>
                 <div className="game-meta">
                   <span className="chip">{game.platform}</span>
-                  <span className="chip">{game.releaseYear}</span>
+                  <span className="chip">{game.year || game.releaseYear}</span>
                   {game.versionLabel && (
                     <span className="chip">{game.versionLabel}</span>
                   )}
