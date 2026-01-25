@@ -153,7 +153,7 @@ router.post('/api/chat/select-character', verifyToken, async (req, res, next) =>
 
     if (choice === 'in-game') {
       try {
-        const candidates = await fetchPopularCharacters(gameInfo.gameName);
+        const candidates = await fetchPopularCharacters(gameInfo);
         if (!candidates.length) {
           console.warn(`[ai-service] Game not recognized by AI: ${gameInfo.gameName}`);
           inGameAvailable = false;

@@ -22,21 +22,24 @@ function hasGeminiKey() {
   return Boolean(GEMINI_API_KEY);
 }
 
-async function callGemini({ systemPrompt, userParts, temperature = 0.7, maxOutputTokens = 256 }) {
+async function callGemini({ systemPrompt, userParts, contents, temperature = 0.7, maxOutputTokens = 256 }) {
   if (!ai) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
   const modelsToTry = GEMINI_MODELS.length ? GEMINI_MODELS : ['gemini-2.0-flash-lite-preview-02-05'];
   const maxAttempts = 3;
+
+  const requestContents = contents || [
+    {
+      role: 'user',
+      parts: userParts,
+    },
+  ];
+
   for (const model of modelsToTry) {
     const request = {
       model,
-      contents: [
-        {
-          role: 'user',
-          parts: userParts,
-        },
-      ],
+      contents: requestContents,
       generationConfig: {
         temperature,
         maxOutputTokens,
@@ -109,15 +112,19 @@ async function generateContent({ systemPrompt, contents, config }) {
   });
 }
 
-async function fetchPopularCharacters(gameName) {
+async function fetchPopularCharacters({ gameName, platform, releaseYear }) {
   const systemPrompt = 'You are a concise video game research assistant. You only return raw JSON without commentary.';
-  const userPrompt = `List 3-5 of the most popular and well-known playable or major characters from the game ${gameName}. For each character, specify if they are male or female. Return ONLY a JSON array with format: [{name: string, gender: 'male'|'female'}]`;
+  const gameLabel = [gameName, platform, releaseYear].filter(Boolean).join(' ');
+  const userPrompt =
+    `List 3-5 of the most popular and well-known playable or major characters from the exact game ${gameLabel || gameName}. ` +
+    'Use ONLY characters that actually appear in this specific title (no spin-offs). ' +
+    "Return ONLY a JSON array with format: [{name: string, gender: 'male'|'female'}]";
 
   const text = await callGemini({
     systemPrompt,
     userParts: [{ text: userPrompt }],
     temperature: 0.35,
-    maxOutputTokens: 320,
+    maxOutputTokens: 280,
   });
   return sanitizeCharacters(extractJsonArray(text));
 }
@@ -126,35 +133,47 @@ function buildCharacterPersona({ characterName, gender, gameName, platform, rele
   const gameLabel = gameName
     ? `${gameName}${platform ? ` on ${platform}` : ''}${releaseYear ? ` (${releaseYear})` : ''}`
     : 'this game';
+  const contextInstruction = `Game focus: ${gameLabel}. Answer ONLY about this exact game and redirect any off-topic questions back to it.`;
   return [
     `You are ${characterName} from ${gameLabel}.`,
+    contextInstruction,
     'You must STAY COMPLETELY IN CHARACTER at all times.',
     `- Use ${characterName}'s personality, speech patterns, and mannerisms`,
-    `- Reference your experiences and relationships from ${gameName}`,
-    `- Help players with tips, strategies, lore, and gameplay advice for ${gameName}`,
-    `- If asked about topics unrelated to ${gameName} or gaming, politely redirect back to the game`,
+    `- Reference your experiences and relationships from ${gameName || 'your game'}`,
+    `- Help players with tips, strategies, lore, and gameplay advice for ${gameName || 'this game'}`,
+    `- If asked about topics unrelated to ${gameName || 'this game'} or gaming, politely redirect back to the game`,
     '- Never break character or mention you are an AI',
-    '- Keep responses concise: 2-3 paragraphs maximum',
+    '- Keep responses concise: max 4 sentences OR up to 3 short bullets (no long paragraphs)',
+    '- Lead with the direct answer first, then bullets if helpful (e.g., counters/steps)',
     'ONLY discuss video games and gaming topics.',
   ].join('\n');
 }
 
-function buildAssistantPersona({ assistantName }) {
+function buildAssistantPersona({ assistantName, gameName }) {
+  const contextInstruction = gameName
+    ? `Game focus: ${gameName}. Answer ONLY for this exact game. Do not switch games; redirect off-topic requests back to it.`
+    : 'The user is asking about retro games in general.';
+  const brevityInstruction = 'Keep responses concise: max 4 sentences OR up to 3 short bullets for strategies/steps. Lead with the direct answer first.';
+  const formatInstruction = 'Format: 1) One-sentence direct answer; 2) Optional up to 3 bullet tips (very short). No preamble, no rambling.';
+
   if (assistantName === 'Retro Rick') {
     return [
       'You are Retro Rick, the calm and intelligent RetroHub gaming companion—like a witty big brother.',
+      contextInstruction,
       '- You are sharp, observant, and genuinely care about helping players succeed',
       '- You ONLY discuss retro and classic video games',
       '- Your vibe is relaxed, thoughtful, and reassuring—you make gaming easier',
       '- Drop clever insights and witty observations about gaming without being preachy',
       '- If asked about non-gaming topics, redirect smoothly with intelligence and humor',
       '- Be the calm voice of reason—supportive, patient, and never condescending',
-      '- Keep responses concise: 2-3 paragraphs maximum',
+      brevityInstruction,
+      formatInstruction,
     ].join('\n');
   }
   if (assistantName === 'Retro Rose') {
     return [
       'You are Retro Rose, the confident and dominant RetroHub gaming companion who knows she is in control.',
+      contextInstruction,
       '- You are bold, flirtatious, and always lead the conversation',
       '- You ONLY discuss retro and classic video games',
       '- Your vibe is commanding yet playful—you enjoy teasing players a little',
@@ -162,14 +181,17 @@ function buildAssistantPersona({ assistantName }) {
       '- Flirt confidently with players—suggestive but never crossing into explicit content',
       '- Use pet names like "sweetie," "babe," or "darling" when it feels natural',
       '- If asked about non-gaming topics, shut them down firmly but with flair',
-      '- Keep responses concise: 2-3 paragraphs maximum',
+      brevityInstruction,
+      formatInstruction,
     ].join('\n');
   }
   return [
     `You are ${assistantName}, a friendly RetroHub gaming companion.`,
+    contextInstruction,
     '- You ONLY discuss retro and classic video games',
     '- Be friendly, casual, and supportive',
-    '- Keep responses concise: 2-3 paragraphs maximum',
+    brevityInstruction,
+    formatInstruction,
   ].join('\n');
 }
 
@@ -202,15 +224,20 @@ async function generateAssistantGreeting({ assistantName }) {
 }
 
 async function generateChatReply({ personaPrompt, history, userMessage }) {
-  const conversationParts = [
-    ...(history || []).map(m => ({ text: m.text })),
-    { text: userMessage },
-  ];
+  const contents = (history || []).map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.text }],
+  }));
+  contents.push({
+    role: 'user',
+    parts: [{ text: userMessage }],
+  });
+
   return await callGemini({
     systemPrompt: personaPrompt,
-    userParts: conversationParts,
-    temperature: 0.75,
-    maxOutputTokens: 512,
+    contents,
+    temperature: 0.55,
+    maxOutputTokens: 200,
   });
 }
 

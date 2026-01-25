@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 
 const GamesContext = createContext(null);
@@ -23,7 +23,7 @@ export const GamesProvider = ({ children }) => {
   const [faqCache, setFaqCache] = useState(new Map());
   const [postsCache, setPostsCache] = useState(new Map());
 
-  const mapApiGame = (g) => {
+  const mapApiGame = useCallback((g) => {
     if (!g || !g._id) return null;
     return {
       id: g.slug || g._id,
@@ -45,9 +45,9 @@ export const GamesProvider = ({ children }) => {
       faq: g.faqs || [],
       theme: g.theme || {},
     };
-  };
+  }, []);
 
-  const loadGames = async () => {
+  const loadGames = useCallback(async () => {
     if (games.length > 0) return; // Already loaded
     
     setLoading(true);
@@ -73,9 +73,9 @@ export const GamesProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [games.length, mapApiGame]);
 
-  const fetchGameFull = async (id) => {
+  const fetchGameFull = useCallback(async (id) => {
     try {
       const data = await api.getGameFull(id);
       const game = mapApiGame(data?.game);
@@ -104,39 +104,39 @@ export const GamesProvider = ({ children }) => {
       console.error('Failed to fetch game:', err);
       throw err;
     }
-  };
+  }, [mapApiGame]);
 
-  const getGameById = (id) => gamesById.get(id);
-  const getGameByDbId = (dbId) => gamesByDbId.get(dbId);
+  const getGameById = useCallback((id) => gamesById.get(id), [gamesById]);
+  const getGameByDbId = useCallback((dbId) => gamesByDbId.get(dbId), [gamesByDbId]);
 
-  const loadTips = async (gameDbId) => {
+  const loadTips = useCallback(async (gameDbId) => {
     if (tipsCache.has(gameDbId)) {
       return tipsCache.get(gameDbId);
     }
     const { tips = [] } = await api.getTips(gameDbId);
     setTipsCache((prev) => new Map(prev).set(gameDbId, tips));
     return tips;
-  };
+  }, [tipsCache]);
 
-  const loadFaqs = async (gameDbId) => {
+  const loadFaqs = useCallback(async (gameDbId) => {
     if (faqCache.has(gameDbId)) {
       return faqCache.get(gameDbId);
     }
     const { faqs = [] } = await api.getFaqs(gameDbId);
     setFaqCache((prev) => new Map(prev).set(gameDbId, faqs));
     return faqs;
-  };
+  }, [faqCache]);
 
-  const loadPosts = async (gameDbId) => {
+  const loadPosts = useCallback(async (gameDbId) => {
     if (postsCache.has(gameDbId)) {
       return postsCache.get(gameDbId);
     }
     const { posts = [] } = await api.getPosts(gameDbId);
     setPostsCache((prev) => new Map(prev).set(gameDbId, posts));
     return posts;
-  };
+  }, [postsCache]);
 
-  const createPost = async (gameDbId, content) => {
+  const createPost = useCallback(async (gameDbId, content) => {
     const result = await api.createPost(gameDbId, content);
     // Invalidate cache
     setPostsCache((prev) => {
@@ -145,31 +145,49 @@ export const GamesProvider = ({ children }) => {
       return newCache;
     });
     return result;
-  };
+  }, []);
 
   useEffect(() => {
     loadGames();
-  }, []);
+  }, [loadGames]);
+
+  const value = useMemo(
+    () => ({
+      games,
+      loading,
+      error,
+      loadGames,
+      fetchGameFull,
+      getGameById,
+      getGameByDbId,
+      loadTips,
+      loadFaqs,
+      loadPosts,
+      createPost,
+      tipsCache,
+      faqCache,
+      postsCache,
+    }),
+    [
+      games,
+      loading,
+      error,
+      loadGames,
+      fetchGameFull,
+      getGameById,
+      getGameByDbId,
+      loadTips,
+      loadFaqs,
+      loadPosts,
+      createPost,
+      tipsCache,
+      faqCache,
+      postsCache,
+    ]
+  );
 
   return (
-    <GamesContext.Provider
-      value={{
-        games,
-        loading,
-        error,
-        loadGames,
-        fetchGameFull,
-        getGameById,
-        getGameByDbId,
-        loadTips,
-        loadFaqs,
-        loadPosts,
-        createPost,
-        tipsCache,
-        faqCache,
-        postsCache,
-      }}
-    >
+    <GamesContext.Provider value={value}>
       {children}
     </GamesContext.Provider>
   );
