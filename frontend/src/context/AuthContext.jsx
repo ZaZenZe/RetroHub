@@ -17,17 +17,43 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('authUser');
-      if (storedUser && token) {
-        setUser(JSON.parse(storedUser));
+    const init = async () => {
+      try {
+        const storedUser = localStorage.getItem('authUser');
+        if (!token) {
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+          setLoading(false);
+          return;
+        }
+
+        // ensure API has the token for validate call
+        api.setToken(token);
+
+        // try to refresh canonical user from server (includes moderatedGames)
+        try {
+          const data = await api.validate();
+          if (data && data.user) {
+            setUser(data.user);
+            localStorage.setItem('authUser', JSON.stringify(data.user));
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          // validation failed — fall back to stored user if present
+          console.warn('Auth validate failed, falling back to stored user', err && err.message);
+          if (storedUser) setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error('Failed to parse stored user:', error);
+        localStorage.removeItem('authUser');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to parse stored user:', error);
-      localStorage.removeItem('authUser');
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    init();
   }, [token]);
 
   const login = async (email, password) => {

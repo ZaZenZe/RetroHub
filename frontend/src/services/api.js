@@ -145,6 +145,10 @@ class ApiService {
     });
   }
 
+  async validate() {
+    return this.request('/auth/validate');
+  }
+
   async register(username, email, password) {
     return this.request('/auth/register', {
       method: 'POST',

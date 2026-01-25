@@ -131,7 +131,7 @@ router.post('/login', async (req, res, next) => {
     await ensureStats(user._id);
 
     const token = signToken(user);
-    return res.json({ user: sanitizeUser(user), token });
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true }), token });
   } catch (err) {
     return next(err);
   }
@@ -147,7 +147,7 @@ router.get('/validate', verifyToken, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    return res.json({ user: sanitizeUser(user) });
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true }) });
   } catch (err) {
     return next(err);
   }
@@ -159,7 +159,7 @@ router.get('/me', verifyToken, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    return res.json({ user: sanitizeUser(user) });
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true }) });
   } catch (err) {
     return next(err);
   }

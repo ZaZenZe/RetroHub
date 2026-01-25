@@ -7,7 +7,7 @@ import { useGames } from '../../context/GamesContext';
 const GameForm = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user, updateUserData } = useAuth();
   const { createGame, updateGame } = useGames();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -286,9 +286,16 @@ const GameForm = () => {
   const handleAddMod = async () => {
     if (!gameId || !modQuery.trim()) return;
     try {
-      await api.addGameMod(gameId, modQuery.trim());
+      const data = await api.addGameMod(gameId, modQuery.trim());
       setModQuery('');
       await loadMods(gameId);
+
+      // If the admin added the currently-logged-in user as a moderator, refresh their local user data
+      const added = data && (data.mod || data.user || data);
+      const modObj = data.mod || data.user || data;
+      if (modObj && user && (modObj.id === user.id || modObj.id === user._id)) {
+        updateUserData({ moderatedGames: modObj.moderatedGames || [], role: modObj.role || user.role });
+      }
     } catch (error) {
       console.error('Failed to add moderator:', error);
       alert(`Failed to add moderator: ${error.message}`);
@@ -298,8 +305,13 @@ const GameForm = () => {
   const handleRemoveMod = async (userId) => {
     if (!gameId || !userId) return;
     try {
-      await api.removeGameMod(gameId, userId);
+      const data = await api.removeGameMod(gameId, userId);
       await loadMods(gameId);
+
+      const modObj = data && (data.mod || data.user || data);
+      if (modObj && user && (modObj.id === user.id || modObj.id === user._id)) {
+        updateUserData({ moderatedGames: modObj.moderatedGames || [], role: modObj.role || user.role });
+      }
     } catch (error) {
       console.error('Failed to remove moderator:', error);
       alert(`Failed to remove moderator: ${error.message}`);
