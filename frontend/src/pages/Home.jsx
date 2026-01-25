@@ -231,7 +231,9 @@ const Home = () => {
             <div id="game-grid" className="game-grid" role="list">
               {filteredGames.map((game) => {
                 const isHovered = hoveredGame === game.id;
-                const displayImage = isHovered && game.hover ? game.hover : game.art;
+                const displayImage = isHovered
+                  ? game.hoverGif || game.hover || game.art
+                  : game.art;
                 const platformClass = getPlatformClass(game.platform);
 
                 return (

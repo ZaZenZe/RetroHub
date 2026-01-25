@@ -110,7 +110,10 @@ const GameForm = () => {
       setLoading(true);
       const res = await api.uploadFile(file);
       if (res.url) {
-        setFormData(prev => ({ ...prev, [field]: res.url }));
+        const absoluteUrl = res.url.startsWith('http')
+          ? res.url
+          : `${window.location.origin}${res.url}`;
+        setFormData(prev => ({ ...prev, [field]: absoluteUrl }));
       }
     } catch (error) {
       console.error('Upload failed:', error);
