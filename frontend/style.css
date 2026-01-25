@@ -162,11 +162,12 @@ body.nav-open .chatbot-toggler, body.nav-open .chat-input-area, body.nav-open .c
 
 /* Core UI elements */
 .tech-card{
-  background: var(--bg-elev-1);
+  background: rgba(var(--bg-elev-1-rgb, 15, 20, 36), 0.8);
   border: 1px solid var(--border);
   position: relative;
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
   box-shadow: var(--shadow);
+  backdrop-filter: blur(4px);
 }
 .tech-card::before{
   content: '';
@@ -281,9 +282,6 @@ body.nav-open .chatbot-toggler, body.nav-open .chat-input-area, body.nav-open .c
   -webkit-appearance: none;
   appearance: none;
   padding-right: 44px; /* room for custom arrow */
-  background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.06) 50%), linear-gradient(to right, rgba(255,255,255,0.03), rgba(255,255,255,0.03));
-  background-repeat: no-repeat, repeat;
-  background-position: calc(100% - 22px) center, 0 0;
 }
 
 /* hide native arrow in IE */
@@ -448,7 +446,7 @@ body.theme-about #header-gif{ display: none !important; }
 
 /* Grid */
 .game-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; align-items: stretch; }
-.card{ position: relative; background: transparent; border: none; overflow: hidden; display: flex; flex-direction: column; transition: transform .18s ease; }
+.card{ position: relative; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; display: flex; flex-direction: column; transition: transform .18s ease; border-radius: 4px; }
 .card::after{ content:""; position:absolute; inset:0; pointer-events:none; opacity:0; }
 .card:hover{ transform: translateY(-4px); }
 .card .thumb{ aspect-ratio: 16/9; background: #000; background-size: cover; background-position: center; filter: none; transition: background-image .15s ease, filter .15s ease; image-rendering: auto; }
@@ -492,7 +490,7 @@ body.theme-about #header-gif{ display: none !important; }
 .faq-block h4{ font-size: 13px; color: var(--muted); }
 
 .columns{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.panel{ background: transparent; border: 1px solid #333; border-radius: 0; padding: 18px; box-shadow: var(--shadow); }
+.panel{ background: rgba(0, 0, 0, 0.5); border: 1px solid #333; border-radius: 0; padding: 18px; box-shadow: var(--shadow); backdrop-filter: blur(4px); }
 .panel h3{ font-size: 12px; margin-bottom: 8px; font-family: 'Press Start 2P', cursive; }
 .tips-list{ display: grid; gap: 8px; }
 .tips-list li{ list-style: none; background: rgba(0,0,0,0.6); border: 1px solid #333; padding: 10px; }
@@ -501,7 +499,7 @@ body.theme-about #header-gif{ display: none !important; }
 .faq p{ color: #c6cbd2; padding: 10px; font-family: 'VT323', monospace; }
 
 /* Screenshot gallery panel */
-.shots-panel{ display: grid; gap: 10px; }
+.shots-panel{ display: grid; gap: 10px; margin-bottom: 24px; }
 .shots-strip{ display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-width: thin; align-items: stretch; }
 .shots-strip::-webkit-scrollbar{ height: 8px; }
 .shots-strip::-webkit-scrollbar-thumb{ background: #333; border-radius: 10px; }
