@@ -544,6 +544,11 @@ body.theme-admin {
 .form-actions .cta.secondary{
   border: 1px dashed var(--admin-border);
 }
+.form-actions .cta:first-of-type{
+  background: linear-gradient(180deg, #ffc46b, #ff8c1a);
+  box-shadow: 0 0 30px rgba(255,140,26,0.45);
+  color: #0a0a0a;
+}
 
 /* Buttons */
 .cta {
@@ -565,6 +570,31 @@ body.theme-admin {
   box-shadow: 0 0 24px rgba(255,123,0,0.25);
 }
 
+/* Force bright CTAs within admin theme */
+.theme-admin .cta {
+  background: linear-gradient(180deg, #ffb347, #ff7b00);
+  color: #0b0b0b;
+  border: 1px solid #ff9f1a;
+  box-shadow: 0 0 26px rgba(255,123,0,0.4);
+}
+
+/* Force bright CTAs everywhere inside admin views */
+.admin-view .cta,
+.admin-header .cta {
+  background: linear-gradient(180deg, #ffb347, #ff7b00);
+  color: #0b0b0b;
+  border: 1px solid #ff9f1a;
+  box-shadow: 0 0 26px rgba(255,123,0,0.4);
+}
+
+/* Ensure list page CTA (Add New Game) is bright */
+.admin-view .filters .cta {
+  background: linear-gradient(180deg, #ffb347, #ff7b00);
+  color: #0b0b0b;
+  border: 1px solid #ff9f1a;
+  box-shadow: 0 0 26px rgba(255,123,0,0.4);
+}
+
 .cta:hover {
   filter: brightness(1.08);
   box-shadow: 0 0 26px rgba(255,123,0,0.35);
@@ -576,6 +606,12 @@ body.theme-admin {
   color: var(--admin-text);
   border: 1px solid var(--admin-border);
   box-shadow: none;
+}
+
+.theme-admin .cta.secondary {
+  background: rgba(255,255,255,0.04);
+  color: #f5f5f5;
+  border: 1px dashed rgba(255,255,255,0.18);
 }
 
 .cta.secondary:hover {
