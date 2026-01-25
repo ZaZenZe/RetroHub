@@ -2,19 +2,27 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useGames } from '../../context/GamesContext';
+import { useAuth } from '../../context/AuthContext';
 
 const GamesManagement = () => {
   const navigate = useNavigate();
   const { games: allGames, loading: gamesLoading, deleteGame } = useGames();
+  const { user, isAdmin, isMod } = useAuth();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
 
-  // Filter games based on search and platform
+  // Filter games based on search and platform — respect moderator scope
   useEffect(() => {
     let filtered = allGames;
-    
+
+    // If the current user is a moderator (but not admin), only show their assigned games
+    if (isMod && !isAdmin) {
+      const moderated = (user && Array.isArray(user.moderatedGames)) ? user.moderatedGames : [];
+      filtered = filtered.filter(g => moderated.includes(g.dbId));
+    }
+
     if (search) {
       const searchLower = search.toLowerCase();
       filtered = filtered.filter(game => 
@@ -22,14 +30,13 @@ const GamesManagement = () => {
         game.slug?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (platformFilter) {
       filtered = filtered.filter(game => game.platform === platformFilter);
     }
-    
-    setGames(filtered);
-  }, [allGames, search, platformFilter]);
 
+    setGames(filtered);
+  }, [allGames, search, platformFilter, isAdmin, isMod, user]);
   const handleDelete = async (gameId, gameTitle) => {
     if (!confirm(`Are you sure you want to delete "${gameTitle}"?`)) {
       return;
@@ -81,9 +88,11 @@ const GamesManagement = () => {
             <option value="PC">PC</option>
             <option value="Other">Other</option>
           </select>
-          <button onClick={() => navigate('/admin/create')} className="cta">
-            Add New Game
-          </button>
+          {isAdmin && (
+            <button onClick={() => navigate('/admin/create')} className="cta">
+              Add New Game
+            </button>
+          )}
         </div>
       </div>
 
@@ -119,18 +128,24 @@ const GamesManagement = () => {
                 </p>
               </div>
               <div className="game-actions">
-                <button
-                  className="cta secondary"
-                  onClick={() => navigate(`/admin/edit/${game.dbId || game._id}`)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="cta danger"
-                  onClick={() => handleDelete(game.dbId || game._id, game.title)}
-                >
-                  Delete
-                </button>
+                {((isAdmin) || (isMod && user && Array.isArray(user.moderatedGames) && user.moderatedGames.includes(game.dbId))) ? (
+                  <>
+                    <button
+                      className="cta secondary"
+                      onClick={() => navigate(`/admin/edit/${game.dbId || game._id}`)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="cta danger"
+                      onClick={() => handleDelete(game.dbId || game._id, game.title)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ color: 'var(--admin-muted)', fontSize: 13 }}>No actions</div>
+                )}
               </div>
             </div>
           ))}

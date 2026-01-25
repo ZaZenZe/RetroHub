@@ -35,13 +35,15 @@ const AdminHeader = () => {
           <span className="material-symbols-outlined">games</span>
           Games
         </button>
-        <button
-          className={`nav-btn ${isActive('/admin/create') ? 'active' : ''}`}
-          onClick={() => navigate('/admin/create')}
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          Create Game
-        </button>
+        {isAdmin && (
+          <button
+            className={`nav-btn ${isActive('/admin/create') ? 'active' : ''}`}
+            onClick={() => navigate('/admin/create')}
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            Create Game
+          </button>
+        )}
       </nav>
       <div className="admin-user">
         <span id="admin-username">{user?.name || user?.email || 'Admin'}</span>

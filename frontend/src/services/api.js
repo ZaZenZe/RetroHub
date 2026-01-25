@@ -259,6 +259,19 @@ class ApiService {
     });
   }
 
+  async togglePostSpoiler(postId, isSpoiler) {
+    return this.request(`/community/posts/${encodeURIComponent(postId)}/spoiler`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isSpoiler }),
+    });
+  }
+
+  async deletePost(postId) {
+    return this.request(`/community/posts/${encodeURIComponent(postId)}`, {
+      method: 'DELETE',
+    });
+  }
+
   async createReply(postId, content) {
     return this.request(`/community/posts/${postId}/replies`, {
       method: 'POST',

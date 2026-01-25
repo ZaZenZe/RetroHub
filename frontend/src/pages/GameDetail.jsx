@@ -3,19 +3,46 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const GameDetail = ({ onChatOpen, onGameChange }) => {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { getGameById, fetchGameFull, loadPosts, createPost, postsCache } = useGames();
   const { applyTheme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, isAdmin, isMod } = useAuth();
   
   const [game, setGame] = useState(null);
   const [postText, setPostText] = useState('');
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+  const [revealedPosts, setRevealedPosts] = useState(new Set());
+
+  const toggleReveal = (postId) => {
+    setRevealedPosts(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+  };
+
+  const handleToggleSpoiler = async (post) => {
+    if (!post || !game || !post._id) return;
+    try {
+      await api.togglePostSpoiler(post._id, !post.isSpoiler);
+      await loadPosts(game.dbId);
+    } catch (err) {
+      console.error('Failed to toggle spoiler:', err);
+      // If server reports the post no longer exists, refresh UI silently
+      if (err && (err.status === 404 || /post not found/i.test(err.message || ''))) {
+        await loadPosts(game.dbId);
+        return;
+      }
+      alert('Failed to update post');
+    }
+  };
 
   // Get posts directly from cache
   const posts = game?.dbId ? (postsCache.get(game.dbId) || []) : [];
@@ -291,15 +318,62 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
               const timestamp = post.createdAt
                 ? new Date(post.createdAt).toLocaleString()
                 : '';
+
+              const isOwner = post.userId && post.userId._id === (user && (user.id || user._id));
+              const canManagePost = isOwner || isAdmin || (isMod && user && Array.isArray(user.moderatedGames) && user.moderatedGames.includes(game?.dbId));
+
               return (
-                <li key={idx} className="post">
+                <li key={post._id || idx} className="post">
                   <div className="meta">
-                    <span>{author}</span>
-                    <span>•</span>
-                    <span>{timestamp}</span>
+                    <div className="meta-left">
+                      <span>{author}</span>
+                      <span>•</span>
+                      <span>{timestamp}</span>
+                    </div>
+
+                    <div className="meta-right actions">
+                      {canManagePost ? (
+                        <>
+                          <button className="cta danger small" onClick={async () => {
+                            if (!post || !post._id) return;
+                            if (!confirm('Delete this post?')) return;
+                            try {
+                              await api.deletePost(post._id);
+                              await loadPosts(game.dbId);
+                            } catch (err) {
+                              console.error('Failed to delete post:', err);
+                              if (err && (err.status === 404 || /post not found/i.test(err.message || ''))) {
+                                await loadPosts(game.dbId);
+                                return;
+                              }
+                              alert('Failed to delete post');
+                            }
+                          }}>Delete</button>
+
+                          <button className="cta secondary small" onClick={() => handleToggleSpoiler(post)}>
+                            {post.isSpoiler ? 'Unmark spoiler' : 'Mark as spoiler'}
+                          </button>
+                        </>
+                      ) : (
+                        <div style={{ color: 'var(--admin-muted)', fontSize: 13 }}>No actions</div>
+                      )}
+                    </div>
                   </div>
+
                   <div className="bubble">
-                    <div className="text">{post.content}</div>
+                    {post.isSpoiler && !revealedPosts.has(post._id) ? (
+                      <div className="spoiler-mask">
+                        <div className="label">
+                          <div className="title">Spoiler — content hidden</div>
+                          <div>
+                            <button className="cta small" onClick={() => toggleReveal(post._id)}>Show</button>
+                          </div>
+                        </div>
+                        <div className="hint">Marked as spoiler{post.spoilerMarkedBy ? ` by ${post.spoilerMarkedBy.username || post.spoilerMarkedBy}` : ''}.</div>
+                      </div>
+                    ) : (
+                      <div className="text">{post.content}</div>
+                    )}
                   </div>
                 </li>
               );

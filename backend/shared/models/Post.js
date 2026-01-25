@@ -38,6 +38,12 @@ const postSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // user who marked the post as a spoiler (admin/mod or owner)
+    spoilerMarkedBy: {
+      type: Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

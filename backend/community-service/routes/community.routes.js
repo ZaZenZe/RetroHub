@@ -41,6 +41,7 @@ router.get('/games/:gameId/posts', async (req, res, next) => {
     const [posts, total] = await Promise.all([
       Post.find({ gameId })
         .populate('userId', 'username avatarUrl')
+        .populate('spoilerMarkedBy', 'username')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -192,6 +193,38 @@ router.delete('/replies/:replyId', verifyToken, async (req, res, next) => {
     await Reply.deleteOne({ _id: replyId });
     await upsertStats(req.user.sub, { forumReplies: isOwner ? -1 : 0 });
     res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Toggle spoiler flag on a post (owner, admin, or moderator of the game's moderators)
+router.patch('/posts/:postId/spoiler', verifyToken, async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    const { isSpoiler } = req.body || {};
+
+    if (!Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post id' });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const isOwner = post.userId.toString() === req.user.sub;
+    const canMod = await canModerateGame(req.user.sub, post.gameId);
+    if (!(isOwner || canMod)) {
+      return res.status(403).json({ error: 'Not authorized to modify this post' });
+    }
+
+    post.isSpoiler = !!isSpoiler;
+    post.spoilerMarkedBy = post.isSpoiler ? req.user.sub : null;
+    await post.save();
+
+    const updated = await Post.findById(post._id).populate('userId', 'username avatarUrl').populate('spoilerMarkedBy', 'username');
+    res.json({ post: updated });
   } catch (err) {
     next(err);
   }
