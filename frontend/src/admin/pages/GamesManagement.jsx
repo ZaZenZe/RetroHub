@@ -1,35 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useGames } from '../../context/GamesContext';
 
 const GamesManagement = () => {
   const navigate = useNavigate();
+  const { games: allGames, loading: gamesLoading, deleteGame } = useGames();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
 
+  // Filter games based on search and platform
   useEffect(() => {
-    loadGames();
-  }, [search, platformFilter]);
-
-  const loadGames = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.append('q', search);
-      if (platformFilter) params.append('platform', platformFilter);
-      params.append('limit', '100');
-
-        const data = await api.request(`/admin/games?${params.toString()}`);
-      setGames(data.games || []);
-    } catch (error) {
-      console.error('Failed to load games:', error);
-      alert('Failed to load games');
-    } finally {
-      setLoading(false);
+    let filtered = allGames;
+    
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(game => 
+        game.title?.toLowerCase().includes(searchLower) ||
+        game.slug?.toLowerCase().includes(searchLower)
+      );
     }
-  };
+    
+    if (platformFilter) {
+      filtered = filtered.filter(game => game.platform === platformFilter);
+    }
+    
+    setGames(filtered);
+  }, [allGames, search, platformFilter]);
 
   const handleDelete = async (gameId, gameTitle) => {
     if (!confirm(`Are you sure you want to delete "${gameTitle}"?`)) {
@@ -37,9 +36,8 @@ const GamesManagement = () => {
     }
 
     try {
-      await api.deleteGame(gameId);
+      await deleteGame(gameId);
       alert('Game deleted successfully');
-      loadGames();
     } catch (error) {
       console.error('Failed to delete game:', error);
       alert('Failed to delete game');
@@ -83,10 +81,13 @@ const GamesManagement = () => {
             <option value="PC">PC</option>
             <option value="Other">Other</option>
           </select>
+          <button onClick={() => navigate('/admin/create')} className="cta">
+            Add New Game
+          </button>
         </div>
       </div>
 
-      {loading && (
+      {gamesLoading && (
         <div className="loading">Loading games...</div>
       )}
 
@@ -97,7 +98,7 @@ const GamesManagement = () => {
       {!loading && games.length > 0 && (
         <div className="games-list">
           {games.map((game) => (
-            <div key={game._id} className="game-item">
+            <div key={game.dbId || game._id} className="game-item">
               <img
                 src={game.coverImageUrl || '/assets/pokeball.png'}
                 alt={game.title}
@@ -114,19 +115,19 @@ const GamesManagement = () => {
                   <span className="chip">{game.theme?.name || 'retro'}</span>
                 </div>
                 <p style={{ fontSize: '13px', color: 'var(--admin-muted)', margin: '4px 0 0' }}>
-                  {game.description.substring(0, 100)}...
+                  {game.description?.substring(0, 100) || ''}...
                 </p>
               </div>
               <div className="game-actions">
                 <button
                   className="cta secondary"
-                  onClick={() => navigate(`/admin/edit/${game._id}`)}
+                  onClick={() => navigate(`/admin/edit/${game.dbId || game._id}`)}
                 >
                   Edit
                 </button>
                 <button
                   className="cta danger"
-                  onClick={() => handleDelete(game._id, game.title)}
+                  onClick={() => handleDelete(game.dbId || game._id, game.title)}
                 >
                   Delete
                 </button>

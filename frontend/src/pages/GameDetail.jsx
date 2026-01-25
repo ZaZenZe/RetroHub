@@ -7,16 +7,18 @@ import { useAuth } from '../context/AuthContext';
 const GameDetail = ({ onChatOpen, onGameChange }) => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { getGameById, fetchGameFull, loadPosts, createPost } = useGames();
+  const { getGameById, fetchGameFull, loadPosts, createPost, postsCache } = useGames();
   const { applyTheme } = useTheme();
   const { isAuthenticated } = useAuth();
   
   const [game, setGame] = useState(null);
-  const [posts, setPosts] = useState([]);
   const [postText, setPostText] = useState('');
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+
+  // Get posts directly from cache
+  const posts = game?.dbId ? (postsCache.get(game.dbId) || []) : [];
 
   useEffect(() => {
     const loadGame = async () => {
@@ -65,11 +67,9 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
   const loadGamePosts = async (gameDbId) => {
     setPostsLoading(true);
     try {
-      const postsData = await loadPosts(gameDbId);
-      setPosts(postsData || []);
+      await loadPosts(gameDbId);
     } catch (error) {
       console.error('Failed to load posts:', error);
-      setPosts([]);
     } finally {
       setPostsLoading(false);
     }
@@ -82,8 +82,7 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
     try {
       await createPost(game.dbId, postText.trim());
       setPostText('');
-      // Reload posts
-      await loadGamePosts(game.dbId);
+      // Posts will update automatically via postsCache
     } catch (error) {
       console.error('Failed to create post:', error);
       alert('Failed to post. Please try again.');

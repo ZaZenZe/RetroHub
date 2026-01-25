@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useGames } from '../../context/GamesContext';
 
 const GameForm = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { createGame, updateGame } = useGames();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -145,10 +147,10 @@ const GameForm = () => {
       };
 
       if (gameId) {
-        await api.updateGame(gameId, payload);
+        await updateGame(gameId, payload);
         alert('Game updated successfully!');
       } else {
-        await api.createGame(payload);
+        await createGame(payload);
         alert('Game created successfully!');
       }
 

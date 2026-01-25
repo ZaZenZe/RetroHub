@@ -138,13 +138,93 @@ export const GamesProvider = ({ children }) => {
 
   const createPost = useCallback(async (gameDbId, content) => {
     const result = await api.createPost(gameDbId, content);
-    // Invalidate cache
-    setPostsCache((prev) => {
+    const newPost = result?.post;
+    
+    // Optimistically update the posts cache with the new post
+    if (newPost) {
+      setPostsCache((prev) => {
+        const newCache = new Map(prev);
+        const existingPosts = newCache.get(gameDbId);
+        if (existingPosts && Array.isArray(existingPosts)) {
+          // Add the new post to the beginning of the posts array
+          newCache.set(gameDbId, [newPost, ...existingPosts]);
+        } else {
+          // If no cache exists, create a new entry
+          newCache.set(gameDbId, [newPost]);
+        }
+        return newCache;
+      });
+    }
+    
+    return result;
+  }, []);
+
+  const createGame = useCallback(async (gameData) => {
+    const result = await api.createGame(gameData);
+    const newGame = result?.game;
+    
+    // Optimistically add the new game to the games list
+    if (newGame) {
+      const mappedGame = mapApiGame(newGame);
+      setGames((prev) => [mappedGame, ...prev]);
+    }
+    
+    return result;
+  }, []);
+
+  const updateGame = useCallback(async (gameId, gameData) => {
+    const result = await api.updateGame(gameId, gameData);
+    const updatedGame = result?.game;
+    
+    // Optimistically update the game in the games list
+    if (updatedGame) {
+      const mappedGame = mapApiGame(updatedGame);
+      setGames((prev) => 
+        prev.map((game) => 
+          game.dbId === updatedGame._id || game.id === gameId 
+            ? mappedGame 
+            : game
+        )
+      );
+      
+      // Clear related caches
+      setTipsCache((prev) => {
+        const newCache = new Map(prev);
+        newCache.delete(updatedGame._id);
+        return newCache;
+      });
+      setFaqCache((prev) => {
+        const newCache = new Map(prev);
+        newCache.delete(updatedGame._id);
+        return newCache;
+      });
+    }
+    
+    return result;
+  }, []);
+
+  const deleteGame = useCallback(async (gameId) => {
+    await api.deleteGame(gameId);
+    
+    // Remove the game from the list
+    setGames((prev) => prev.filter((game) => game.id !== gameId && game.dbId !== gameId));
+    
+    // Clear all related caches
+    setTipsCache((prev) => {
       const newCache = new Map(prev);
-      newCache.delete(gameDbId);
+      newCache.delete(gameId);
       return newCache;
     });
-    return result;
+    setFaqCache((prev) => {
+      const newCache = new Map(prev);
+      newCache.delete(gameId);
+      return newCache;
+    });
+    setPostsCache((prev) => {
+      const newCache = new Map(prev);
+      newCache.delete(gameId);
+      return newCache;
+    });
   }, []);
 
   useEffect(() => {
@@ -164,6 +244,9 @@ export const GamesProvider = ({ children }) => {
       loadFaqs,
       loadPosts,
       createPost,
+      createGame,
+      updateGame,
+      deleteGame,
       tipsCache,
       faqCache,
       postsCache,
@@ -180,6 +263,9 @@ export const GamesProvider = ({ children }) => {
       loadFaqs,
       loadPosts,
       createPost,
+      createGame,
+      updateGame,
+      deleteGame,
       tipsCache,
       faqCache,
       postsCache,
