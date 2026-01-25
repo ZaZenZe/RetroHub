@@ -115,7 +115,11 @@ class ApiService {
         return payload;
       } catch (err) {
         if (err.name === 'AbortError') {
-          err.message = 'Request timeout';
+          // DOMException.message is read-only in some browsers; wrap to set a friendly message
+          const wrapped = new Error('Request timeout');
+          wrapped.name = 'AbortError';
+          wrapped.status = err.status;
+          throw wrapped;
         }
 
         const isNetworkError = err instanceof TypeError || err.name === 'AbortError';
