@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const SETTINGS_KEY = 'retrohub:settings';
 
@@ -31,7 +31,16 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  const applyTheme = (theme) => {
+  const clearTheme = useCallback(() => {
+    const style = document.getElementById('dynamic-theme-style');
+    if (style) {
+      style.remove();
+    }
+    document.body.className = 'theme-home';
+    setCurrentTheme(null);
+  }, []);
+
+  const applyTheme = useCallback((theme) => {
     if (!theme || !theme.colors) {
       clearTheme();
       return;
@@ -67,31 +76,22 @@ export const ThemeProvider = ({ children }) => {
     // Apply theme class to body
     document.body.className = `theme-${theme.name || 'default'}`;
     setCurrentTheme(theme);
-  };
+  }, [clearTheme]);
 
-  const clearTheme = () => {
-    const style = document.getElementById('dynamic-theme-style');
-    if (style) {
-      style.remove();
-    }
-    document.body.className = 'theme-home';
-    setCurrentTheme(null);
-  };
-
-  const updateSettings = (newSettings) => {
+  const updateSettings = useCallback((newSettings) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    currentTheme,
+    settings,
+    applyTheme,
+    clearTheme,
+    updateSettings,
+  }), [currentTheme, settings, applyTheme, clearTheme, updateSettings]);
 
   return (
-    <ThemeContext.Provider
-      value={{
-        currentTheme,
-        settings,
-        applyTheme,
-        clearTheme,
-        updateSettings,
-      }}
-    >
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

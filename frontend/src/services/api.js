@@ -205,7 +205,8 @@ class ApiService {
   }
 
   async getGameFull(id) {
-    return this.request(`/games/${encodeURIComponent(id)}/full`);
+    // Full game payload can be heavier (tips, faqs, media); allow more time before timing out
+    return this.request(`/games/${encodeURIComponent(id)}/full`, {}, { timeout: 20000, retries: 2 });
   }
 
   async getTips(gameId) {

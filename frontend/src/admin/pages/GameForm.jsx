@@ -123,6 +123,40 @@ const GameForm = () => {
     }
   };
 
+  const handleScreenshotUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    try {
+      setLoading(true);
+      const uploadedUrls = [];
+      
+      for (const file of files) {
+        const res = await api.uploadFile(file);
+        if (res.url) {
+          const absoluteUrl = res.url.startsWith('http')
+            ? res.url
+            : `${window.location.origin}${res.url}`;
+          uploadedUrls.push(absoluteUrl);
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          screenshots: prev.screenshots
+            ? prev.screenshots + '\n' + uploadedUrls.join('\n')
+            : uploadedUrls.join('\n'),
+        }));
+      }
+    } catch (error) {
+      console.error('Screenshot upload failed:', error);
+      alert('Screenshot upload failed: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -388,11 +422,12 @@ const GameForm = () => {
                 <label htmlFor={field.name}>{field.label}</label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input
-                    type="url"
+                    type="text"
                     id={field.name}
                     name={field.name}
                     value={formData[field.name] || ''}
                     onChange={handleChange}
+                    placeholder="Paste URL or upload a file below"
                     style={{ flex: 1 }}
                   />
                   <label className="cta secondary" style={{ cursor: 'pointer', margin: 0 }}>
@@ -413,6 +448,18 @@ const GameForm = () => {
             
             <div className="form-group">
               <label htmlFor="screenshots">Screenshots (one per line)</label>
+              <div style={{ marginBottom: '10px' }}>
+                <label className="cta secondary" style={{ cursor: 'pointer' }}>
+                  Upload Multiple
+                  <input 
+                    type="file" 
+                    hidden 
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => handleScreenshotUpload(e)} 
+                  />
+                </label>
+              </div>
               <textarea
                 id="screenshots"
                 name="screenshots"
