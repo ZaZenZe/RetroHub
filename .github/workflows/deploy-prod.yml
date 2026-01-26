@@ -17,8 +17,8 @@ jobs:
     name: Build and Deploy to Production
     runs-on: ubuntu-latest
     
-    # Only allow deployments from main branch
-    if: github.ref == 'refs/heads/main' && github.event.inputs.confirm == 'yes'
+    # Require confirmation input
+    if: github.event.inputs.confirm == 'yes'
 
     steps:
       - name: Checkout repository
