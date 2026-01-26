@@ -820,9 +820,12 @@ body.show-chatbot .chatbot{ opacity: 1; pointer-events: auto; transform: scale(1
 .favorite-card .btn-icon{ margin-top: 8px; }
 .favorite-card .btn-icon:active{ transform: translateY(0); }
 
-/* card-level fav placement */
+/* card-level fav placement (moved inline beside OPEN) */
 .card{ position: relative; }
-.card .fav-btn{ position: absolute; top: 12px; right: 12px; z-index: 6; backdrop-filter: blur(6px); }
+.card .fav-btn{ position: static; top: auto; right: auto; margin-left: 8px; z-index: 1; backdrop-filter: none; vertical-align: middle; }
+.card .body > div[style], .card .body > .title + .chips { display: flex; align-items: center; gap: 12px; }
+.card .body .fav-btn { margin-left: 8px; }
+@media (max-width: 760px){ .card .body > div[style] { flex-direction: row; gap: 8px; } .card .fav-btn{ margin-left:6px; } }
 
 /* vote button */
 .vote-btn{ width:36px; height:36px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); color:var(--muted); transition: all .14s ease; }
