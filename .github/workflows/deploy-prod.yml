@@ -63,7 +63,7 @@ jobs:
 
       - name: Merge main into prod
         run: |
-          git merge main --no-edit --allow-unrelated-histories
+          git merge dev --no-edit --allow-unrelated-histories
 
       - name: Push to prod branch
         uses: ad-m/github-push-action@master
