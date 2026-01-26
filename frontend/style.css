@@ -761,6 +761,14 @@ body.show-chatbot .chatbot{ opacity: 1; pointer-events: auto; transform: scale(1
 .stat .value{ font-size: 20px; font-weight: 800; color: var(--text); }
 .stat .stat-sub{ font-size: 12px; color: var(--muted); margin-top: 4px; }
 
+/* Page tracker (per-page) */
+.page-tracker{ display:flex; flex-direction:column; align-items:center; gap:6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.02); padding:8px 10px; border-radius:12px; min-width:96px; color:var(--muted); }
+.page-tracker .tracker-label{ font-size:11px; color:var(--muted); }
+.page-tracker .tracker-value{ font-weight:700; color:var(--text); font-size:14px; }
+.page-tracker .tracker-actions{ display:flex; gap:8px; margin-top:4px; }
+.page-tracker .btn-icon{ width:28px; height:28px; font-size:12px; }
+@media (max-width: 980px){ .profile-card{ flex-direction:column; align-items:flex-start; } .page-tracker{ align-self:flex-end; } }
+
 /* improve last-posts spacing and clickable affordance */
 .last-post-item.compact{ display:flex; gap:14px; align-items:flex-start; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition: background .14s ease, transform .12s ease; }
 .last-post-item.compact:hover{ background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); transform: translateY(-2px); }

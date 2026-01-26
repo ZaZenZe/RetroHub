@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGames } from '../context/GamesContext';
 import api from '../services/api';
+import PageTracker from '../components/PageTracker';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, updateUserData } = useAuth();
+  const { isAuthenticated, user, updateUserData, userStats, refreshUserStats } = useAuth();
   const { games } = useGames();
   const [stats, setStats] = useState(null);
   const [achievements, setAchievements] = useState([]);
@@ -45,6 +46,9 @@ const Profile = () => {
         const collection = buildCollection(userGamesList);
         setUserGames(collection);
 
+        // ensure the profile page tracker has the latest authoritative stats (so it shows immediately)
+        if (typeof refreshUserStats === 'function') await refreshUserStats();
+
         // If AuthContext provided favorite games, enrich them from catalog (preferred over calling /users/:id)
         if (user && Array.isArray(user.favoriteGames)) {
           const favs = user.favoriteGames
@@ -64,6 +68,13 @@ const Profile = () => {
 
     loadProfileData();
   }, [isAuthenticated, user?.id, games]);
+
+  // Subscribe to live stats published by AuthContext (updated by heartbeat)
+  useEffect(() => {
+    if (userStats) {
+      setStats(prev => ({ ...(prev || {}), ...(userStats || {}) }));
+    }
+  }, [userStats]);
 
   const buildCollection = (userGamesList) => {
     if (!Array.isArray(userGamesList) || userGamesList.length === 0) {
@@ -100,7 +111,7 @@ const Profile = () => {
     if (!match) return <div className="map-hint">Favourite game not in catalog.</div>;
 
     return (
-      <div className="fav-game" onClick={() => match && (window.location.href = `/games/${match.id}`)}>
+      <div className="fav-game" onClick={() => match && (window.location.href = `/game/${match.id}`)}>
         <div className="fav-art" style={{ backgroundImage: `url('${match.art || ''}')` }} />
         <div className="fav-meta">
           <div className="fav-title">{match.title}</div>
@@ -124,7 +135,7 @@ const Profile = () => {
               <span className="material-symbols-sharp">favorite</span>
             </button>
 
-            <button className="btn-cyber" onClick={() => match && (window.location.href = `/games/${match.id}`)}>Open</button>
+            <button className="btn-cyber" onClick={() => match && (window.location.href = `/game/${match.id}`)}>Open</button>
           </div>
         </div>
       </div>
@@ -134,13 +145,29 @@ const Profile = () => {
   // Format play time (prefer exact seconds if provided, otherwise accept backend's decimal hours)
   const formatPlayTime = (raw) => {
     if (raw == null) return '0m';
-    // raw may be seconds (integer) or hours (decimal). Heuristic: if > 1000 assume seconds.
-    const seconds = raw > 1000 ? raw : Math.round((raw || 0) * 3600);
+    // Prefer seconds when available; if caller passed hours (decimal) convert to seconds.
+    let seconds = 0;
+    if (Number.isFinite(raw)) {
+      // If raw looks like seconds (>= 60) assume seconds, otherwise treat as hours
+      seconds = raw >= 60 ? Math.floor(raw) : Math.round(raw * 3600);
+    } else {
+      return '0m';
+    }
+
+    // Sanity: clamp absurd values for display (prevent runaway numbers from bad writes)
+    const maxReasonableSeconds = 60 * 60 * 24 * 365 * 10; // 10 years
+    if (seconds > maxReasonableSeconds) return '—';
+
     if (seconds === 0) return '0m';
     if (seconds < 60) return '<1m';
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.round((seconds % 3600) / 60);
     if (hrs === 0) return `${mins}m`;
+    if (hrs >= 24) {
+      const days = Math.floor(hrs / 24);
+      const rem = hrs % 24;
+      return `${days}d${rem ? ` ${rem}h` : ''}`;
+    }
     return `${hrs}h${mins ? ` ${mins}m` : ''}`;
   };
 
@@ -213,7 +240,7 @@ const Profile = () => {
                     const thumbArt = (games.find(g => g.dbId === (p.gameId && p.gameId._id)) || {}).art || '';
                     const gid = (p.gameId && (p.gameId.slug || p.gameId._id)) || p.gameId || '';
                     return (
-                  <div key={p._id || p.id} className="last-post-item compact" role="button" tabIndex={0} onClick={() => { if (gid) navigate(`/games/${gid}`, { state: { highlightPostId: p._id }, replace: false }); }} onKeyDown={(e) => { if (e.key==='Enter') { if (gid) navigate(`/games/${gid}`, { state: { highlightPostId: p._id }, replace: false }); } }}>
+                  <div key={p._id || p.id} className="last-post-item compact" role="button" tabIndex={0} onClick={() => { if (gid) navigate(`/game/${gid}`, { state: { highlightPostId: p._id }, replace: false }); }} onKeyDown={(e) => { if (e.key==='Enter') { if (gid) navigate(`/game/${gid}`, { state: { highlightPostId: p._id }, replace: false }); } }}>
                     <div className="lp-thumb" style={{ backgroundImage: `url('${thumbArt}')` }} />
                     <div className="lp-body">
                       <div className="lp-game">{(p.gameId && (p.gameId.title || p.gameId.name)) || p.gameTitle || 'Unknown game'}</div>

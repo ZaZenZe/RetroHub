@@ -21,7 +21,8 @@
     "start:game": "cd backend/game-service && npm start",
     "start:community": "cd backend/community-service && npm start",
     "start:ai": "cd backend/ai-service && npm start",
-    "start:services": "concurrently \"npm run start:auth\" \"npm run start:user\" \"npm run start:game\" \"npm run start:community\" \"npm run start:ai\""
+    "start:services": "concurrently \"npm run start:auth\" \"npm run start:user\" \"npm run start:game\" \"npm run start:community\" \"npm run start:ai\"",
+    "smoke:profile-links": "node scripts/check-profile-links.js"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
