@@ -199,6 +199,30 @@ class ApiService {
     return this.request(`/users/${encodeURIComponent(id)}/games`);
   }
 
+  async postSessionSeconds(userId, seconds) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/session`, {
+      method: 'POST',
+      body: JSON.stringify({ seconds }),
+    });
+  }
+
+  async toggleFavoriteGame(userId, gameId, action = 'add') {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/favorites`, {
+      method: 'PATCH',
+      body: JSON.stringify({ gameId, action }),
+    });
+  }
+
+  async getLastPosts(userId) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/last-posts`);
+  }
+
   // Games
   async getGames() {
     return this.request('/games');
@@ -280,6 +304,16 @@ class ApiService {
     return this.request(`/community/posts/${postId}/replies`, {
       method: 'POST',
       body: JSON.stringify({ content }),
+    });
+  }
+
+  async votePost(postId, direction = 'up') {
+    if (!postId) throw new Error('postId required');
+    // allow clearing a vote with 'none' (UI sends 'none' to unvote)
+    if (direction !== 'up' && direction !== 'down' && direction !== 'none') throw new Error('invalid direction');
+    return this.request(`/community/posts/${encodeURIComponent(postId)}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ direction }),
     });
   }
 

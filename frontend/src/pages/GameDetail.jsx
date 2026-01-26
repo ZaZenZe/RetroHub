@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 
 const GameDetail = ({ onChatOpen, onGameChange }) => {
@@ -10,9 +11,31 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
   const navigate = useNavigate();
   const { getGameById, fetchGameFull, loadPosts, createPost, deletePost, togglePostSpoiler, postsCache } = useGames();
   const { applyTheme } = useTheme();
-  const { isAuthenticated, user, isAdmin, isMod } = useAuth();
+  const { isAuthenticated, user, updateUserData, isAdmin, isMod } = useAuth();
   
   const [game, setGame] = useState(null);
+
+  const handleToggleFavorite = async (e) => {
+    e && e.stopPropagation && e.stopPropagation();
+    if (!isAuthenticated || !user || !game || !game.dbId) return;
+    const gid = game.dbId;
+    const currently = Array.isArray(user.favoriteGames) && user.favoriteGames.includes(gid);
+
+    // optimistic update
+    const prev = user.favoriteGames || [];
+    const nextFavs = currently ? prev.filter(x => x !== gid) : [...prev, gid];
+    updateUserData({ favoriteGames: nextFavs });
+
+    try {
+      const res = await api.toggleFavoriteGame(user.id, gid, currently ? 'remove' : 'add');
+      if (res && res.user) updateUserData(res.user);
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
+      // revert
+      updateUserData({ favoriteGames: prev });
+      alert('Failed to update favourites');
+    }
+  };
   const [postText, setPostText] = useState('');
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -219,6 +242,19 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
             <button className="btn-cyber secondary" onClick={handleScrollToForum}>
               OPEN_COMMUNITY
             </button>
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                className={`btn-icon favorite-toggle ${Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId) ? 'fav' : ''}`}
+                onClick={handleToggleFavorite}
+                aria-pressed={Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId)}
+                title={Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId) ? 'Unfavorite' : 'Add to favourites'}
+              >
+                <span className="material-symbols-sharp" aria-hidden="true">favorite</span>
+                <span className="sr-only">{Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId) ? 'Unfavorite' : 'Add to favourites'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -331,6 +367,59 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
                     </div>
 
                     <div className="meta-right actions">
+                      {/* Upvote / dislike controls (supports toggle/unvote) */}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginRight: 8 }}>
+                        <button
+                          type="button"
+                          className={`btn-icon vote-btn ${(post.voteMap && post.voteMap[user?.id] === 'up') ? 'active' : ''}`}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) return alert('Sign in to vote');
+                            if (!post || !post._id) return;
+                            const meVote = post.voteMap && post.voteMap[user?.id];
+                            const direction = meVote === 'up' ? 'none' : 'up';
+                            try {
+                              await api.votePost(post._id, direction);
+                              await loadPosts(game.dbId);
+                            } catch (err) {
+                              console.error('Failed to vote:', err);
+                              alert('Failed to register vote');
+                            }
+                          }}
+                          aria-pressed={post.voteMap && post.voteMap[user?.id] === 'up'}
+                          title="Upvote / remove upvote"
+                          onKeyDown={(ev) => ev.stopPropagation()}
+                        >
+                          <span className="material-symbols-sharp">thumb_up</span>
+                        </button>
+                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>{post.upvotes || 0}</div>
+
+                        <button
+                          type="button"
+                          className={`btn-icon vote-btn ${(post.voteMap && post.voteMap[user?.id] === 'down') ? 'active' : ''}`}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) return alert('Sign in to vote');
+                            if (!post || !post._id) return;
+                            const meVote = post.voteMap && post.voteMap[user?.id];
+                            const direction = meVote === 'down' ? 'none' : 'down';
+                            try {
+                              await api.votePost(post._id, direction);
+                              await loadPosts(game.dbId);
+                            } catch (err) {
+                              console.error('Failed to vote:', err);
+                              alert('Failed to register vote');
+                            }
+                          }}
+                          aria-pressed={post.voteMap && post.voteMap[user?.id] === 'down'}
+                          title="Downvote / remove downvote"
+                          onKeyDown={(ev) => ev.stopPropagation()}
+                        >
+                          <span className="material-symbols-sharp">thumb_down</span>
+                        </button>
+                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>{post.downvotes || 0}</div>
+                      </div>
+
                       {canManagePost ? (
                         <>
                           <button className="cta danger small" onClick={async () => {

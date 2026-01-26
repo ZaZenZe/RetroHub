@@ -8,6 +8,7 @@ const UserStats = require('../../shared/models/UserStats');
 const Achievement = require('../../shared/models/Achievement');
 const UserGame = require('../../shared/models/UserGame');
 const Game = require('../../shared/models/Game');
+const Post = require('../../shared/models/Post');
 
 const router = express.Router();
 const allowedStatuses = ['PLAYING', 'COMPLETED', 'BACKLOG', 'WISH_LIST'];
@@ -30,6 +31,7 @@ function sanitizeUser(user) {
     experiencePoints: user.experiencePoints,
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
+    favoriteGames: (user.favoriteGames || []).map(id => id.toString()),
   };
 }
 
@@ -152,7 +154,60 @@ router.get('/users/:id/stats', verifyToken, async (req, res, next) => {
   if (!ensureSelf(req, res)) return;
   try {
     const stats = await ensureStats(req.params.id);
-    return res.json({ stats });
+    // expose human-friendly totalPlayTime in hours (1 decimal)
+    const totalPlayTime = Math.round(((stats.totalPlaySeconds || 0) / 3600) * 10) / 10;
+    return res.json({ stats: { ...stats.toObject(), totalPlayTime } });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Accept a session heartbeat (seconds) to accumulate play time
+router.post('/users/:id/session', verifyToken, async (req, res, next) => {
+  if (!ensureSelf(req, res)) return;
+  try {
+    const { seconds = 0 } = req.body || {};
+    const inc = Math.max(0, Math.floor(Number(seconds) || 0));
+    if (!inc) return res.status(400).json({ error: 'seconds > 0 required' });
+    const stats = await UserStats.findOneAndUpdate(
+      { userId: req.params.id },
+      { $inc: { totalPlaySeconds: inc } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    const totalPlayTime = Math.round(((stats.totalPlaySeconds || 0) / 3600) * 10) / 10;
+    return res.json({ stats: { ...stats.toObject(), totalPlayTime } });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Toggle favorite game for the user
+router.patch('/users/:id/favorites', verifyToken, async (req, res, next) => {
+  if (!ensureSelf(req, res)) return;
+  try {
+    const { gameId, action = 'add' } = req.body || {};
+    if (!gameId || !Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: 'valid gameId required' });
+    }
+    const update = action === 'remove' ? { $pull: { favoriteGames: gameId } } : { $addToSet: { favoriteGames: gameId } };
+    const user = await User.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json({ user: { id: user._id.toString(), favoriteGames: (user.favoriteGames || []).map(g => g.toString()) } });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Last posts by user (with game info)
+router.get('/users/:id/last-posts', verifyToken, async (req, res, next) => {
+  if (!ensureSelf(req, res)) return;
+  try {
+    const posts = await Post.find({ userId: req.params.id })
+      .populate('gameId', 'title slug')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+    return res.json({ posts });
   } catch (err) {
     return next(err);
   }

@@ -17,6 +17,65 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let heartbeatTimer = null;
+    let sessionAccumulator = 0;
+    let lastTick = Date.now();
+
+    const sendHeartbeat = async () => {
+      if (!user || !token) return;
+      const toSend = sessionAccumulator;
+      sessionAccumulator = 0;
+      try {
+        await api.postSessionSeconds(user.id, toSend);
+        // update local stats display (optimistic)
+        setUser((u) => {
+          if (!u) return u;
+          const next = { ...u, _meta: { ...(u._meta || {}), lastSessionUpdate: Date.now() } };
+          try { localStorage.setItem('authUser', JSON.stringify(next)); } catch (e) {}
+          return next;
+        });
+      } catch (e) {
+        // ignore transient errors
+      }
+    };
+
+    const tick = () => {
+      const now = Date.now();
+      const delta = Math.floor((now - lastTick) / 1000);
+      lastTick = now;
+      if (document.visibilityState === 'visible' && token && user) {
+        sessionAccumulator += delta;
+      }
+    };
+
+    const startHeartbeat = () => {
+      if (heartbeatTimer) return;
+      lastTick = Date.now();
+      heartbeatTimer = setInterval(async () => {
+        tick();
+        if (sessionAccumulator >= 30) {
+          await sendHeartbeat();
+        }
+      }, 1000);
+    };
+
+    const stopHeartbeat = async () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+      tick();
+      if (sessionAccumulator > 0) await sendHeartbeat();
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        stopHeartbeat();
+      } else {
+        startHeartbeat();
+      }
+    };
+
     const init = async () => {
       try {
         const storedUser = localStorage.getItem('authUser');
@@ -54,7 +113,16 @@ export const AuthProvider = ({ children }) => {
     };
 
     init();
-  }, [token]);
+    startHeartbeat();
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('beforeunload', stopHeartbeat);
+
+    return () => {
+      stopHeartbeat();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('beforeunload', stopHeartbeat);
+    };
+  }, [token, user]);
 
   const login = async (email, password) => {
     const data = await api.login(email, password);

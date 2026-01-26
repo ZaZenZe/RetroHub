@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Home = () => {
   const { games, loading } = useGames();
   const { clearTheme } = useTheme();
+  const { user, updateUserData } = useAuth();
   const navigate = useNavigate();
   
   const [filters, setFilters] = useState({
@@ -254,10 +257,45 @@ const Home = () => {
                       }
                     }}
                   >
-                    <div
-                      className="thumb crt-screen"
-                      style={{ backgroundImage: displayImage ? `url('${displayImage}')` : '' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        className="thumb crt-screen"
+                        style={{ backgroundImage: displayImage ? `url('${displayImage}')` : '' }}
+                      />
+
+                      {/* favourite heart (stopPropagation so card click doesn't fire) */}
+                      <button
+                        type="button"
+                        className={`btn-icon fav-btn ${Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game.dbId) ? 'fav' : ''}`}
+                        style={{ pointerEvents: 'auto' }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          console.debug('fav click', { user: user?.username, game: game.title, gid: game.dbId });
+                          if (!user) return alert('Sign in to favourite games');
+                          const gid = game.dbId || game._id || game.id;
+                          const prev = user.favoriteGames || [];
+                          const currently = Array.isArray(prev) && prev.includes(gid);
+                          // optimistic
+                          const nextFavs = currently ? prev.filter(x => x !== gid) : [...prev, gid];
+                          updateUserData({ favoriteGames: nextFavs });
+                          try {
+                            const res = await api.toggleFavoriteGame(user.id, gid, currently ? 'remove' : 'add');
+                            if (res && res.user) updateUserData(res.user);
+                          } catch (err) {
+                            console.error('Failed to toggle favorite from catalog', err);
+                            updateUserData({ favoriteGames: prev });
+                            alert('Failed to update favourites');
+                          }
+                        }}
+                        aria-pressed={Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game.dbId)}
+                        title={Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game.dbId) ? 'Unfavorite' : 'Add to favourites'}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <span className="material-symbols-sharp" aria-hidden="true">favorite</span>
+                        <span className="sr-only">{Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game.dbId) ? 'Unfavorite' : 'Add to favourites'}</span>
+                      </button>
+                    </div>
+
                     <div className="body">
                       <div className="title">{game.title}</div>
                       <div className="chips">

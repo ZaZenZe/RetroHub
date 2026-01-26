@@ -136,11 +136,17 @@ router.post('/posts/:postId/vote', verifyToken, async (req, res, next) => {
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
-    if (direction !== 'up' && direction !== 'down') {
-      return res.status(400).json({ error: 'direction must be up or down' });
+
+    // Accept 'up', 'down' or 'none' (to clear a user's vote)
+    if (direction !== 'up' && direction !== 'down' && direction !== 'none') {
+      return res.status(400).json({ error: "direction must be 'up', 'down' or 'none'" });
     }
+
     await post.applyVote(req.user.sub, direction);
-    res.json({ upvotes: post.upvotes, downvotes: post.downvotes });
+
+    // Reload fresh counts from DB to ensure accurate response
+    const refreshed = await Post.findById(postId).lean();
+    res.json({ upvotes: refreshed.upvotes || 0, downvotes: refreshed.downvotes || 0 });
   } catch (err) {
     next(err);
   }

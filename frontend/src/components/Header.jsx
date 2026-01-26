@@ -138,16 +138,16 @@ const Header = ({ onAuthClick }) => {
             className="mobile-nav-item"
             onClick={() => setIsNavOpen(false)}
           >
-            >> {item.label}
+            {item.label}
           </Link>
         ))}
         {(isAdmin || isMod) && (
           <Link to="/admin" className="mobile-nav-item" onClick={() => setIsNavOpen(false)}>
-            >> {isAdmin ? 'ADMIN' : 'MOD_PANEL'}
+            {isAdmin ? 'ADMIN' : 'MOD_PANEL'}
           </Link>
         )}
         <button className="mobile-nav-item" type="button" onClick={handleAuthClick}>
-          >> {user ? 'SIGNOUT' : 'SIGNIN'}
+          {user ? 'SIGNOUT' : 'SIGNIN'}
         </button>
         {user && <span className="user-tag">ID: {user.username || user.email}</span>}
       </div>

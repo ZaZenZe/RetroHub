@@ -60,6 +60,12 @@ const userSchema = new Schema({
     ref: 'Game',
     default: [],
   }],
+  // user-marked favorite games (for profile)
+  favoriteGames: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Game',
+    default: [],
+  }],
 });
 
 // Hash password when changed
