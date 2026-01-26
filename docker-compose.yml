@@ -85,7 +85,7 @@ services:
       PORT: 3001
       MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost,capacitor://localhost,http://localhost:5173}
       NODE_ENV: production
     depends_on:
       mongodb:
@@ -110,7 +110,7 @@ services:
       PORT: 3002
       MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost,capacitor://localhost,http://localhost:5173}
       NODE_ENV: production
     depends_on:
       mongodb:
@@ -135,7 +135,7 @@ services:
       PORT: 3003
       MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost,capacitor://localhost,http://localhost:5173}
       NODE_ENV: production
     depends_on:
       mongodb:
@@ -160,7 +160,7 @@ services:
       PORT: 3004
       MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost,capacitor://localhost,http://localhost:5173}
       NODE_ENV: production
     depends_on:
       mongodb:
