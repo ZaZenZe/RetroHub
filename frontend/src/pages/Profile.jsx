@@ -203,8 +203,8 @@ const Profile = () => {
             <div className="stat" role="listitem" aria-label={`Hours logged ${formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)}`}>
               <div className="value">{formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)}</div>
               <div className="label">Hours logged</div>
-              {typeof stats?.totalPlayTime === 'number' && (
-                <div className="stat-sub">{stats.totalPlayTime} hrs</div>
+              {typeof stats?.totalPlayTime === 'number' && (stats.totalPlayTime > 0) && (
+                <div className="stat-sub">{(Math.round(stats.totalPlayTime * 10) / 10).toFixed(1)} hrs</div>
               )}
             </div>
 
