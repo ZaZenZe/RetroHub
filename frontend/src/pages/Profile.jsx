@@ -131,6 +131,19 @@ const Profile = () => {
     );
   };
 
+  // Format play time (prefer exact seconds if provided, otherwise accept backend's decimal hours)
+  const formatPlayTime = (raw) => {
+    if (raw == null) return '0m';
+    // raw may be seconds (integer) or hours (decimal). Heuristic: if > 1000 assume seconds.
+    const seconds = raw > 1000 ? raw : Math.round((raw || 0) * 3600);
+    if (seconds === 0) return '0m';
+    if (seconds < 60) return '<1m';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.round((seconds % 3600) / 60);
+    if (hrs === 0) return `${mins}m`;
+    return `${hrs}h${mins ? ` ${mins}m` : ''}`;
+  };
+
   if (!isAuthenticated) {
     return (
       <section className="view active" aria-labelledby="profile-title">
@@ -159,18 +172,23 @@ const Profile = () => {
             <h2 id="profile-title">{user?.username || 'Trainer Profile'}</h2>
             <p className="map-hint">{user?.bio || 'Retro collector and walkthrough writer.'}</p>
           </div>
-          <div className="profile-stats compact">
-            <div className="stat">
-              <span className="label">Hours Logged</span>
-              <span className="value">{(stats?.totalPlayTime ?? 0)}</span>
+          <div className="profile-stats compact" role="list" aria-label="Profile summary stats">
+            <div className="stat" role="listitem" aria-label={`Hours logged ${formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)}`}>
+              <div className="value">{formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)}</div>
+              <div className="label">Hours logged</div>
+              {typeof stats?.totalPlayTime === 'number' && (
+                <div className="stat-sub">{stats.totalPlayTime} hrs</div>
+              )}
             </div>
-            <div className="stat">
-              <span className="label">Posts made</span>
-              <span className="value">{Math.max(stats?.forumPosts ?? 0, lastPosts.length)}</span>
+
+            <div className="stat" role="listitem" aria-label={`${Math.max(stats?.forumPosts ?? 0, lastPosts.length)} forum posts`}>
+              <div className="value">{Math.max(stats?.forumPosts ?? 0, lastPosts.length)}</div>
+              <div className="label">Posts made</div>
             </div>
-            <div className="stat">
-              <span className="label">Achievements</span>
-              <span className="value">{stats?.achievementsCount ?? achievements.length ?? 0}</span>
+
+            <div className="stat" role="listitem" aria-label={`${stats?.achievementsCount ?? achievements.length ?? 0} achievements`}>
+              <div className="value">{stats?.achievementsCount ?? achievements.length ?? 0}</div>
+              <div className="label">Achievements</div>
             </div>
           </div>
         </div>
@@ -193,15 +211,14 @@ const Profile = () => {
               ) : (
                 lastPosts.map(p => {
                     const thumbArt = (games.find(g => g.dbId === (p.gameId && p.gameId._id)) || {}).art || '';
+                    const gid = (p.gameId && (p.gameId.slug || p.gameId._id)) || p.gameId || '';
                     return (
-                  <div key={p._id || p.id} className="last-post-item compact" onClick={() => {
-                    const gid = (p.gameId && (p.gameId.slug || p.gameId._id)) || p.gameId || ''; if (gid) window.location.href = `/games/${gid}`;
-                  }}>
+                  <div key={p._id || p.id} className="last-post-item compact" role="button" tabIndex={0} onClick={() => { if (gid) navigate(`/games/${gid}`, { state: { highlightPostId: p._id }, replace: false }); }} onKeyDown={(e) => { if (e.key==='Enter') { if (gid) navigate(`/games/${gid}`, { state: { highlightPostId: p._id }, replace: false }); } }}>
                     <div className="lp-thumb" style={{ backgroundImage: `url('${thumbArt}')` }} />
                     <div className="lp-body">
                       <div className="lp-game">{(p.gameId && (p.gameId.title || p.gameId.name)) || p.gameTitle || 'Unknown game'}</div>
-                      <div className="lp-excerpt">{(p.content||'').slice(0,160)}{(p.content||'').length>160?'…':''}</div>
-                      <div className="lp-time">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+                      <div className="lp-excerpt">{(p.content||'').slice(0,120)}{(p.content||'').length>120?'…':''}</div>
+                      <div className="lp-time">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''} <span className="muted">· view</span></div>
                     </div>
                   </div>
                 );

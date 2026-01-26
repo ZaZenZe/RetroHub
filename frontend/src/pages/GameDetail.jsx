@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +9,7 @@ import api from '../services/api';
 const GameDetail = ({ onChatOpen, onGameChange }) => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { getGameById, fetchGameFull, loadPosts, createPost, deletePost, togglePostSpoiler, postsCache } = useGames();
+  const { getGameById, fetchGameFull, loadPosts, createPost, deletePost, togglePostSpoiler, applyLocalVote, invalidatePosts, postsCache } = useGames();
   const { applyTheme } = useTheme();
   const { isAuthenticated, user, updateUserData, isAdmin, isMod } = useAuth();
   
@@ -68,6 +68,45 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
 
   // Get posts directly from cache
   const posts = game?.dbId ? (postsCache.get(game.dbId) || []) : [];
+
+  const location = useLocation();
+
+  // If the URL contains a #post-<id> fragment (or ?highlight=...), scroll to and highlight that post
+  useEffect(() => {
+    if (!posts || posts.length === 0) return;
+    // Priority: location.state.highlightPostId -> hash -> ?highlight=
+    let targetId = '';
+    if (location && location.state && location.state.highlightPostId) {
+      targetId = `post-${location.state.highlightPostId}`;
+    } else {
+      const hash = (location && location.hash) || '';
+      if (hash && hash.startsWith('#post-')) targetId = hash.slice(1);
+      else {
+        const qp = new URLSearchParams(location.search);
+        const h = qp.get('highlight');
+        if (h) targetId = `post-${h}`;
+      }
+    }
+    if (!targetId) return;
+    // Delay slightly to ensure DOM is updated
+    const t = setTimeout(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        try {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('flash');
+          // attempt to focus for screen-readers
+          el.setAttribute('tabindex', '-1');
+          el.focus({ preventScroll: true });
+          setTimeout(() => el.classList.remove('flash'), 2200);
+        } catch (e) {
+          /* ignore */
+        }
+      }
+    }, 120);
+
+    return () => clearTimeout(t);
+  }, [posts, location && location.hash, location && location.search]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -358,7 +397,7 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
               const canManagePost = isOwner || isAdmin || (isMod && user && Array.isArray(user.moderatedGames) && user.moderatedGames.includes(game?.dbId));
 
               return (
-                <li key={post._id || idx} className="post">
+                <li id={`post-${post._id}`} key={post._id || idx} className="post">
                   <div className="meta">
                     <div className="meta-left">
                       <span>{author}</span>
@@ -378,11 +417,22 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
                             if (!post || !post._id) return;
                             const meVote = post.voteMap && post.voteMap[user?.id];
                             const direction = meVote === 'up' ? 'none' : 'up';
+
+                            // Optimistic UI update
+                            try {
+                              applyLocalVote(game.dbId, post._id, user.id, direction);
+                            } catch (err) {
+                              console.warn('optimistic vote failed', err);
+                            }
+
                             try {
                               await api.votePost(post._id, direction);
-                              await loadPosts(game.dbId);
+                              // Force-refresh posts to reconcile authoritative counts
+                              await loadPosts(game.dbId, { force: true });
                             } catch (err) {
                               console.error('Failed to vote:', err);
+                              // Revert to server state
+                              await loadPosts(game.dbId, { force: true }).catch(() => {});
                               alert('Failed to register vote');
                             }
                           }}
@@ -403,11 +453,19 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
                             if (!post || !post._id) return;
                             const meVote = post.voteMap && post.voteMap[user?.id];
                             const direction = meVote === 'down' ? 'none' : 'down';
+
+                            try {
+                              applyLocalVote(game.dbId, post._id, user.id, direction);
+                            } catch (err) {
+                              console.warn('optimistic vote failed', err);
+                            }
+
                             try {
                               await api.votePost(post._id, direction);
-                              await loadPosts(game.dbId);
+                              await loadPosts(game.dbId, { force: true });
                             } catch (err) {
                               console.error('Failed to vote:', err);
+                              await loadPosts(game.dbId, { force: true }).catch(() => {});
                               alert('Failed to register vote');
                             }
                           }}

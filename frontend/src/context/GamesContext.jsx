@@ -127,8 +127,9 @@ export const GamesProvider = ({ children }) => {
     return faqs;
   }, [faqCache]);
 
-  const loadPosts = useCallback(async (gameDbId) => {
-    if (postsCache.has(gameDbId)) {
+  // Load posts; pass { force: true } to bypass cache and re-fetch from server
+  const loadPosts = useCallback(async (gameDbId, { force = false } = {}) => {
+    if (!force && postsCache.has(gameDbId)) {
       return postsCache.get(gameDbId);
     }
     const { posts = [] } = await api.getPosts(gameDbId);
@@ -192,14 +193,59 @@ export const GamesProvider = ({ children }) => {
 
     try {
       const res = await api.togglePostSpoiler(postId, isSpoiler);
-      await loadPosts(gameDbId).catch(() => {});
+      await loadPosts(gameDbId, { force: true }).catch(() => {});
       try { localStorage.setItem(`retrohub:posts:update:${gameDbId}`, Date.now().toString()); } catch (e) {}
       return res;
     } catch (err) {
-      await loadPosts(gameDbId).catch(() => {});
+      await loadPosts(gameDbId, { force: true }).catch(() => {});
       throw err;
     }
   }, [loadPosts]);
+
+  // Optimistically apply a vote locally so the UI updates instantly. Caller should
+  // call loadPosts(gameDbId, { force: true }) after the server round-trip to reconcile.
+  const applyLocalVote = useCallback((gameDbId, postId, userId, direction) => {
+    setPostsCache((prev) => {
+      const newCache = new Map(prev);
+      const existing = Array.isArray(newCache.get(gameDbId)) ? newCache.get(gameDbId) : [];
+      const updated = existing.map((p) => {
+        if (!p || ((p._id || p.id) !== postId)) return p;
+        const next = { ...p };
+        const voteMap = { ...(next.voteMap || {}) };
+        const prevVote = voteMap[userId];
+
+        // Remove previous vote counts
+        if (prevVote === 'up') next.upvotes = Math.max(0, (next.upvotes || 0) - 1);
+        if (prevVote === 'down') next.downvotes = Math.max(0, (next.downvotes || 0) - 1);
+
+        // Apply new direction
+        if (direction === 'none') {
+          delete voteMap[userId];
+        } else if (direction === 'up') {
+          voteMap[userId] = 'up';
+          next.upvotes = (next.upvotes || 0) + 1;
+        } else if (direction === 'down') {
+          voteMap[userId] = 'down';
+          next.downvotes = (next.downvotes || 0) + 1;
+        }
+
+        next.voteMap = voteMap;
+        return next;
+      });
+      newCache.set(gameDbId, updated);
+      return newCache;
+    });
+  }, []);
+
+  const invalidatePosts = useCallback((gameDbId) => {
+    setPostsCache((prev) => {
+      const newCache = new Map(prev);
+      newCache.delete(gameDbId);
+      return newCache;
+    });
+    try { localStorage.setItem(`retrohub:posts:update:${gameDbId}`, Date.now().toString()); } catch (e) {}
+  }, []);
+
 
   useEffect(() => {
     const handler = (ev) => {
@@ -301,6 +347,8 @@ export const GamesProvider = ({ children }) => {
       createPost,
       deletePost,
       togglePostSpoiler,
+      applyLocalVote,
+      invalidatePosts,
       createGame,
       updateGame,
       deleteGame,
@@ -322,6 +370,8 @@ export const GamesProvider = ({ children }) => {
       createPost,
       deletePost,
       togglePostSpoiler,
+      applyLocalVote,
+      invalidatePosts,
       createGame,
       updateGame,
       deleteGame,
