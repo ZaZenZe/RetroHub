@@ -21,13 +21,13 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: '/assets/apk_logo.png',
-            sizes: '1024x1024',
+            src: '/assets/pokeball.png',
+            sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/assets/apk_logo.png',
-            sizes: '1024x1024',
+            src: '/assets/pokeball.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable any',
           },
