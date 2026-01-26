@@ -18,6 +18,11 @@ body.theme-admin {
   color: var(--admin-text);
   font-family: 'Share Tech Mono', monospace;
   overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.theme-admin * {
+  box-sizing: border-box;
 }
 
 /* Admin Header */
@@ -160,6 +165,9 @@ body.theme-admin {
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .admin-view {
@@ -319,11 +327,16 @@ body.theme-admin {
   border: 1px solid var(--admin-border);
   border-radius: 16px;
   padding: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .form-grid {
   display: grid;
   gap: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .form-section {
@@ -333,6 +346,9 @@ body.theme-admin {
   background: var(--admin-card);
   border: 1px solid var(--admin-border);
   border-radius: 12px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .form-section.full-width {
@@ -357,11 +373,16 @@ body.theme-admin {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .form-group {
   display: grid;
   gap: 6px;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .form-group label {
@@ -381,6 +402,9 @@ body.theme-admin {
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .form-group input:focus,
@@ -428,9 +452,11 @@ body.theme-admin {
 
 .screenshots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 12px;
   margin-top: 12px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .screenshot-item {
@@ -469,8 +495,10 @@ body.theme-admin {
 /* Color Grid */
 .color-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 12px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Content Manager (Tips & FAQs) */
@@ -486,6 +514,8 @@ body.theme-admin {
   margin-bottom: 12px;
   max-height: 400px;
   overflow-y: auto;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .content-item {
@@ -495,6 +525,9 @@ body.theme-admin {
   border-radius: 8px;
   display: grid;
   gap: 8px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .content-item input,
@@ -506,6 +539,9 @@ body.theme-admin {
   color: var(--admin-text);
   font-size: 13px;
   font-family: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .content-item-actions {
@@ -822,8 +858,16 @@ body.theme-admin {
     grid-template-columns: 1fr;
   }
   
+  .form-section {
+    padding: 16px;
+  }
+  
   .color-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .screenshots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   }
 
   .view-header {
@@ -846,6 +890,18 @@ body.theme-admin {
     flex-direction: column;
     align-items: stretch;
   }
+  
+  /* Flex containers should wrap on mobile */
+  .form-group > div[style*="display: flex"],
+  .form-group > div[style*="display:flex"] {
+    flex-wrap: wrap;
+  }
+  
+  .form-group > div[style*="display: flex"] > input,
+  .form-group > div[style*="display:flex"] > input {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -867,6 +923,47 @@ body.theme-admin {
   }
 
   .filters select {
+    width: 100%;
+  }
+  
+  .form-section {
+    padding: 12px;
+  }
+  
+  .form-grid {
+    gap: 16px;
+  }
+  
+  .color-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .screenshots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+  }
+  
+  /* Ensure image previews don't cause overflow */
+  .form-group img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Flex containers in forms */
+  .form-group > div[style*="display: flex"],
+  .form-group > div[style*="display:flex"] {
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+  
+  .form-group > div[style*="display: flex"] > input,
+  .form-group > div[style*="display:flex"] > input {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+  
+  .form-group > div[style*="display: flex"] > label,
+  .form-group > div[style*="display:flex"] > label {
     width: 100%;
   }
 }
