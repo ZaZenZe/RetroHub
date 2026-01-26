@@ -243,6 +243,8 @@ router.put('/games/:gameParam', async (req, res, next) => {
     if (!ensureGameAccess(req, game)) return res.status(403).json({ error: 'Forbidden' });
 
     const updates = req.body || {};
+    const tipsPayload = Array.isArray(updates.tips) ? updates.tips : null;
+    const faqsPayload = Array.isArray(updates.faqs) ? updates.faqs : null;
     const allowed = [
       'title',
       'slug',
@@ -271,6 +273,42 @@ router.put('/games/:gameParam', async (req, res, next) => {
     });
 
     await game.save();
+
+    if (tipsPayload) {
+      await Tip.deleteMany({ gameId: game._id });
+      if (tipsPayload.length > 0) {
+        const tipDocs = tipsPayload
+          .map(t =>
+            typeof t === 'string'
+              ? { gameId: game._id, content: t, category: 'gameplay' }
+              : {
+                  gameId: game._id,
+                  content: t.content,
+                  category: t.category || 'gameplay',
+                }
+          )
+          .filter(t => t.content);
+        if (tipDocs.length > 0) {
+          await Tip.insertMany(tipDocs);
+        }
+      }
+    }
+
+    if (faqsPayload) {
+      await FAQ.deleteMany({ gameId: game._id });
+      if (faqsPayload.length > 0) {
+        const faqDocs = faqsPayload
+          .map(f => ({
+            gameId: game._id,
+            question: f.question,
+            answer: f.answer,
+          }))
+          .filter(f => f.question && f.answer);
+        if (faqDocs.length > 0) {
+          await FAQ.insertMany(faqDocs);
+        }
+      }
+    }
     res.json({ game: sanitizeGame(game) });
   } catch (err) {
     if (err.code === 11000) {

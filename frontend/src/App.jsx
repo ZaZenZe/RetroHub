@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Chatbot from './components/Chatbot';
 import AuthModal from './components/AuthModal';
+import PixelSnow from './components/PixelSnow';
 import Home from './pages/Home';
 import GameDetail from './pages/GameDetail';
 import Profile from './pages/Profile';
@@ -25,11 +26,36 @@ function App() {
   };
 
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <AuthProvider>
         <GamesProvider>
           <ThemeProvider>
             <div className="app">
+              {/* PixelSnow Background */}
+              <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1, pointerEvents: 'none' }}>
+                <PixelSnow 
+                  color="#ffffff"
+                  flakeSize={0.01}
+                  minFlakeSize={1.25}
+                  pixelResolution={200}
+                  speed={1.25}
+                  density={0.3}
+                  direction={125}
+                  brightness={1}
+                  depthFade={8}
+                  farPlane={20}
+                  gamma={0.4545}
+                  variant="square"
+                />
+              </div>
+
+              <div className="cyber-grid" aria-hidden="true" />
+              <div className="vignette" aria-hidden="true" />
               <Header onAuthClick={() => setIsAuthModalOpen(true)} />
               
               <main className="app-main" role="main">

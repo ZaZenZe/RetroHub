@@ -8,7 +8,7 @@ import '../../style.css';
 import '../../admin.css';
 
 const AdminRoutes = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -25,7 +25,7 @@ const AdminRoutes = () => {
         <Routes>
           <Route index element={<GamesManagement />} />
           <Route path="games" element={<GamesManagement />} />
-          <Route path="create" element={<GameForm />} />
+          <Route path="create" element={isAdmin ? <GameForm /> : <Navigate to="/admin" replace />} />
           <Route path="edit/:gameId" element={<GameForm />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>

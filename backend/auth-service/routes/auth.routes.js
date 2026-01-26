@@ -26,7 +26,7 @@ function signToken(user) {
   );
 }
 
-function sanitizeUser(user, { includeModeratedGames = false } = {}) {
+function sanitizeUser(user, { includeModeratedGames = false, includeFavorites = false } = {}) {
   const base = {
     id: user._id.toString(),
     email: user.email,
@@ -40,6 +40,9 @@ function sanitizeUser(user, { includeModeratedGames = false } = {}) {
   };
   if (includeModeratedGames) {
     base.moderatedGames = (user.moderatedGames || []).map(id => id.toString());
+  }
+  if (includeFavorites) {
+    base.favoriteGames = (user.favoriteGames || []).map(id => id.toString());
   }
   return base;
 }
@@ -108,10 +111,16 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'email and password are required' });
+    const identifier = typeof email === 'string' ? email.trim() : '';
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'email/username and password are required' });
     }
-    const user = await User.findByEmail(email);
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier },
+      ],
+    });
     if (!user) {
       return res.status(401).json({ error: 'invalid credentials' });
     }
@@ -125,7 +134,7 @@ router.post('/login', async (req, res, next) => {
     await ensureStats(user._id);
 
     const token = signToken(user);
-    return res.json({ user: sanitizeUser(user), token });
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true, includeFavorites: true }), token });
   } catch (err) {
     return next(err);
   }
@@ -141,7 +150,8 @@ router.get('/validate', verifyToken, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    return res.json({ user: sanitizeUser(user) });
+    // include favorites so client has canonical list on validate
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true, includeFavorites: true }) });
   } catch (err) {
     return next(err);
   }
@@ -153,7 +163,7 @@ router.get('/me', verifyToken, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    return res.json({ user: sanitizeUser(user) });
+    return res.json({ user: sanitizeUser(user, { includeModeratedGames: true, includeFavorites: true }) });
   } catch (err) {
     return next(err);
   }

@@ -17,7 +17,7 @@ const tipSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: ['gameplay', 'strategy', 'items', 'general'],
+    enum: ['gameplay', 'strategy', 'items', 'general', 'story', 'collectibles', 'secrets'],
   },
   createdAt: {
     type: Date,

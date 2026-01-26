@@ -39,6 +39,17 @@ const userStatsSchema = new Schema({
     default: 0,
     min: 0,
   },
+  // total play time in seconds (accumulated from session heartbeats)
+  totalPlaySeconds: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  // lightweight achievements list (ids) for quick display
+  achievements: [{
+    type: String,
+    default: [],
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

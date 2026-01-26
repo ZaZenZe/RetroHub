@@ -19,6 +19,31 @@ class ApiService {
     }
   }
 
+  async uploadFile(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    // Direct fetch to avoid JSON headers
+    const response = await fetch(`${API_BASE}/admin/upload`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+       let error = 'Upload failed';
+       try {
+         const data = await response.json();
+         error = data.error || error;
+       } catch (e) {}
+       throw new Error(error);
+    }
+    
+    return response.json();
+  }
+
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',
@@ -90,7 +115,11 @@ class ApiService {
         return payload;
       } catch (err) {
         if (err.name === 'AbortError') {
-          err.message = 'Request timeout';
+          // DOMException.message is read-only in some browsers; wrap to set a friendly message
+          const wrapped = new Error('Request timeout');
+          wrapped.name = 'AbortError';
+          wrapped.status = err.status;
+          throw wrapped;
         }
 
         const isNetworkError = err instanceof TypeError || err.name === 'AbortError';
@@ -114,6 +143,10 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+  }
+
+  async validate() {
+    return this.request('/auth/validate');
   }
 
   async register(username, email, password) {
@@ -166,6 +199,30 @@ class ApiService {
     return this.request(`/users/${encodeURIComponent(id)}/games`);
   }
 
+  async postSessionSeconds(userId, seconds) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/session`, {
+      method: 'POST',
+      body: JSON.stringify({ seconds }),
+    });
+  }
+
+  async toggleFavoriteGame(userId, gameId, action = 'add') {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/favorites`, {
+      method: 'PATCH',
+      body: JSON.stringify({ gameId, action }),
+    });
+  }
+
+  async getLastPosts(userId) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/last-posts`);
+  }
+
   // Games
   async getGames() {
     return this.request('/games');
@@ -176,7 +233,8 @@ class ApiService {
   }
 
   async getGameFull(id) {
-    return this.request(`/games/${encodeURIComponent(id)}/full`);
+    // Full game payload can be heavier (tips, faqs, media); allow more time before timing out
+    return this.request(`/games/${encodeURIComponent(id)}/full`, {}, { timeout: 20000, retries: 2 });
   }
 
   async getTips(gameId) {
@@ -185,6 +243,36 @@ class ApiService {
 
   async getFaqs(gameId) {
     return this.request(`/games/${encodeURIComponent(gameId)}/faqs`);
+  }
+
+  // Admin - users & moderators
+  async getAdminUsers(query = '') {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    return this.request(`/admin/users?${params.toString()}`);
+  }
+
+  async getGameMods(gameId) {
+    return this.request(`/admin/games/${encodeURIComponent(gameId)}/mods`);
+  }
+
+  async addGameMod(gameId, identifier) {
+    const payload = {};
+    if (identifier?.includes('@')) {
+      payload.email = identifier;
+    } else {
+      payload.username = identifier;
+    }
+    return this.request(`/admin/games/${encodeURIComponent(gameId)}/mods`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async removeGameMod(gameId, userId) {
+    return this.request(`/admin/games/${encodeURIComponent(gameId)}/mods/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    });
   }
 
   // Community
@@ -199,10 +287,33 @@ class ApiService {
     });
   }
 
+  async togglePostSpoiler(postId, isSpoiler) {
+    return this.request(`/community/posts/${encodeURIComponent(postId)}/spoiler`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isSpoiler }),
+    });
+  }
+
+  async deletePost(postId) {
+    return this.request(`/community/posts/${encodeURIComponent(postId)}`, {
+      method: 'DELETE',
+    });
+  }
+
   async createReply(postId, content) {
     return this.request(`/community/posts/${postId}/replies`, {
       method: 'POST',
       body: JSON.stringify({ content }),
+    });
+  }
+
+  async votePost(postId, direction = 'up') {
+    if (!postId) throw new Error('postId required');
+    // allow clearing a vote with 'none' (UI sends 'none' to unvote)
+    if (direction !== 'up' && direction !== 'down' && direction !== 'none') throw new Error('invalid direction');
+    return this.request(`/community/posts/${encodeURIComponent(postId)}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ direction }),
     });
   }
 

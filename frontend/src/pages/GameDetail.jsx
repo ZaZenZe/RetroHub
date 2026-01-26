@@ -1,22 +1,112 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+
 
 const GameDetail = ({ onChatOpen, onGameChange }) => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { getGameById, fetchGameFull, loadPosts, createPost } = useGames();
+  const { getGameById, fetchGameFull, loadPosts, createPost, deletePost, togglePostSpoiler, applyLocalVote, invalidatePosts, postsCache } = useGames();
   const { applyTheme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, updateUserData, isAdmin, isMod } = useAuth();
   
   const [game, setGame] = useState(null);
-  const [posts, setPosts] = useState([]);
+
+  const handleToggleFavorite = async (e) => {
+    e && e.stopPropagation && e.stopPropagation();
+    if (!isAuthenticated || !user || !game || !game.dbId) return;
+    const gid = game.dbId;
+    const currently = Array.isArray(user.favoriteGames) && user.favoriteGames.includes(gid);
+
+    // optimistic update
+    const prev = user.favoriteGames || [];
+    const nextFavs = currently ? prev.filter(x => x !== gid) : [...prev, gid];
+    updateUserData({ favoriteGames: nextFavs });
+
+    try {
+      const res = await api.toggleFavoriteGame(user.id, gid, currently ? 'remove' : 'add');
+      if (res && res.user) updateUserData(res.user);
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
+      // revert
+      updateUserData({ favoriteGames: prev });
+      alert('Failed to update favourites');
+    }
+  };
   const [postText, setPostText] = useState('');
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+  const [revealedPosts, setRevealedPosts] = useState(new Set());
+
+  const toggleReveal = (postId) => {
+    setRevealedPosts(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+  };
+
+  const handleToggleSpoiler = async (post) => {
+    if (!post || !game || !post._id) return;
+    try {
+      await togglePostSpoiler(game.dbId, post._id, !post.isSpoiler);
+    } catch (err) {
+      console.error('Failed to toggle spoiler:', err);
+      // If server reports the post no longer exists, refresh UI silently
+      if (err && (err.status === 404 || /post not found/i.test(err.message || ''))) {
+        await loadPosts(game.dbId);
+        return;
+      }
+      alert('Failed to update post');
+    }
+  };
+
+  // Get posts directly from cache
+  const posts = game?.dbId ? (postsCache.get(game.dbId) || []) : [];
+
+  const location = useLocation();
+
+  // If the URL contains a #post-<id> fragment (or ?highlight=...), scroll to and highlight that post
+  useEffect(() => {
+    if (!posts || posts.length === 0) return;
+    // Priority: location.state.highlightPostId -> hash -> ?highlight=
+    let targetId = '';
+    if (location && location.state && location.state.highlightPostId) {
+      targetId = `post-${location.state.highlightPostId}`;
+    } else {
+      const hash = (location && location.hash) || '';
+      if (hash && hash.startsWith('#post-')) targetId = hash.slice(1);
+      else {
+        const qp = new URLSearchParams(location.search);
+        const h = qp.get('highlight');
+        if (h) targetId = `post-${h}`;
+      }
+    }
+    if (!targetId) return;
+    // Delay slightly to ensure DOM is updated
+    const t = setTimeout(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        try {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('flash');
+          // attempt to focus for screen-readers
+          el.setAttribute('tabindex', '-1');
+          el.focus({ preventScroll: true });
+          setTimeout(() => el.classList.remove('flash'), 2200);
+        } catch (e) {
+          /* ignore */
+        }
+      }
+    }, 120);
+
+    return () => clearTimeout(t);
+  }, [posts, location && location.hash, location && location.search]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -25,8 +115,12 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
         let gameData = getGameById(gameId);
         if (!gameData) {
           gameData = await fetchGameFull(gameId);
-        } else if (!gameData.tips || !gameData.faq) {
-          gameData = await fetchGameFull(gameId);
+        } else {
+          const tipsMissing = !Array.isArray(gameData.tips) || gameData.tips.length === 0;
+          const faqMissing = !Array.isArray(gameData.faq) || gameData.faq.length === 0;
+          if (tipsMissing || faqMissing) {
+            gameData = await fetchGameFull(gameId);
+          }
         }
         
         if (gameData) {
@@ -61,11 +155,9 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
   const loadGamePosts = async (gameDbId) => {
     setPostsLoading(true);
     try {
-      const postsData = await loadPosts(gameDbId);
-      setPosts(postsData || []);
+      await loadPosts(gameDbId);
     } catch (error) {
       console.error('Failed to load posts:', error);
-      setPosts([]);
     } finally {
       setPostsLoading(false);
     }
@@ -78,8 +170,7 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
     try {
       await createPost(game.dbId, postText.trim());
       setPostText('');
-      // Reload posts
-      await loadGamePosts(game.dbId);
+      // Posts will update automatically via postsCache
     } catch (error) {
       console.error('Failed to create post:', error);
       alert('Failed to post. Please try again.');
@@ -161,50 +252,69 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
     : [];
 
   return (
-    <section id="game-view" className="view active" aria-live="polite" aria-labelledby="game-title">
+    <section id="game-view" className="view active game-view" aria-live="polite" aria-labelledby="game-title">
+      <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to Home">
+        <span className="material-symbols-sharp">arrow_back</span>
+        <span>RETURN_TO_ROOT</span>
+      </button>
+
       <div className="game-hero">
-        <button className="back-btn" onClick={() => navigate('/')} aria-label="Back to Home">
-          <span className="material-symbols-outlined">arrow_back</span>
-          <span>Back</span>
-        </button>
-        <div
-          className={`art ${heroUrl ? '' : 'no-image'}`}
-          style={{ backgroundImage: heroUrl ? `url('${heroUrl}')` : '' }}
-          aria-hidden="true"
-        />
-        <div className="meta">
-          <h2 id="game-title">{game.title}</h2>
+        <div className="game-art tech-card">
+          <div
+            className={`art crt-screen ${heroUrl ? '' : 'no-image'}`}
+            style={{ backgroundImage: heroUrl ? `url('${heroUrl}')` : '' }}
+            aria-hidden="true"
+          />
+          <div className="art-label">IMG_SRC_01</div>
+        </div>
+        <div className="meta tech-card">
+          <h2 id="game-title" className="game-title">{game.title}</h2>
           <div className="chips">
             <span className="chip">{game.platform || 'Platform TBA'}</span>
             <span className="chip">{game.year || 'Year TBA'}</span>
           </div>
           <p className="description">{game.description || NO_INFO}</p>
           <div className="quick-actions">
-            <button className="cta" onClick={() => onChatOpen && onChatOpen()}>
-              Ask help from AI
+            <button className="btn-cyber" onClick={() => onChatOpen && onChatOpen()}>
+              LAUNCH_AI
             </button>
-            <button className="cta secondary" onClick={handleScrollToForum}>
-              Blab about it in community
+            <button className="btn-cyber secondary" onClick={handleScrollToForum}>
+              OPEN_COMMUNITY
             </button>
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                className={`btn-icon favorite-toggle ${Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId) ? 'fav' : ''}`}
+                onClick={handleToggleFavorite}
+                aria-pressed={Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId)}
+                title={Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId) ? 'Unfavorite' : 'Add to favourites'}
+              >
+                <span className="material-symbols-sharp" aria-hidden="true">favorite</span>
+                <span className="sr-only">{Array.isArray(user?.favoriteGames) && user.favoriteGames.includes(game?.dbId) ? 'Unfavorite' : 'Add to favourites'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="detail-middle" aria-label="Game details">
-        <section className="panel" aria-labelledby="tips-title">
+        <section className="panel tech-card" aria-labelledby="tips-title">
           <div className="section-head">
-            <h3 id="tips-title">Quick Tips</h3>
+            <h3 id="tips-title">HACK_TIPS</h3>
           </div>
           <ul className="tips-list">
             {tips.map((tip, idx) => (
-              <li key={idx}>{tip}</li>
+              <li key={idx}>
+                {typeof tip === 'string' ? tip : (tip.content || tip.text || JSON.stringify(tip))}
+              </li>
             ))}
           </ul>
         </section>
         
-        <section className="panel" aria-labelledby="faq-title">
+        <section className="panel tech-card" aria-labelledby="faq-title">
           <div className="section-head">
-            <h3 id="faq-title">Popular Questions</h3>
+            <h3 id="faq-title">POPULAR_QUESTIONS</h3>
           </div>
           <div className="faq">
             {!faqs ? (
@@ -222,8 +332,8 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
       </div>
 
       {screenshots.length > 0 && (
-        <div className="panel shots-panel" aria-labelledby="shots-title">
-          <h3 id="shots-title">Screenshots</h3>
+        <div className="panel shots-panel tech-card" aria-labelledby="shots-title">
+          <h3 id="shots-title">MEDIA_FILES</h3>
           <div className="shots-strip" role="list">
             {screenshots.map((shot, idx) => (
               <button
@@ -242,8 +352,8 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
         </div>
       )}
 
-      <section className="panel forum" id="forum" aria-labelledby="forum-title">
-        <h3 id="forum-title">Blabbers</h3>
+      <section className="panel forum tech-card" id="forum" aria-labelledby="forum-title">
+        <h3 id="forum-title">GLOBAL_CHAT_STREAM</h3>
         {isAuthenticated ? (
           <form className="post-form" onSubmit={handlePostSubmit} autoComplete="off">
             <textarea
@@ -253,8 +363,8 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
               aria-label="Your message"
               required
             />
-            <button type="submit" className="cta">
-              Blab
+            <button type="submit" className="btn-cyber">
+              BLAB
             </button>
           </form>
         ) : (
@@ -282,15 +392,133 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
               const timestamp = post.createdAt
                 ? new Date(post.createdAt).toLocaleString()
                 : '';
+
+              const isOwner = post.userId && post.userId._id === (user && (user.id || user._id));
+              const canManagePost = isOwner || isAdmin || (isMod && user && Array.isArray(user.moderatedGames) && user.moderatedGames.includes(game?.dbId));
+
               return (
-                <li key={idx} className="post">
+                <li id={`post-${post._id}`} key={post._id || idx} className="post">
                   <div className="meta">
-                    <span>{author}</span>
-                    <span>•</span>
-                    <span>{timestamp}</span>
+                    <div className="meta-left">
+                      <span>{author}</span>
+                      <span>•</span>
+                      <span>{timestamp}</span>
+                    </div>
+
+                    <div className="meta-right actions">
+                      {/* Upvote / dislike controls (supports toggle/unvote) */}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginRight: 8 }}>
+                        <button
+                          type="button"
+                          className={`btn-icon vote-btn ${(post.voteMap && post.voteMap[user?.id] === 'up') ? 'active' : ''}`}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) return alert('Sign in to vote');
+                            if (!post || !post._id) return;
+                            const meVote = post.voteMap && post.voteMap[user?.id];
+                            const direction = meVote === 'up' ? 'none' : 'up';
+
+                            // Optimistic UI update
+                            try {
+                              applyLocalVote(game.dbId, post._id, user.id, direction);
+                            } catch (err) {
+                              console.warn('optimistic vote failed', err);
+                            }
+
+                            try {
+                              await api.votePost(post._id, direction);
+                              // Force-refresh posts to reconcile authoritative counts
+                              await loadPosts(game.dbId, { force: true });
+                            } catch (err) {
+                              console.error('Failed to vote:', err);
+                              // Revert to server state
+                              await loadPosts(game.dbId, { force: true }).catch(() => {});
+                              alert('Failed to register vote');
+                            }
+                          }}
+                          aria-pressed={post.voteMap && post.voteMap[user?.id] === 'up'}
+                          title="Upvote / remove upvote"
+                          onKeyDown={(ev) => ev.stopPropagation()}
+                        >
+                          <span className="material-symbols-sharp">thumb_up</span>
+                        </button>
+                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>{post.upvotes || 0}</div>
+
+                        <button
+                          type="button"
+                          className={`btn-icon vote-btn ${(post.voteMap && post.voteMap[user?.id] === 'down') ? 'active' : ''}`}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) return alert('Sign in to vote');
+                            if (!post || !post._id) return;
+                            const meVote = post.voteMap && post.voteMap[user?.id];
+                            const direction = meVote === 'down' ? 'none' : 'down';
+
+                            try {
+                              applyLocalVote(game.dbId, post._id, user.id, direction);
+                            } catch (err) {
+                              console.warn('optimistic vote failed', err);
+                            }
+
+                            try {
+                              await api.votePost(post._id, direction);
+                              await loadPosts(game.dbId, { force: true });
+                            } catch (err) {
+                              console.error('Failed to vote:', err);
+                              await loadPosts(game.dbId, { force: true }).catch(() => {});
+                              alert('Failed to register vote');
+                            }
+                          }}
+                          aria-pressed={post.voteMap && post.voteMap[user?.id] === 'down'}
+                          title="Downvote / remove downvote"
+                          onKeyDown={(ev) => ev.stopPropagation()}
+                        >
+                          <span className="material-symbols-sharp">thumb_down</span>
+                        </button>
+                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>{post.downvotes || 0}</div>
+                      </div>
+
+                      {canManagePost ? (
+                        <>
+                          <button className="cta danger small" onClick={async () => {
+                            if (!post || !post._id) return;
+                            if (!confirm('Delete this post?')) return;
+                            try {
+                              await deletePost(game.dbId, post._id);
+                            } catch (err) {
+                              console.error('Failed to delete post:', err);
+                              if (err && (err.status === 404 || /post not found/i.test(err.message || ''))) {
+                                await loadPosts(game.dbId);
+                                return;
+                              }
+                              alert('Failed to delete post');
+                            }
+                          }}>Delete</button>
+
+                          <button className="cta secondary small" onClick={() => handleToggleSpoiler(post)}>
+                            {post.isSpoiler ? 'Unmark spoiler' : 'Mark as spoiler'}
+                          </button>
+                        </>
+                      ) : (
+                        <div style={{ color: 'var(--admin-muted)', fontSize: 13 }}>No actions</div>
+                      )}
+                    </div>
                   </div>
+
                   <div className="bubble">
-                    <div className="text">{post.content}</div>
+                    {post.isSpoiler && !revealedPosts.has(post._id) ? (
+                      <div className="spoiler-mask">
+                        <div className="label">
+                          <div className="title">Spoiler — content hidden</div>
+                          <div>
+                            <button className="cta small" onClick={() => toggleReveal(post._id)}>Show</button>
+                          </div>
+                        </div>
+                        <div className="hint">Marked as spoiler{post.spoilerMarkedBy ? ` by ${post.spoilerMarkedBy.username || post.spoilerMarkedBy}` : ''}.</div>
+                      </div>
+                    ) : (
+                      <div className="text">{post.content}</div>
+                    )}
                   </div>
                 </li>
               );
