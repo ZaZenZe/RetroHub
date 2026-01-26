@@ -1,0 +1,226 @@
+networks:
+  retrohub-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: retrohub-mongodb
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-retrohub}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-retrohub}
+      MONGO_INITDB_DATABASE: retrohub
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:1.0.0-alpha.4
+    container_name: retrohub-mongo-express
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-retrohub}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-retrohub}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin}
+    ports:
+      - '8081:8081'
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  seed-db:
+    image: node:20
+    container_name: retrohub-seed
+    working_dir: /app
+    networks:
+      - retrohub-network
+    volumes:
+      - ./:/app
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-retrohub}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-retrohub}
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
+      NODE_ENV: production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      bash -lc "
+        for i in {1..30}; do
+          node -e \"const net=require('net'); const s=net.connect(27017,'mongodb'); s.on('connect',()=>{console.log('mongo up'); s.end(); process.exit(0);}); s.on('error',()=>process.exit(1));\" && break || { echo 'waiting for mongo...'; sleep 2; }; done;
+        npm ci --omit=dev;
+        node scripts/seed-database.js;
+        node scripts/seed-users-posts.js;
+        echo 'seed complete';
+      "
+    restart: "no"
+
+  auth-service:
+    build:
+      context: backend
+      dockerfile: auth-service/Dockerfile
+    container_name: retrohub-auth
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      NODE_ENV: production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  user-service:
+    build:
+      context: backend
+      dockerfile: user-service/Dockerfile
+    container_name: retrohub-user
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    ports:
+      - '3002:3002'
+    environment:
+      PORT: 3002
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      NODE_ENV: production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  game-service:
+    build:
+      context: backend
+      dockerfile: game-service/Dockerfile
+    container_name: retrohub-game
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    ports:
+      - '3003:3003'
+    environment:
+      PORT: 3003
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      NODE_ENV: production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  community-service:
+    build:
+      context: backend
+      dockerfile: community-service/Dockerfile
+    container_name: retrohub-community
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    ports:
+      - '3004:3004'
+    environment:
+      PORT: 3004
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      NODE_ENV: production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  ai-service:
+    build:
+      context: backend
+      dockerfile: ai-service/Dockerfile
+    container_name: retrohub-ai
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    ports:
+      - '3005:3005'
+    env_file:
+      - ./backend/ai-service/.env
+    environment:
+      PORT: 3005
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3005/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: retrohub-gateway
+    restart: unless-stopped
+    networks:
+      - retrohub-network
+    ports:
+      - '5173:5173'
+    environment:
+      PORT: 5173
+      NODE_ENV: production
+      AUTH_SERVICE_URL: http://auth-service:3001
+      USER_SERVICE_URL: http://user-service:3002
+      GAME_SERVICE_URL: http://game-service:3003
+      COMMUNITY_SERVICE_URL: http://community-service:3004
+      AI_SERVICE_URL: http://ai-service:3005
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      game-service:
+        condition: service_healthy
+      community-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+

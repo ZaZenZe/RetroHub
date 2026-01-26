@@ -1,0 +1,99 @@
+name: Deploy to Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Confirm production deployment'
+        required: true
+        default: 'no'
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Production
+    runs-on: ubuntu-latest
+    
+    # Require confirmation input
+    if: github.event.inputs.confirm == 'yes'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install backend service dependencies
+        run: |
+          npm install --prefix backend/auth-service
+          npm install --prefix backend/user-service
+          npm install --prefix backend/game-service
+          npm install --prefix backend/community-service
+          npm install --prefix backend/ai-service
+
+      - name: Install frontend dependencies
+        run: npm install --prefix frontend
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Create or switch to prod branch
+        run: |
+          git fetch origin prod 2>/dev/null || true
+          git checkout -B prod origin/prod 2>/dev/null || git checkout -B prod
+
+      - name: Merge main into prod
+        run: |
+          git merge dev --no-edit --allow-unrelated-histories
+
+      - name: Push to prod branch
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: prod
+          force: false
+
+      - name: Create deployment status check
+        run: |
+          echo "✅ Deployment to prod branch completed successfully"
+          echo "Frontend build: dist/"
+          echo "All linting checks: passed"
+          echo "Branch: prod"
+
+      - name: Send deployment notification
+        run: |
+          echo "📢 Production deployment initiated"
+          echo "Deployed from: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+
+  deploy-confirmation:
+    name: Require Deployment Confirmation
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm != 'yes'
+    
+    steps:
+      - name: Deployment cancelled
+        run: |
+          echo "⚠️  Deployment to production was not confirmed"
+          echo "To deploy, re-run this workflow and select 'yes' for confirmation"
+          exit 1

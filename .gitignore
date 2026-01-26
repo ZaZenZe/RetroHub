@@ -1,0 +1,57 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Editor/IDE
+.vscode/
+.idea/
+.history/
+*.code-workspace
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Env/Secrets (do not commit API keys)
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+secrets.*
+*.pem
+*.p12
+*.key
+config.local.*
+
+# Build/Cache/Artifacts
+dist/
+build/
+out/
+.cache/
+.tmp/
+coverage/
+*.coverage
+*.lcov
+android/build/
+ios/build/
+mongo-data/
+data/db/
+
+# Node/Python (in case added later)
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
+# Misc
+milestone1_todo_copilot.md
+milestone2_todo_copilot.md
+ref

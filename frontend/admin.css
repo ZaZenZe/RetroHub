@@ -1,0 +1,972 @@
+/* Admin Panel Styles */
+body.theme-admin {
+  --admin-primary: #ff7b00;
+  --admin-primary-alt: #ff9f1a;
+  --admin-accent: #4fc3f7;
+  --admin-bg: #030303;
+  --admin-panel: rgba(10, 10, 10, 0.9);
+  --admin-card: rgba(12, 12, 12, 0.9);
+  --admin-border: #333;
+  --admin-text: #e0e0e0;
+  --admin-muted: #8b8b8b;
+  --danger: #ff5c5c;
+  --success: #2ecc71;
+}
+
+.theme-admin {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: 'Share Tech Mono', monospace;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.theme-admin * {
+  box-sizing: border-box;
+}
+
+/* Admin Header */
+.cta {
+  padding: 10px 16px;
+  background: var(--admin-primary);
+  color: #000;
+  font-weight: 600;
+  font-size: 11px;
+  border: 1px solid #b35a00;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.cta:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(255,123,0,0.35);
+}
+
+.cta.secondary {
+  background: #111;
+  color: var(--admin-text);
+  border: 1px solid #333;
+}
+
+.cta.secondary:hover {
+  background: #1a1a1a;
+  border-color: var(--admin-primary);
+}
+
+.cta.danger {
+  background: #ff5c5c !important;
+  color: #000 !important;
+  border-color: #c94747 !important;
+}
+
+.admin-header {
+  position: sticky;
+  top: 54px;
+  z-index: 50;
+  background: rgba(0,0,0,0.95);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 14px 20px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: clip;
+}
+
+.admin-header .subtitle {
+  font-size: 9px;
+  color: var(--admin-muted);
+  margin: 2px 0 0;
+  letter-spacing: 2px;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px 13px;
+  background: transparent;
+  border: 1px solid #333;
+  color: #9a9a9a;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 0.5px;
+}
+
+.nav-btn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--admin-primary), transparent);
+  transform: scaleX(0);
+  transform-origin: center;
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 123, 0, 0.08);
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+.nav-btn:hover::after,
+.nav-btn.active::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.nav-btn.active {
+  background: linear-gradient(180deg, rgba(255, 123, 0, 0.12), rgba(255, 123, 0, 0.06));
+  border-color: var(--admin-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.nav-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#admin-username {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+
+/* Main Content */
+.admin-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-view {
+  display: none;
+}
+
+.admin-view.active {
+  display: block;
+}
+
+.admin-view {
+  background: transparent;
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.view-header {
+  border: 1px solid var(--admin-border);
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.6);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+
+.view-header h2 {
+  font-size: 18px;
+  font-family: 'Press Start 2P', monospace;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 12px;
+}
+
+.filters input::placeholder{
+  color: var(--admin-muted);
+}
+
+.filters input,
+.filters select {
+  padding: 8px 12px;
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 0;
+  color: var(--admin-primary);
+  font-size: 16px;
+  font-family: 'VT323', monospace;
+}
+
+.filters input[type="search"] {
+  min-width: 280px;
+}
+
+/* Games List */
+.games-list {
+  display: grid;
+  gap: 16px;
+}
+
+.game-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 16px;
+  padding: 16px;
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 0;
+  align-items: center;
+  transition: all 0.2s ease;
+  position: relative;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+.game-item::before{
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, transparent 50%, var(--admin-primary) 50%);
+}
+
+.game-item:hover {
+  border-color: var(--admin-primary);
+  box-shadow: 0 4px 16px rgba(255, 123, 0, 0.2);
+}
+
+.game-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: 0;
+  object-fit: cover;
+  border: 1px solid var(--admin-border);
+}
+
+.game-info {
+  display: grid;
+  gap: 6px;
+}
+
+.game-info h3 {
+  font-size: 14px;
+  margin: 0;
+  font-weight: 600;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.game-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.game-meta .chip {
+  font-size: 10px;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  border-radius: 999px;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.game-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Admin form controls */
+.admin-view input,
+.admin-view select,
+.admin-view textarea{
+  background: #000;
+  border: 1px solid #333;
+  color: var(--admin-primary);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  padding: 8px 10px;
+}
+.admin-view input:focus,
+.admin-view select:focus,
+.admin-view textarea:focus{
+  outline: none;
+  box-shadow: 0 0 12px rgba(255,123,0,0.25);
+  border-color: var(--admin-primary);
+}
+
+/* Forms */
+.game-form {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.form-grid {
+  display: grid;
+  gap: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.form-section {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.form-section.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-section h3 {
+  font-size: 14px;
+  font-family: 'Press Start 2P', monospace;
+  margin: 0 0 8px;
+  color: var(--admin-primary);
+}
+
+.form-section h4 {
+  font-size: 12px;
+  font-family: 'Press Start 2P', monospace;
+  margin: 0 0 8px;
+  color: var(--admin-accent);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.form-group {
+  display: grid;
+  gap: 6px;
+  max-width: 100%;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: var(--admin-muted);
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 10px 14px;
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(255, 123, 0, 0.1);
+}
+
+.form-group small {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+
+.form-group input[type="color"] {
+  height: 46px;
+  cursor: pointer;
+}
+
+.upload-btn {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* Image Previews */
+.image-preview {
+  margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  max-height: 200px;
+  display: none;
+}
+
+.image-preview.show {
+  display: block;
+}
+
+.image-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.screenshots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.screenshot-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  aspect-ratio: 16 / 9;
+}
+
+.screenshot-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.screenshot-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Color Grid */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Content Manager (Tips & FAQs) */
+.content-manager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.content-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.content-item {
+  padding: 12px;
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.content-item input,
+.content-item textarea {
+  padding: 8px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  color: var(--admin-text);
+  font-size: 13px;
+  font-family: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.content-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.content-item-actions button {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.content-item-actions .remove-content {
+  background: var(--danger);
+  color: white;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--admin-border);
+}
+.form-actions .cta{
+  min-width: 180px;
+  justify-content: center;
+}
+.form-actions .cta.secondary{
+  border: 1px dashed var(--admin-border);
+}
+.form-actions .cta:first-of-type{
+  background: linear-gradient(180deg, #ffc46b, #ff8c1a);
+  box-shadow: 0 0 30px rgba(255,140,26,0.45);
+  color: #0a0a0a;
+}
+
+/* Buttons */
+.cta {
+  padding: 12px 22px;
+  background: linear-gradient(180deg, var(--admin-primary), var(--admin-primary-alt));
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid #b35a00;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 24px rgba(255,123,0,0.25);
+}
+
+/* Force bright CTAs within admin theme */
+.theme-admin .cta {
+  background: linear-gradient(180deg, #ffb347, #ff7b00);
+  color: #0b0b0b;
+  border: 1px solid #ff9f1a;
+  box-shadow: 0 0 26px rgba(255,123,0,0.4);
+}
+
+/* Force bright CTAs everywhere inside admin views */
+.admin-view .cta,
+.admin-header .cta {
+  background: linear-gradient(180deg, #ffb347, #ff7b00);
+  color: #0b0b0b;
+  border: 1px solid #ff9f1a;
+  box-shadow: 0 0 26px rgba(255,123,0,0.4);
+}
+
+/* Ensure list page CTA (Add New Game) is bright */
+.admin-view .filters .cta {
+  background: linear-gradient(180deg, #ffb347, #ff7b00);
+  color: #0b0b0b;
+  border: 1px solid #ff9f1a;
+  box-shadow: 0 0 26px rgba(255,123,0,0.4);
+}
+
+.cta:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 26px rgba(255,123,0,0.35);
+  transform: translateY(-1px);
+}
+
+.cta.secondary {
+  background: var(--admin-card);
+  color: var(--admin-text);
+  border: 1px solid var(--admin-border);
+  box-shadow: none;
+}
+
+.theme-admin .cta.secondary {
+  background: rgba(255,255,255,0.04);
+  color: #f5f5f5;
+  border: 1px dashed rgba(255,255,255,0.18);
+}
+
+.cta.secondary:hover {
+  background: var(--admin-panel);
+  border-color: var(--admin-primary);
+}
+
+.cta.danger {
+  background: linear-gradient(180deg, #ff5c5c, #e74c3c);
+  color: white;
+}
+
+/* Themes Grid */
+.themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.theme-card {
+  padding: 20px;
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 0;
+  display: grid;
+  gap: 12px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+
+.theme-card h3 {
+  font-size: 14px;
+  font-family: 'Press Start 2P', monospace;
+  margin: 0;
+}
+
+.theme-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.theme-color {
+  aspect-ratio: 1;
+  border-radius: 0;
+  border: 1px solid var(--admin-border);
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal[aria-hidden="false"] {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+
+.modal h3 {
+  font-size: 16px;
+  font-family: 'Press Start 2P', monospace;
+  margin: 0 0 16px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.upload-preview {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  max-height: 300px;
+}
+
+.upload-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Notification */
+.notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 20px;
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+}
+
+.notification.success {
+  border-left: 4px solid var(--success);
+}
+
+.notification.error {
+  border-left: 4px solid var(--danger);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Loading & Empty States */
+.loading,
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--admin-muted);
+  background: var(--admin-card);
+  border: 1px dashed var(--admin-border);
+  border-radius: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-header {
+    position: relative;
+    top: auto;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    z-index: 1;
+  }
+  
+  .admin-nav {
+    overflow-x: auto;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .nav-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .admin-main {
+    padding: 16px;
+  }
+
+  .games-list {
+    grid-template-columns: 1fr;
+  }
+
+  .game-item {
+    grid-template-columns: 1fr;
+  }
+
+  .game-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  
+  .form-row,
+  .content-manager {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-section {
+    padding: 16px;
+  }
+  
+  .color-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .screenshots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .filters {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .filters input[type="search"] {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  /* Flex containers should wrap on mobile */
+  .form-group > div[style*="display: flex"],
+  .form-group > div[style*="display:flex"] {
+    flex-wrap: wrap;
+  }
+  
+  .form-group > div[style*="display: flex"] > input,
+  .form-group > div[style*="display:flex"] > input {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header {
+    padding: 12px;
+  }
+
+  .admin-main {
+    padding: 12px;
+  }
+
+  .game-item {
+    padding: 12px;
+  }
+
+  .cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filters select {
+    width: 100%;
+  }
+  
+  .form-section {
+    padding: 12px;
+  }
+  
+  .form-grid {
+    gap: 16px;
+  }
+  
+  .color-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .screenshots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+  }
+  
+  /* Ensure image previews don't cause overflow */
+  .form-group img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Flex containers in forms */
+  .form-group > div[style*="display: flex"],
+  .form-group > div[style*="display:flex"] {
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+  
+  .form-group > div[style*="display: flex"] > input,
+  .form-group > div[style*="display:flex"] > input {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+  
+  .form-group > div[style*="display: flex"] > label,
+  .form-group > div[style*="display:flex"] > label {
+    width: 100%;
+  }
+}
