@@ -94,6 +94,11 @@ const gameSchema = new Schema(
       type: [String],
       default: [],
     },
+    retroAchievementsGameId: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
     theme: {
       name: {
         type: String,

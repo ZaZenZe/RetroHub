@@ -51,7 +51,7 @@ app.use(
   createProxyMiddleware({
     ...commonProxyOptions,
     target: targets.auth,
-    pathRewrite: path => path || '/',
+    pathRewrite: (path) => path.replace(/^\/api\/auth/, '') || '/',
   })
 );
 
@@ -76,6 +76,16 @@ app.use(
       if (path.startsWith('/admin')) return path;
       return `/games${path}`;
     },
+  })
+);
+
+// RetroAchievements proxy (game-service)
+app.use(
+  '/api/retroachievements',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: targets.game,
+    pathRewrite: (path) => `/retroachievements${path}`,
   })
 );
 

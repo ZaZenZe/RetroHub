@@ -12,6 +12,8 @@ const Post = require('../../shared/models/Post');
 
 const router = express.Router();
 const allowedStatuses = ['PLAYING', 'COMPLETED', 'BACKLOG', 'WISH_LIST'];
+const RA_API_BASE = process.env.RETROACHIEVEMENTS_API_BASE || 'https://retroachievements.org';
+const RA_API_KEY = process.env.RETROACHIEVEMENTS_API_KEY || '';
 
 function ensureSelf(req, res) {
   if (!req.user || req.user.sub !== req.params.id) {
@@ -32,6 +34,7 @@ function sanitizeUser(user) {
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
     favoriteGames: (user.favoriteGames || []).map(id => id.toString()),
+    featuredAchievements: (user.featuredAchievements || []).map(id => id.toString()),
   };
 }
 
@@ -154,8 +157,8 @@ router.get('/users/:id/stats', verifyToken, async (req, res, next) => {
   if (!ensureSelf(req, res)) return;
   try {
     const stats = await ensureStats(req.params.id);
-    // expose human-friendly totalPlayTime in hours (1 decimal)
-    const totalPlayTime = Math.round(((stats.totalPlaySeconds || 0) / 3600) * 10) / 10;
+    // expose human-friendly totalPlayTime in hours (2 decimals)
+    const totalPlayTime = Math.round(((stats.totalPlaySeconds || 0) / 3600) * 100) / 100;
     return res.json({ stats: { ...stats.toObject(), totalPlayTime } });
   } catch (err) {
     return next(err);
@@ -174,8 +177,53 @@ router.post('/users/:id/session', verifyToken, async (req, res, next) => {
       { $inc: { totalPlaySeconds: inc } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    const totalPlayTime = Math.round(((stats.totalPlaySeconds || 0) / 3600) * 10) / 10;
+    const totalPlayTime = Math.round(((stats.totalPlaySeconds || 0) / 3600) * 100) / 100;
     return res.json({ stats: { ...stats.toObject(), totalPlayTime } });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Update user-selected featured achievements (showcased on profile)
+router.patch('/users/:id/featured-achievements', verifyToken, async (req, res, next) => {
+  if (!ensureSelf(req, res)) return;
+  try {
+    const MAX_FEATURED = 6;
+    const { achievementIds = [] } = req.body || {};
+    if (!Array.isArray(achievementIds)) {
+      return res.status(400).json({ error: 'achievementIds must be an array' });
+    }
+
+    const uniqueIds = Array.from(new Set(achievementIds.map((id) => String(id).trim()))).filter(Boolean);
+
+    if (uniqueIds.some(id => id.length > 140)) {
+      return res.status(400).json({ error: 'Achievement id too long' });
+    }
+
+    if (uniqueIds.length > MAX_FEATURED) {
+      return res.status(400).json({ error: `Select up to ${MAX_FEATURED} achievements` });
+    }
+
+    // Validate ownership for internal achievement ObjectIds, allow external ids as-is
+    const internalIds = uniqueIds.filter(id => Types.ObjectId.isValid(id));
+    if (internalIds.length) {
+      const owned = await Achievement.find({
+        _id: { $in: internalIds },
+        userId: req.params.id,
+      }).select('_id');
+
+      if (owned.length !== internalIds.length) {
+        return res.status(400).json({ error: 'One or more achievements are invalid' });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { featuredAchievements: uniqueIds } },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json({ user: sanitizeUser(user) });
   } catch (err) {
     return next(err);
   }
@@ -218,6 +266,48 @@ router.get('/users/:id/achievements', verifyToken, async (req, res, next) => {
   try {
     const achievements = await Achievement.findByUser(req.params.id);
     return res.json({ achievements });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// RetroAchievements awards proxy (prevents exposing API key to client)
+router.get('/users/:id/retroachievements/awards', verifyToken, async (req, res, next) => {
+  if (!ensureSelf(req, res)) return;
+  try {
+    if (!RA_API_KEY) {
+      return res.status(503).json({ error: 'RetroAchievements API key not configured' });
+    }
+
+    const username = (req.query.username || '').toString().trim();
+    if (!username) {
+      return res.status(400).json({ error: 'username query param required' });
+    }
+
+    const url = `${RA_API_BASE}/API/API_GetUserAwards.php?u=${encodeURIComponent(username)}&y=${encodeURIComponent(RA_API_KEY)}`;
+    const response = await fetch(url, { headers: { 'User-Agent': 'RetroHub/1.0' } });
+    if (!response.ok) {
+      return res.status(502).json({ error: 'RetroAchievements request failed' });
+    }
+
+    const payload = await response.json();
+    const awards = Array.isArray(payload?.VisibleUserAwards) ? payload.VisibleUserAwards : [];
+    const mapped = awards.map((award) => {
+      const key = `${award.AwardType || 'Award'}:${award.AwardData || ''}:${award.AwardedAt || ''}`;
+      const iconPath = award.ImageIcon || '';
+      const iconUrl = iconPath.startsWith('http') ? iconPath : `${RA_API_BASE}${iconPath}`;
+      return {
+        _id: key,
+        name: award.Title || award.AwardType || 'Award',
+        description: award.AwardType || '',
+        iconUrl,
+        awardedAt: award.AwardedAt || null,
+        source: 'retroachievements',
+        raw: award,
+      };
+    });
+
+    return res.json({ achievements: mapped, raw: payload });
   } catch (err) {
     return next(err);
   }

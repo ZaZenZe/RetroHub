@@ -259,6 +259,7 @@ router.put('/games/:gameParam', async (req, res, next) => {
       'hoverImageUrl',
       'hoverGifUrl',
       'screenshots',
+      'retroAchievementsGameId',
       'theme',
     ];
 

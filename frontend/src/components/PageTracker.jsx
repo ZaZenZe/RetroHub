@@ -74,13 +74,9 @@ export default function PageTracker({ label = 'This page', sendInterval = 30 }) 
   };
 
   const fmt = (s) => {
-    if (!s) return '0s';
-    if (s < 60) return `${s}s`;
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m`;
-    const h = Math.floor(m / 60);
-    const rm = m % 60;
-    return `${h}h${rm ? ` ${rm}m` : ''}`;
+    if (!s) return '0.00hrs';
+    const hours = Math.max(0, s / 3600);
+    return `${hours.toFixed(2)}hrs`;
   };
 
   return (

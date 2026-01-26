@@ -15,6 +15,13 @@ const Profile = () => {
   const [collectionFilter, setCollectionFilter] = useState('');
   const [lastPosts, setLastPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [featuredDetails, setFeaturedDetails] = useState([]);
+  const [manualRaGameId, setManualRaGameId] = useState('');
+  const [manualAchievements, setManualAchievements] = useState([]);
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualError, setManualError] = useState('');
+  const [selectedAchievements, setSelectedAchievements] = useState(new Set());
+  const [savingAchievements, setSavingAchievements] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -25,15 +32,18 @@ const Profile = () => {
     const loadProfileData = async () => {
       setLoading(true);
       try {
-        const [statsRes, achRes, gamesRes, postsRes] = await Promise.all([
+        const [statsRes, achRes, gamesRes, postsRes, raRes] = await Promise.all([
           api.getUserStats(user?.id),
           api.getUserAchievements(user?.id),
           api.getUserGames(user?.id),
           api.getLastPosts(user?.id),
+          api.getRetroAchievementsAwards(user?.id, user?.username).catch(() => null),
         ]);
 
         setStats(statsRes?.stats || null);
-        setAchievements(achRes?.achievements || []);
+        const raAchievements = raRes?.achievements || [];
+        const loadedAchievements = raAchievements.length ? raAchievements : (achRes?.achievements || []);
+        setAchievements(loadedAchievements);
         setLastPosts(postsRes?.posts || []);
 
         // if stats appear lower than the returned posts, reconcile locally so UI isn't misleading
@@ -59,6 +69,13 @@ const Profile = () => {
             return [...favs.filter(f=>!(ids.has(f.dbId||f.id))), ...prev];
           });
         }
+
+        // Initialize selected achievements from user profile
+        if (user && Array.isArray(user.featuredAchievements)) {
+          setSelectedAchievements(new Set(user.featuredAchievements.map(String)));
+        } else {
+          setSelectedAchievements(new Set());
+        }
       } catch (error) {
         console.error('Failed to load profile:', error);
       } finally {
@@ -68,6 +85,38 @@ const Profile = () => {
 
     loadProfileData();
   }, [isAuthenticated, user?.id, games]);
+
+  useEffect(() => {
+    if (user && Array.isArray(user.featuredAchievements)) {
+      setSelectedAchievements(new Set(user.featuredAchievements.map(String)));
+    }
+  }, [user?.featuredAchievements]);
+
+  useEffect(() => {
+    const loadFeaturedDetails = async () => {
+      if (!user || !Array.isArray(user.featuredAchievements) || user.featuredAchievements.length === 0) {
+        setFeaturedDetails([]);
+        return;
+      }
+
+      const ids = user.featuredAchievements.map(String);
+      const raIds = ids.filter((id) => id.startsWith('ra|'));
+      if (raIds.length === 0) {
+        setFeaturedDetails([]);
+        return;
+      }
+
+      const gameIds = Array.from(new Set(raIds.map((id) => id.split('|')[1]).filter(Boolean)));
+      const results = await Promise.all(
+        gameIds.map((gid) => api.getRetroAchievementsByRaGameId(gid).catch(() => null))
+      );
+      const allAchievements = results.flatMap((r) => r?.achievements || []);
+      const byId = new Map(allAchievements.map((a) => [String(a._id), a]));
+      setFeaturedDetails(ids.map((id) => byId.get(id)).filter(Boolean));
+    };
+
+    loadFeaturedDetails();
+  }, [user?.featuredAchievements]);
 
   // Subscribe to live stats published by AuthContext (updated by heartbeat)
   useEffect(() => {
@@ -144,31 +193,79 @@ const Profile = () => {
 
   // Format play time (prefer exact seconds if provided, otherwise accept backend's decimal hours)
   const formatPlayTime = (raw) => {
-    if (raw == null) return '0m';
-    // Prefer seconds when available; if caller passed hours (decimal) convert to seconds.
-    let seconds = 0;
+    if (raw == null) return '0.00';
+    let hours = 0;
     if (Number.isFinite(raw)) {
       // If raw looks like seconds (>= 60) assume seconds, otherwise treat as hours
-      seconds = raw >= 60 ? Math.floor(raw) : Math.round(raw * 3600);
+      hours = raw >= 60 ? raw / 3600 : raw;
     } else {
-      return '0m';
+      return '0.00';
     }
 
     // Sanity: clamp absurd values for display (prevent runaway numbers from bad writes)
-    const maxReasonableSeconds = 60 * 60 * 24 * 365 * 10; // 10 years
-    if (seconds > maxReasonableSeconds) return '—';
+    const maxReasonableHours = 24 * 365 * 10; // 10 years
+    if (hours > maxReasonableHours) return '—';
 
-    if (seconds === 0) return '0m';
-    if (seconds < 60) return '<1m';
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.round((seconds % 3600) / 60);
-    if (hrs === 0) return `${mins}m`;
-    if (hrs >= 24) {
-      const days = Math.floor(hrs / 24);
-      const rem = hrs % 24;
-      return `${days}d${rem ? ` ${rem}h` : ''}`;
+    if (hours < 0) hours = 0;
+    return hours.toFixed(2);
+  };
+
+  const toggleAchievementSelection = (id) => {
+    setSelectedAchievements((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        if (next.size >= 6) {
+          alert('You can showcase up to 6 achievements.');
+          return next;
+        }
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const fetchManualAchievements = async () => {
+    if (!manualRaGameId) return;
+    setManualLoading(true);
+    setManualError('');
+    try {
+      const res = await api.getRetroAchievementsByRaGameId(manualRaGameId);
+      const list = res?.achievements || [];
+      setManualAchievements(list);
+    } catch (err) {
+      setManualError('Failed to fetch achievements.');
+      setManualAchievements([]);
+    } finally {
+      setManualLoading(false);
     }
-    return `${hrs}h${mins ? ` ${mins}m` : ''}`;
+  };
+
+  const availableAchievements = (() => {
+    const combined = [...(achievements || []), ...(manualAchievements || [])];
+    const seen = new Set();
+    return combined.filter((a) => {
+      const id = String(a._id || a.id || '');
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  })();
+
+  const saveFeaturedAchievements = async () => {
+    if (!user) return;
+    setSavingAchievements(true);
+    try {
+      const ids = Array.from(selectedAchievements);
+      const res = await api.updateFeaturedAchievements(user.id, ids);
+      if (res && res.user) updateUserData(res.user);
+    } catch (err) {
+      console.error('Failed to update featured achievements', err);
+      alert('Failed to update achievements');
+    } finally {
+      setSavingAchievements(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -200,11 +297,11 @@ const Profile = () => {
             <p className="map-hint">{user?.bio || 'Retro collector and walkthrough writer.'}</p>
           </div>
           <div className="profile-stats compact" role="list" aria-label="Profile summary stats">
-            <div className="stat" role="listitem" aria-label={`Hours logged ${formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)}`}>
-              <div className="value">{formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)}</div>
+            <div className="stat" role="listitem" aria-label={`Hours logged ${formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)} hours`}>
+              <div className="value">{formatPlayTime(stats?.totalPlaySeconds || stats?.totalPlayTime)} hrs</div>
               <div className="label">Hours logged</div>
               {typeof stats?.totalPlayTime === 'number' && (
-                <div className="stat-sub">{stats.totalPlayTime} hrs</div>
+                <div className="stat-sub">{Number(stats.totalPlayTime).toFixed(2)} hrs</div>
               )}
             </div>
 
@@ -255,19 +352,78 @@ const Profile = () => {
           </div>
 
           <div className="panel tech-card" aria-labelledby="achievements-title">
-            <h3 id="achievements-title">Achievements</h3>
+            <div className="panel-head">
+              <h3 id="achievements-title">Achievements</h3>
+              <button
+                className="btn-cyber btn-sm"
+                onClick={saveFeaturedAchievements}
+                disabled={savingAchievements}
+              >
+                {savingAchievements ? 'Saving…' : 'Save selection'}
+              </button>
+            </div>
+            <div className="subhead">Showcased</div>
             <div className="achievements-grid compact">
-              {achievements.length === 0 ? (
-                <div className="map-hint">No achievements yet.</div>
+              {selectedAchievements.size === 0 ? (
+                <div className="map-hint">No showcased achievements yet.</div>
               ) : (
-                achievements.map(a => (
-                  <div key={a._id} className="achievement-card small">
-                    <div className="icon">{a.icon || '🏆'}</div>
-                    <div className="name">{a.name}</div>
-                  </div>
-                ))
+                (featuredDetails.length ? featuredDetails : achievements.filter((a) => selectedAchievements.has(String(a._id))))
+                  .map((a) => (
+                    <div key={a._id} className="achievement-card small">
+                      <div className="icon">{a.iconUrl || a.icon || '🏆'}</div>
+                      <div className="name">{a.title || a.name}</div>
+                    </div>
+                  ))
               )}
             </div>
+            <div className="subhead">Select achievements</div>
+            <div className="achievements-grid compact">
+              {availableAchievements.length === 0 ? (
+                <div className="map-hint">No achievements yet.</div>
+              ) : (
+                availableAchievements.map(a => {
+                  const id = String(a._id || a.id || '');
+                  const selected = selectedAchievements.has(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`achievement-card small selectable ${selected ? 'selected' : ''}`}
+                      onClick={() => toggleAchievementSelection(id)}
+                      aria-pressed={selected}
+                    >
+                      <div className="icon">{a.iconUrl || a.icon || '🏆'}</div>
+                      <div className="name">{a.title || a.name}</div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            <div className="subhead">Fetch achievements by game</div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="ra-game-id">RetroAchievements Game ID</label>
+                <input
+                  id="ra-game-id"
+                  type="number"
+                  value={manualRaGameId}
+                  onChange={(e) => setManualRaGameId(e.target.value)}
+                  placeholder="e.g., 14402"
+                />
+              </div>
+              <div className="form-group" style={{ alignSelf: 'end' }}>
+                <button
+                  type="button"
+                  className="btn-cyber btn-sm"
+                  onClick={fetchManualAchievements}
+                  disabled={manualLoading || !manualRaGameId}
+                >
+                  {manualLoading ? 'Fetching…' : 'Fetch achievements'}
+                </button>
+              </div>
+            </div>
+            {manualError && <div className="map-hint">{manualError}</div>}
+            <div className="map-hint">Select up to 6 achievements to showcase.</div>
           </div>
         </div>
       </div>

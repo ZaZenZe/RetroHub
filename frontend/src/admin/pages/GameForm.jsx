@@ -24,6 +24,7 @@ const GameForm = () => {
     hoverImageUrl: '',
     hoverGifUrl: '',
     screenshots: '',
+    retroAchievementsGameId: '',
     theme: {
       name: 'retro',
       colors: {
@@ -69,6 +70,7 @@ const GameForm = () => {
         hoverImageUrl: game.hoverImageUrl || '',
         hoverGifUrl: game.hoverGifUrl || '',
         screenshots: (game.screenshots || []).join('\n'),
+        retroAchievementsGameId: game.retroAchievementsGameId || '',
         theme: game.theme || formData.theme,
       });
 
@@ -175,6 +177,9 @@ const GameForm = () => {
 
       const payload = {
         ...formData,
+        retroAchievementsGameId: formData.retroAchievementsGameId
+          ? Number(formData.retroAchievementsGameId)
+          : null,
         screenshots: formData.screenshots
           .split('\n')
           .map((s) => s.trim())
@@ -408,6 +413,18 @@ const GameForm = () => {
                 onChange={handleChange}
                 placeholder="e.g., Fire Red, Emerald, etc."
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="retroAchievementsGameId">RetroAchievements Game ID</label>
+              <input
+                type="number"
+                id="retroAchievementsGameId"
+                name="retroAchievementsGameId"
+                min="1"
+                value={formData.retroAchievementsGameId}
+                onChange={handleChange}
+              />
+              <small>Use the numeric game ID from retroachievements.org</small>
             </div>
             <div className="form-group">
               <label htmlFor="description">Description *</label>

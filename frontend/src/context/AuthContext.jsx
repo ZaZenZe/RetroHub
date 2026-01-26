@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
         if (res && res.stats) {
           // Normalize/validate server payload: prefer authoritative totalPlaySeconds and derive hours client-side
           const totalPlaySeconds = Number(res.stats.totalPlaySeconds) || 0;
-          const totalPlayTime = Math.round(((totalPlaySeconds) / 3600) * 10) / 10;
+          const totalPlayTime = Math.round(((totalPlaySeconds) / 3600) * 100) / 100;
           const normalized = { ...res.stats, totalPlaySeconds, totalPlayTime };
 
           // Sanity clamp: prevent wildly inflated values from showing (protect against bad writes)
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }) => {
       if (res && res.stats) {
         // normalize
         const totalPlaySeconds = Number(res.stats.totalPlaySeconds) || 0;
-        const totalPlayTime = Math.round(((totalPlaySeconds) / 3600) * 10) / 10;
+        const totalPlayTime = Math.round(((totalPlaySeconds) / 3600) * 100) / 100;
         const normalized = { ...res.stats, totalPlaySeconds, totalPlayTime };
         setUserStats(normalized);
         try { localStorage.setItem(`retrohub:stats:${user.id}`, JSON.stringify(normalized)); } catch (e) {}

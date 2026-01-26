@@ -40,6 +40,9 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+  const [gameAchievements, setGameAchievements] = useState([]);
+  const [achievementsLoading, setAchievementsLoading] = useState(false);
+  const [achievementsError, setAchievementsError] = useState('');
   const [revealedPosts, setRevealedPosts] = useState(new Set());
 
   const toggleReveal = (postId) => {
@@ -135,6 +138,9 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
           if (gameData.dbId) {
             loadGamePosts(gameData.dbId);
           }
+
+          // Load RetroAchievements for this game (auto-resolves if possible)
+          await loadGameAchievements(gameData.id || gameId);
         }
       } catch (error) {
         console.error('Failed to load game:', error);
@@ -160,6 +166,65 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
       console.error('Failed to load posts:', error);
     } finally {
       setPostsLoading(false);
+    }
+  };
+
+  const loadGameAchievements = async (gameKey) => {
+    if (!gameKey) return;
+    setAchievementsLoading(true);
+    setAchievementsError('');
+    try {
+      const cacheKey = `ra:gameAchievements:${gameKey}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed?.data && parsed?.ts && Date.now() - parsed.ts < 1000 * 60 * 30) {
+            setGameAchievements(parsed.data);
+            setAchievementsLoading(false);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const res = await api.getRetroAchievementsGameAchievements(gameKey);
+      const list = res?.achievements || [];
+      setGameAchievements(list);
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ data: list, ts: Date.now() }));
+      } catch (e) {}
+    } catch (err) {
+      console.error('Failed to load achievements', err);
+      setAchievementsError('Failed to load achievements.');
+    } finally {
+      setAchievementsLoading(false);
+    }
+  };
+
+  const toggleFeaturedAchievement = async (achievement) => {
+    if (!isAuthenticated || !user || !achievement) return;
+    const id = String(achievement._id || achievement.id || '').trim();
+    if (!id) return;
+    const current = new Set((user.featuredAchievements || []).map(String));
+    if (current.has(id)) {
+      current.delete(id);
+    } else {
+      if (current.size >= 6) {
+        alert('You can showcase up to 6 achievements.');
+        return;
+      }
+      current.add(id);
+    }
+
+    const next = Array.from(current);
+    updateUserData({ featuredAchievements: next });
+    try {
+      const res = await api.updateFeaturedAchievements(user.id, next);
+      if (res && res.user) updateUserData(res.user);
+    } catch (err) {
+      console.error('Failed to update achievements', err);
+      updateUserData({ featuredAchievements: user.featuredAchievements || [] });
+      alert('Failed to update achievements');
     }
   };
 
@@ -350,6 +415,50 @@ const GameDetail = ({ onChatOpen, onGameChange }) => {
           </div>
           <p className="map-hint">Swipe or scroll horizontally. Tap a screenshot to expand.</p>
         </div>
+      )}
+
+      {game && (
+        <section className="panel tech-card" aria-labelledby="ra-title">
+          <h3 id="ra-title">ACHIEVEMENTS</h3>
+          {achievementsLoading ? (
+            <div className="map-hint">Loading achievements…</div>
+          ) : achievementsError ? (
+            <div className="map-hint">{achievementsError}</div>
+          ) : gameAchievements.length === 0 ? (
+            <div className="map-hint">No achievements found for this game.</div>
+          ) : (
+            <div className="achievements-grid">
+              {gameAchievements.map((ach) => {
+                const id = String(ach._id || ach.id || '');
+                const selected = Array.isArray(user?.featuredAchievements)
+                  ? user.featuredAchievements.map(String).includes(id)
+                  : false;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`achievement-card selectable ${selected ? 'selected' : ''}`}
+                    onClick={() => toggleFeaturedAchievement(ach)}
+                    aria-pressed={selected}
+                  >
+                    <div className="icon">
+                      {ach.iconUrl ? <img src={ach.iconUrl} alt="" /> : '🏆'}
+                    </div>
+                    <div>
+                      <div className="name">{ach.title || ach.name}</div>
+                      <div className="map-hint">{ach.description}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="map-hint">
+            {isAuthenticated
+              ? 'Select achievements to showcase on your profile (max 6).'
+              : 'Sign in to select achievements for your profile.'}
+          </div>
+        </section>
       )}
 
       <section className="panel forum tech-card" id="forum" aria-labelledby="forum-title">

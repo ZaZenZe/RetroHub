@@ -41,6 +41,7 @@ export const GamesProvider = ({ children }) => {
       hover: g.media?.hoverImage || g.hoverImageUrl || '',
       hoverGif: g.media?.hoverGif || g.hoverGifUrl || '',
       screenshots: g.media?.screenshots || g.screenshots || [],
+      retroAchievementsGameId: g.retroAchievementsGameId || null,
       tips: g.tips || [],
       faq: g.faqs || [],
       theme: g.theme || {},

@@ -66,6 +66,12 @@ const userSchema = new Schema({
     ref: 'Game',
     default: [],
   }],
+  // user-selected achievements to showcase on profile
+  featuredAchievements: [{
+    type: String,
+    trim: true,
+    default: [],
+  }],
 });
 
 // Hash password when changed

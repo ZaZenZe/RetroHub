@@ -319,11 +319,17 @@ body.theme-admin {
   border: 1px solid var(--admin-border);
   border-radius: 16px;
   padding: 24px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .form-grid {
   display: grid;
   gap: 24px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .form-section {
@@ -333,6 +339,9 @@ body.theme-admin {
   background: var(--admin-card);
   border: 1px solid var(--admin-border);
   border-radius: 12px;
+  min-width: 0;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .form-section.full-width {
@@ -357,11 +366,14 @@ body.theme-admin {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .form-group {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .form-group label {
@@ -381,6 +393,9 @@ body.theme-admin {
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,

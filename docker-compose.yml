@@ -111,6 +111,8 @@ services:
       MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      RETROACHIEVEMENTS_API_KEY: ${RETROACHIEVEMENTS_API_KEY:-}
+      RETROACHIEVEMENTS_API_BASE: ${RETROACHIEVEMENTS_API_BASE:-https://retroachievements.org}
       NODE_ENV: production
     depends_on:
       mongodb:
@@ -136,6 +138,8 @@ services:
       MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-retrohub}:${MONGO_INITDB_ROOT_PASSWORD:-retrohub}@mongodb:27017/retrohub?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      RETROACHIEVEMENTS_API_KEY: ${RETROACHIEVEMENTS_API_KEY:-}
+      RETROACHIEVEMENTS_API_BASE: ${RETROACHIEVEMENTS_API_BASE:-https://retroachievements.org}
       NODE_ENV: production
     depends_on:
       mongodb:

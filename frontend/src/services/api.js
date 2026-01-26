@@ -193,6 +193,23 @@ class ApiService {
     return this.request(`/users/${encodeURIComponent(id)}/achievements`);
   }
 
+  async getRetroAchievementsAwards(userId, username) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    const params = new URLSearchParams();
+    if (username) params.set('username', username);
+    return this.request(`/users/${encodeURIComponent(id)}/retroachievements/awards?${params.toString()}`);
+  }
+
+  async updateFeaturedAchievements(userId, achievementIds = []) {
+    const id = userId || this.getStoredUserId();
+    if (!id) throw new Error('User not available');
+    return this.request(`/users/${encodeURIComponent(id)}/featured-achievements`, {
+      method: 'PATCH',
+      body: JSON.stringify({ achievementIds }),
+    });
+  }
+
   async getUserGames(userId) {
     const id = userId || this.getStoredUserId();
     if (!id) throw new Error('User not available');
@@ -235,6 +252,18 @@ class ApiService {
   async getGameFull(id) {
     // Full game payload can be heavier (tips, faqs, media); allow more time before timing out
     return this.request(`/games/${encodeURIComponent(id)}/full`, {}, { timeout: 20000, retries: 2 });
+  }
+
+  async getRetroAchievementsGameAchievements(gameId) {
+    if (!gameId) throw new Error('Game not available');
+    return this.request(`/games/${encodeURIComponent(gameId)}/retroachievements/achievements`);
+  }
+
+  async getRetroAchievementsByRaGameId(raGameId) {
+    if (!raGameId) throw new Error('raGameId required');
+    const params = new URLSearchParams();
+    params.set('raGameId', String(raGameId));
+    return this.request(`/retroachievements/achievements?${params.toString()}`);
   }
 
   async getTips(gameId) {

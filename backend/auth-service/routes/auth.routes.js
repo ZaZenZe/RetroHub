@@ -37,6 +37,7 @@ function sanitizeUser(user, { includeModeratedGames = false, includeFavorites = 
     experiencePoints: user.experiencePoints,
     createdAt: user.createdAt,
     lastLogin: user.lastLogin,
+    featuredAchievements: (user.featuredAchievements || []).map(id => id.toString()),
   };
   if (includeModeratedGames) {
     base.moderatedGames = (user.moderatedGames || []).map(id => id.toString());

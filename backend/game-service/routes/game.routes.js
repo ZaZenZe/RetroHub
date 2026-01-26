@@ -9,6 +9,12 @@ const User = require('../../shared/models/User');
 const { verifyToken } = require('../../shared/middleware/auth.middleware');
 
 const router = express.Router();
+const RA_API_BASE = process.env.RETROACHIEVEMENTS_API_BASE || 'https://retroachievements.org';
+const RA_API_KEY = process.env.RETROACHIEVEMENTS_API_KEY || '';
+const RA_CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
+const raCache = new Map();
+const consoleCache = { data: null, expiresAt: 0 };
+const gameListCache = new Map();
 
 const DEFAULT_THEME = {
   name: 'retro',
@@ -42,6 +48,84 @@ function normalizeTheme(input, fallback = DEFAULT_THEME) {
 
 function isObjectId(value) {
   return Types.ObjectId.isValid(value);
+}
+
+function normalizeTitle(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+}
+
+async function fetchConsoleIds() {
+  const now = Date.now();
+  if (consoleCache.data && consoleCache.expiresAt > now) return consoleCache.data;
+  const url = `${RA_API_BASE}/API/API_GetConsoleIDs.php?y=${encodeURIComponent(RA_API_KEY)}`;
+  const response = await fetch(url, { headers: { 'User-Agent': 'RetroHub/1.0' } });
+  if (!response.ok) throw new Error('RetroAchievements console list failed');
+  const payload = await response.json();
+  const list = Array.isArray(payload) ? payload : payload?.consoleIDs || payload?.ConsoleIDs || [];
+  consoleCache.data = list;
+  consoleCache.expiresAt = now + RA_CACHE_TTL_MS;
+  return list;
+}
+
+async function resolveConsoleId(platform = '') {
+  if (!platform) return null;
+  const list = await fetchConsoleIds();
+  const platformKey = String(platform).toLowerCase();
+  const aliases = {
+    nes: ['nes', 'nintendo entertainment system'],
+    snes: ['snes', 'super nintendo'],
+    gb: ['game boy', 'gb'],
+    gbc: ['game boy color', 'gbc'],
+    gba: ['game boy advance', 'gba'],
+    n64: ['nintendo 64', 'n64'],
+    gc: ['gamecube', 'gc'],
+    ds: ['nintendo ds', 'ds'],
+    '3ds': ['nintendo 3ds', '3ds'],
+    wii: ['wii'],
+    switch: ['nintendo switch', 'switch'],
+    ps1: ['playstation', 'ps1', 'psx'],
+    ps2: ['playstation 2', 'ps2'],
+    psp: ['psp', 'playstation portable'],
+    arcade: ['arcade'],
+    pc: ['pc'],
+  };
+  const aliasList = aliases[platformKey] || [platformKey];
+  const match = list.find((c) => {
+    const name = String(c.Name || c.name || '').toLowerCase();
+    return aliasList.some((a) => name.includes(a));
+  });
+  return match ? Number(match.ID || match.id) : null;
+}
+
+async function fetchGameList(consoleId) {
+  const now = Date.now();
+  const cached = gameListCache.get(consoleId);
+  if (cached && cached.expiresAt > now) return cached.data;
+  const url = `${RA_API_BASE}/API/API_GetGameList.php?i=${encodeURIComponent(consoleId)}&y=${encodeURIComponent(RA_API_KEY)}`;
+  const response = await fetch(url, { headers: { 'User-Agent': 'RetroHub/1.0' } });
+  if (!response.ok) throw new Error('RetroAchievements game list failed');
+  const payload = await response.json();
+  const list = Array.isArray(payload) ? payload : payload?.GameList || payload?.games || [];
+  gameListCache.set(consoleId, { data: list, expiresAt: now + RA_CACHE_TTL_MS });
+  return list;
+}
+
+async function resolveRaGameId(gameDoc) {
+  if (!gameDoc) return null;
+  const existing = Number(gameDoc.retroAchievementsGameId || 0);
+  if (existing) return existing;
+  if (!RA_API_KEY) return null;
+  const consoleId = await resolveConsoleId(gameDoc.platform || '');
+  if (!consoleId) return null;
+  const list = await fetchGameList(consoleId);
+  const target = normalizeTitle(gameDoc.title || '');
+  if (!target) return null;
+  const exact = list.find((g) => normalizeTitle(g.Title || g.title || '') === target);
+  const fallback = exact || list.find((g) => normalizeTitle(g.Title || g.title || '').includes(target));
+  return fallback ? Number(fallback.ID || fallback.id) : null;
 }
 
 async function findGameByParam(param) {
@@ -177,6 +261,121 @@ router.get('/games/:gameParam/faqs', async (req, res, next) => {
   }
 });
 
+// RetroAchievements: get achievements for this game (cached)
+router.get('/games/:gameParam/retroachievements/achievements', async (req, res, next) => {
+  try {
+    if (!RA_API_KEY) {
+      return res.status(503).json({ error: 'RetroAchievements API key not configured' });
+    }
+
+    const game = await findGameByParam(req.params.gameParam);
+    if (!game) return res.status(404).json({ error: 'Game not found' });
+
+    let raGameId = Number(game.retroAchievementsGameId || 0);
+    if (!raGameId) {
+      raGameId = await resolveRaGameId(game);
+      if (!raGameId) {
+        return res.status(404).json({ error: 'RetroAchievements game id not found' });
+      }
+      // persist resolved id for future calls
+      try {
+        game.retroAchievementsGameId = raGameId;
+        await game.save();
+      } catch (e) {
+        // ignore persistence failure
+      }
+    }
+
+    const cached = raCache.get(raGameId);
+    const now = Date.now();
+    if (cached && cached.expiresAt > now) {
+      return res.json({ achievements: cached.data, cached: true, raGameId });
+    }
+
+    const url = `${RA_API_BASE}/API/API_GetGameExtended.php?i=${encodeURIComponent(raGameId)}&y=${encodeURIComponent(RA_API_KEY)}`;
+    const response = await fetch(url, { headers: { 'User-Agent': 'RetroHub/1.0' } });
+    if (!response.ok) {
+      return res.status(502).json({ error: 'RetroAchievements request failed' });
+    }
+
+    const payload = await response.json();
+    const rawAchievements = payload?.Achievements || {};
+    const mapped = Object.values(rawAchievements).map((a) => {
+      const badgeName = a.BadgeName || '';
+      const iconUrl = badgeName ? `${RA_API_BASE}/Badge/${badgeName}.png` : '';
+      return {
+        _id: `ra|${raGameId}|${a.ID}`,
+        raAchievementId: a.ID,
+        title: a.Title || 'Achievement',
+        description: a.Description || '',
+        points: a.Points || 0,
+        trueRatio: a.TrueRatio || 0,
+        displayOrder: a.DisplayOrder || 0,
+        iconUrl,
+        source: 'retroachievements',
+        raw: a,
+      };
+    });
+
+    mapped.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    raCache.set(raGameId, { data: mapped, expiresAt: now + RA_CACHE_TTL_MS });
+    return res.json({ achievements: mapped, cached: false, raGameId });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// RetroAchievements: get achievements by RA game id (cached)
+router.get('/retroachievements/achievements', async (req, res, next) => {
+  try {
+    if (!RA_API_KEY) {
+      return res.status(503).json({ error: 'RetroAchievements API key not configured' });
+    }
+
+    const raGameId = Number(req.query.raGameId || 0);
+    if (!raGameId) {
+      return res.status(400).json({ error: 'raGameId query param required' });
+    }
+
+    const cached = raCache.get(raGameId);
+    const now = Date.now();
+    if (cached && cached.expiresAt > now) {
+      return res.json({ achievements: cached.data, cached: true, raGameId });
+    }
+
+    const url = `${RA_API_BASE}/API/API_GetGameExtended.php?i=${encodeURIComponent(raGameId)}&y=${encodeURIComponent(RA_API_KEY)}`;
+    const response = await fetch(url, { headers: { 'User-Agent': 'RetroHub/1.0' } });
+    if (!response.ok) {
+      return res.status(502).json({ error: 'RetroAchievements request failed' });
+    }
+
+    const payload = await response.json();
+    const rawAchievements = payload?.Achievements || {};
+    const mapped = Object.values(rawAchievements).map((a) => {
+      const badgeName = a.BadgeName || '';
+      const iconUrl = badgeName ? `${RA_API_BASE}/Badge/${badgeName}.png` : '';
+      return {
+        _id: `ra|${raGameId}|${a.ID}`,
+        raAchievementId: a.ID,
+        title: a.Title || 'Achievement',
+        description: a.Description || '',
+        points: a.Points || 0,
+        trueRatio: a.TrueRatio || 0,
+        displayOrder: a.DisplayOrder || 0,
+        iconUrl,
+        source: 'retroachievements',
+        raw: a,
+      };
+    });
+
+    mapped.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    raCache.set(raGameId, { data: mapped, expiresAt: now + RA_CACHE_TTL_MS });
+    return res.json({ achievements: mapped, cached: false, raGameId });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 router.post('/games', verifyToken, requireAdmin, async (req, res, next) => {
   try {
     const payload = req.body || {};
@@ -231,6 +430,7 @@ router.put('/games/:gameParam', verifyToken, async (req, res, next) => {
       'hoverImageUrl',
       'hoverGifUrl',
       'screenshots',
+      'retroAchievementsGameId',
       'theme',
     ];
     if (Object.prototype.hasOwnProperty.call(updates, 'theme')) {
