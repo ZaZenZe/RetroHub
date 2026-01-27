@@ -1,5 +1,28 @@
 // API Service Layer
-const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+import { Capacitor } from '@capacitor/core';
+
+// Fallback; we resolve the real base at runtime inside ApiService to ensure Capacitor is initialized
+const DEFAULT_WEB_API = '/api';
+
+function resolveApiBaseForRuntime() {
+  try {
+    const nativeBase = import.meta.env.VITE_API_BASE_NATIVE || import.meta.env.VITE_API_BASE_ANDROID;
+    const webBase = import.meta.env.VITE_API_BASE;
+    const isNative = !!(Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+    const resolved = isNative ? (nativeBase || 'http://10.0.2.2:5173/api') : (webBase || DEFAULT_WEB_API);
+    // Ensure the value is visible in device logs
+    // eslint-disable-next-line no-console
+    console.log('[ApiService][BASE_RESOLVED]', { isNative, resolved, env_native: nativeBase, env_web: webBase });
+    // expose for quick runtime inspection
+    try { window.__RETROHUB_API_BASE = resolved; } catch (e) {}
+    return resolved;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[ApiService][BASE_RESOLVE_ERROR]', err && err.message);
+    return DEFAULT_WEB_API;
+  }
+}
+
 const DEFAULT_TIMEOUT = 8000;
 const RETRYABLE_STATUS = new Set([502, 503, 504]);
 
@@ -24,7 +47,7 @@ class ApiService {
     formData.append('image', file);
     
     // Direct fetch to avoid JSON headers
-    const response = await fetch(`${API_BASE}/admin/upload`, {
+    const response = await fetch(`${resolveApiBaseForRuntime()}/admin/upload`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -76,12 +99,36 @@ class ApiService {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeout);
 
+      // Diagnostic: log attempted request (appears in WebView console / logcat)
       try {
-        const response = await fetch(`${API_BASE}${path}`, {
+        // eslint-disable-next-line no-console
+        console.log('[ApiService] request ->', finalUrl || `${resolveApiBaseForRuntime()}${path}`, 'method=', method, 'attempt=', attempt, 'nativeCacheBust=', (isGet && isNative) || false);
+      } catch (e) {}
+
+      try {
+        // Build final URL and apply native cache-busting for GET requests to avoid SW/stale caches
+        const base = resolveApiBaseForRuntime();
+        let finalUrl = `${base}${path}`.replace(/([^:])\/\//g, '$1/');
+
+        const isGet = method === 'GET';
+        const isNative = typeof window !== 'undefined' && !!window.__RETROHUB_API_BASE || (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+        if (isGet && isNative) {
+          const sep = finalUrl.includes('?') ? '&' : '?';
+          finalUrl = `${finalUrl}${sep}_t=${Date.now()}`;
+        }
+
+        const fetchOptions = {
           ...options,
           headers: { ...headers, ...options.headers },
           signal: controller.signal,
-        });
+        };
+
+        if (isGet && isNative) {
+          fetchOptions.cache = 'no-store';
+          fetchOptions.headers = { ...fetchOptions.headers, 'Cache-Control': 'no-store' };
+        }
+
+        const response = await fetch(finalUrl, fetchOptions);
 
         let payload = null;
         const contentType = response.headers.get('content-type') || '';
@@ -114,6 +161,12 @@ class ApiService {
 
         return payload;
       } catch (err) {
+        // Log network / fetch errors for easier diagnosis on device
+        try {
+          // eslint-disable-next-line no-console
+          console.error('[ApiService][ERROR]', `${resolveApiBaseForRuntime()}${path}`, err && err.message ? err.message : err, 'status=', err && err.status);
+        } catch (logErr) {}
+
         if (err.name === 'AbortError') {
           // DOMException.message is read-only in some browsers; wrap to set a friendly message
           const wrapped = new Error('Request timeout');
@@ -225,7 +278,19 @@ class ApiService {
 
   // Games
   async getGames() {
-    return this.request('/games');
+    const url = '/games';
+    const payload = await this.request(url);
+
+    // store recent responses for debugging (exposed to window for the debug overlay)
+    try {
+      if (!this.lastResponses) this.lastResponses = [];
+      const snippet = JSON.stringify(payload || {}).slice(0, 800);
+      this.lastResponses.unshift({ url: resolveApiBaseForRuntime() + url, ok: !!payload, length: (payload && payload.games && payload.games.length) || (Array.isArray(payload) ? payload.length : 0), snippet, ts: Date.now() });
+      this.lastResponses = this.lastResponses.slice(0, 8);
+      try { window.__RETROHUB_LAST_RESPONSES = this.lastResponses; } catch (e) {}
+    } catch (e) {}
+
+    return payload;
   }
 
   async getGame(id) {

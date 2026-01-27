@@ -7,6 +7,15 @@ const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
+const ALLOWED_ORIGINS = [
+  'capacitor://localhost',
+  'http://localhost',
+  'http://localhost:5173',
+  'http://10.0.2.2:5173',
+  process.env.CORS_ORIGIN,
+].filter(Boolean);
+
+const cors = require('cors');
 
 // Check if dist folder exists (production build), otherwise use frontend folder (development)
 const DIST_DIR = path.join(__dirname, 'frontend', 'dist');
@@ -29,6 +38,9 @@ const targets = {
 };
 
 console.log('[gateway] targets:', targets);
+
+// CORS for Capacitor/native + web
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 
 // NOTE: Do not register body parsers (express.json/urlencoded) before proxy routes.
 // Doing so drains the request stream and can cause proxied POST/PUT requests to hang.

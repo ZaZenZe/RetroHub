@@ -4,6 +4,9 @@ import { useGames } from '../context/GamesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import banner2 from '../../assets/AP_Steam_Banner_2.gif';
+import banner3 from '../../assets/AP_Steam_Banner_3.gif';
+import banner4 from '../../assets/AP_Steam_Banner_4.gif';
 
 const Home = () => {
   const { games, loading } = useGames();
@@ -21,9 +24,9 @@ const Home = () => {
   const [currentBanner, setCurrentBanner] = useState(0);
 
   const bannerImages = [
-    '/assets/AP_Steam_Banner_2.gif',
-    '/assets/AP_Steam_Banner_3.gif',
-    '/assets/AP_Steam_Banner_4.gif'
+    banner2,
+    banner3,
+    banner4,
   ];
 
   useEffect(() => {

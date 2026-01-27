@@ -49,12 +49,48 @@ export const GamesProvider = ({ children }) => {
 
   const loadGames = useCallback(async () => {
     if (games.length > 0) return; // Already loaded
-    
+
     setLoading(true);
     setError(null);
     try {
       const data = await api.getGames();
       const rawGames = Array.isArray(data) ? data : data?.games || [];
+
+      // If API returned no games, attempt a direct Docker-gateway fallback (emulator host)
+      if ((!rawGames || rawGames.length === 0)) {
+        // expose for debugging
+        try { window.__RETROHUB_GAME_FALLBACK = { attempted: true, url: 'http://10.0.2.2:5173/api/games' }; } catch (e) {}
+
+        try {
+          const res = await fetch('http://10.0.2.2:5173/api/games', { method: 'GET' });
+          if (res && res.ok) {
+            const fallbackData = await res.json();
+            const fbGames = Array.isArray(fallbackData) ? fallbackData : fallbackData?.games || [];
+            if (fbGames && fbGames.length > 0) {
+              // Use fallback payload
+              const mappedFb = fbGames.map(mapApiGame).filter(Boolean);
+              setGames(mappedFb);
+
+              const byIdFb = new Map();
+              const byDbIdFb = new Map();
+              mappedFb.forEach((game) => {
+                byIdFb.set(game.id, game);
+                byDbIdFb.set(game.dbId, game);
+              });
+              setGamesById(byIdFb);
+              setGamesByDbId(byDbIdFb);
+
+              try { window.__RETROHUB_GAME_FALLBACK = { attempted: true, used: true, sourceCount: fbGames.length }; } catch (e) {}
+              return;
+            }
+            try { window.__RETROHUB_GAME_FALLBACK = { attempted: true, used: false, status: res.status }; } catch (e) {}
+          }
+        } catch (fallbackErr) {
+          console.warn('Fallback fetch to Docker gateway failed', fallbackErr && fallbackErr.message);
+          try { window.__RETROHUB_GAME_FALLBACK = { attempted: true, used: false, error: (fallbackErr && fallbackErr.message) || String(fallbackErr) }; } catch (e) {}
+        }
+      }
+
       const mapped = rawGames.map(mapApiGame).filter(Boolean);
       setGames(mapped);
 
