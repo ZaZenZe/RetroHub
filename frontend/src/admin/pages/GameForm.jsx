@@ -370,6 +370,7 @@ const GameForm = () => {
                 >
                   <option value="">Select platform</option>
                   <optgroup label="Retro">
+                    <option value="Arcade">Arcade</option>
                     <option value="Atari">Atari</option>
                     <option value="Amiga">Amiga</option>
                     <option value="NES">NES</option>
@@ -388,9 +389,12 @@ const GameForm = () => {
                     <option value="DS">DS</option>
                     <option value="3DS">3DS</option>
                     <option value="Wii">Wii</option>
+                    <option value="PC">PC</option>
                     <option value="PS1">PS1</option>
                     <option value="PS2">PS2</option>
                     <option value="PSP">PSP</option>
+                    <option value ="Xbox">Xbox</option>
+                    <option value="Other">Other</option>
                   </optgroup>
                 </select>
               </div>

@@ -91,6 +91,7 @@ const GamesManagement = () => {
               <option value="PSP">PSP</option>
               <option value="Arcade">Arcade</option>
               <option value="PC">PC</option>
+              <option value="Xbox">Xbox</option>
               <option value="Other">Other</option>
             </optgroup>
           </select>

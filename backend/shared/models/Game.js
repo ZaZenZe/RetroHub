@@ -27,6 +27,7 @@ const PLATFORM_ENUM = [
   'PlayStation 2',
   'Arcade',
   'PC',
+  'Xbox',
   'Other',
 ];
 

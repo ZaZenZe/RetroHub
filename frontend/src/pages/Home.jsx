@@ -201,6 +201,8 @@ const Home = () => {
                   <option value="Sega Genesis">Sega Genesis</option>
                   <option value="Sega Master System">Sega Master System</option>
                   <option value="Sega Saturn">Sega Saturn</option>
+                </optgroup>
+                <optgroup label="Modern Systems">
                   <option value="DS">DS</option>
                   <option value="3DS">3DS</option>
                   <option value="Wii">Wii</option>
@@ -209,6 +211,7 @@ const Home = () => {
                   <option value="PSP">PSP</option>
                   <option value="Arcade">Arcade</option>
                   <option value="PC">PC</option>
+                  <option value="Xbox">Xbox</option>
                   <option value="Other">Other</option>
                 </optgroup>
             </select>
