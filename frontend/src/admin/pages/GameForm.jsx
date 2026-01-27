@@ -369,19 +369,29 @@ const GameForm = () => {
                   required
                 >
                   <option value="">Select platform</option>
-                  <option value="NES">NES</option>
-                  <option value="SNES">SNES</option>
-                  <option value="GB">GB</option>
-                  <option value="GBC">GBC</option>
-                  <option value="N64">N64</option>
-                  <option value="GBA">GBA</option>
-                  <option value="GC">GameCube</option>
-                  <option value="DS">DS</option>
-                  <option value="Wii">Wii</option>
-                  <option value="3DS">3DS</option>
-                  <option value="Switch">Switch</option>
-                  <option value="PS1">PS1</option>
-                  <option value="PS2">PS2</option>
+                  <optgroup label="Retro">
+                    <option value="Atari">Atari</option>
+                    <option value="Amiga">Amiga</option>
+                    <option value="NES">NES</option>
+                    <option value="SNES">SNES</option>
+                    <option value="GB">GB</option>
+                    <option value="GBC">GBC</option>
+                    <option value="GBA">GBA</option>
+                    <option value="N64">N64</option>
+                    <option value="GC">GameCube</option>
+                    <option value="Dreamcast">Dreamcast</option>
+                    <option value="Sega Genesis">Sega Genesis</option>
+                    <option value="Sega Master System">Sega Master System</option>
+                    <option value="Sega Saturn">Sega Saturn</option>
+                  </optgroup>
+                  <optgroup label="Modern / Misc">
+                    <option value="DS">DS</option>
+                    <option value="3DS">3DS</option>
+                    <option value="Wii">Wii</option>
+                    <option value="PS1">PS1</option>
+                    <option value="PS2">PS2</option>
+                    <option value="PSP">PSP</option>
+                  </optgroup>
                 </select>
               </div>
               <div className="form-group">
