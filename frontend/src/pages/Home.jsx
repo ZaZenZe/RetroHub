@@ -22,6 +22,8 @@ const Home = () => {
   });
   const [hoveredGame, setHoveredGame] = useState(null);
   const [currentBanner, setCurrentBanner] = useState(0);
+  const [sortBy, setSortBy] = useState('name'); // 'name' | 'time'
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
 
   const bannerImages = [
     banner2,
@@ -80,6 +82,27 @@ const Home = () => {
   };
 
   const filteredGames = filterGameList(games);
+
+  const sortedGames = (() => {
+    if (!Array.isArray(filteredGames)) return filteredGames;
+    const copy = [...filteredGames];
+    copy.sort((a, b) => {
+      if (sortBy === 'name') {
+        const an = (a.title || '').toLowerCase();
+        const bn = (b.title || '').toLowerCase();
+        if (an < bn) return sortOrder === 'asc' ? -1 : 1;
+        if (an > bn) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      }
+      // sortBy === 'time' -> use year/releaseYear
+      const ay = parseInt(a.year || a.releaseYear || 0, 10) || 0;
+      const by = parseInt(b.year || b.releaseYear || 0, 10) || 0;
+      if (ay < by) return sortOrder === 'asc' ? -1 : 1;
+      if (ay > by) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  })();
 
   const handleReset = () => {
     setFilters({ platform: '', minYear: '', maxYear: '', search: '' });
@@ -140,6 +163,22 @@ const Home = () => {
       <div className="home-layout">
         <aside className="filters tech-card" aria-label="Game filters">
           <div className="panel-title">SEARCH_PARAMS</div>
+
+          {/* Sort controls: moved to top of filters so they're always visible */}
+          <div className="filter-group" style={{ marginTop: 12 }}>
+            <label htmlFor="filter-sort">Sort by</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select id="filter-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ flex: 1, minWidth: 120, padding: '10px' }}>
+                <option value="name">Name</option>
+                <option value="time">Release Date</option>
+              </select>
+
+              <select id="filter-sort-order" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={{ flex: 1, minWidth: 120, padding: '10px' }}>
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+          </div>
           <div className="filter-group">
             <label htmlFor="filter-platform">Platform</label>
             <select
@@ -235,7 +274,7 @@ const Home = () => {
 
           {!loading && filteredGames.length > 0 && (
             <div id="game-grid" className="game-grid" role="list">
-              {filteredGames.map((game) => {
+              {sortedGames.map((game) => {
                 const isHovered = hoveredGame === game.id;
                 const displayImage = isHovered
                   ? game.hoverGif || game.hover || game.art
