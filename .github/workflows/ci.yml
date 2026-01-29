@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
+  repository_dispatch:
 
 jobs:
   lint-and-test:
@@ -46,3 +48,57 @@ jobs:
       # Emit a success message when all steps pass
       - name: Build success message
         run: echo "CI completed successfully"
+
+  build-docker:
+    name: Build Docker images for services
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - context: "."
+            dockerfile: "./Dockerfile"
+            image: "test-root"
+          - context: "backend"
+            dockerfile: "backend/ai-service/Dockerfile"
+            image: "test-backend-ai-service"
+          - context: "backend"
+            dockerfile: "backend/auth-service/Dockerfile"
+            image: "test-backend-auth-service"
+          - context: "backend"
+            dockerfile: "backend/community-service/Dockerfile"
+            image: "test-backend-community-service"
+          - context: "backend"
+            dockerfile: "backend/game-service/Dockerfile"
+            image: "test-backend-game-service"
+          - context: "backend"
+            dockerfile: "backend/user-service/Dockerfile"
+            image: "test-backend-user-service"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for multi-arch build support)
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ matrix.image }}:${{ github.sha }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Confirm build succeeded
+        run: |
+          echo "Dockerfile: ${{ matrix.dockerfile }}"
+          echo "Built image: ${{ matrix.image }}:${{ github.sha }}"
