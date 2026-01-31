@@ -7,44 +7,99 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-6-4ea94b?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker&logoColor=white)](https://www.docker.com/)
 
-## Features
+## 📸 Visual tour — Screenshots & Features
 
-### 🎮 Game Library
-Browse and track GBA, DS, and 3DS games with detailed pages, media galleries, and search filters.
+Explore RetroHub through a curated visual walkthrough. Each image is captioned and paired with the feature it demonstrates so you can quickly get a sense of the app's UI across desktop and mobile.
 
-<img width="2559" height="1320" alt="image (10)" src="https://github.com/user-attachments/assets/b4523acb-f302-47bc-b2fe-84979fbbf173" />
+---
 
-<img width="493" height="1039" alt="image" src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" />
+### Desktop highlights
+<div style="display:flex;flex-wrap:wrap;gap:16px;">
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/b4523acb-f302-47bc-b2fe-84979fbbf173" alt="Desktop homepage" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Homepage (Desktop)</strong> — Welcome banner, left-hand <em>Search Params</em> (filters for platform, year, and text), and a main grid of game cards. (file: `image (10).jpg`)</figcaption>
+  </figure>
 
-<img width="497" height="1081" alt="image (1)" src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" />
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/fb0ab466-3f5f-431f-b0ae-8a5bacb6d9a8" alt="Half-Life 2 details" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Game Details — Half-Life 2 (Desktop)</strong> — Large hero header, synopsis, action buttons, and focused sections for <em>Hack Tips</em> and <em>Popular Questions</em>. (file: `image (8).jpg`)</figcaption>
+  </figure>
+</div>
 
-### 💬 Community
-Share tips, strategies, and discussions with global chat streams, posts, replies, and moderation tools.
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;">
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/2039367a-2a2f-4848-bc0c-bc5e40b99ce2" alt="Manage Games dashboard" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Manage Games (Desktop)</strong> — Admin dashboard listing games with search and management actions. (file: `image (4).jpg`)</figcaption>
+  </figure>
 
-<img width="2553" height="1305" alt="image (7)" src="https://github.com/user-attachments/assets/960f8e6a-f065-413e-97ae-025d223d5847" />
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/4b6a244b-40f1-479b-abb8-a387b9aea8cc" alt="Persona 4 details" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Game Details — Persona 4 (Desktop)</strong> — Themed layout with color accents, media gallery and structured tips/questions. (file: `image (9).jpg`)</figcaption>
+  </figure>
+</div>
 
-### 🤖 AI Assistant
-Get hints and walkthroughs from AI-powered assistants, including in-game character personas.
+---
 
-<img width="747" height="922" alt="image (6)" src="https://github.com/user-attachments/assets/35fb0f3d-1251-4738-964e-139349ca6819" />
+### Mobile-first experience
+<div style="display:flex;flex-wrap:wrap;gap:16px;">
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" alt="Metroid Prime mobile details" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Game Details (Mobile)</strong> — Metroid Prime example: gameplay image, title, platform tags (GC, 2002), synopsis, and fast actions to <em>Launch AI</em> or <em>Open Community</em>. (file: `image.jpg`)</figcaption>
+  </figure>
 
-### 👤 User Profiles
-Track achievements and collections, view stats, and manage favorites.
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" alt="Mobile homepage" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Homepage (Mobile)</strong> — Condensed welcome banner and an accessible <em>Search Params</em> panel for quick filtering on the go. (file: `image (1).png`)</figcaption>
+  </figure>
+</div>
 
-<img width="2559" height="1311" alt="image (5)" src="https://github.com/user-attachments/assets/006805f4-55b3-4cf4-8aab-1e75c4f7172b" />
+---
 
-### 🔧 Admin/Moderator Panel
-Manage games with full CRUD operations, assign moderators, and oversee content.
+### Admin & moderator tools (mobile + desktop)
+<div style="display:flex;flex-wrap:wrap;gap:16px;">
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/29c35456-e301-4e80-9b06-70e5da3097b6" alt="Manage Games mobile" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Manage Games (Mobile)</strong> — Moderators can search, add, edit and delete entries right from a compact mobile UI. (file: `image (2).png`)</figcaption>
+  </figure>
 
-<img width="495" height="1043" alt="image (2)" src="https://github.com/user-attachments/assets/29c35456-e301-4e80-9b06-70e5da3097b6" />
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/ead3f501-394e-4efb-a0e2-5dc1c53196da" alt="Create Game form desktop" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Create / Edit Game (Desktop)</strong> — Full form: title, slug, platform, release year, version, media uploads, tips and FAQs. (file: `image (3).png`)</figcaption>
+  </figure>
+</div>
 
-<img width="2559" height="1318" alt="image (3)" src="https://github.com/user-attachments/assets/ead3f501-394e-4efb-a0e2-5dc1c53196da" />
+---
 
-<img width="2559" height="1302" alt="image (4)" src="https://github.com/user-attachments/assets/2039367a-2a2f-4848-bc0c-bc5e40b99ce2" />
+### Community & Media
+<div style="display:flex;flex-wrap:wrap;gap:16px;">
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/960f8e6a-f065-413e-97ae-025d223d5847" alt="Media gallery and chat" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>Media Gallery & Global Chat (Desktop)</strong> — Scrollable screenshots and a live global chat stream with moderation controls (delete, mark spoiler). (file: `image (7).jpg`)</figcaption>
+  </figure>
 
-<img width="2546" height="1285" alt="image (8)" src="https://github.com/user-attachments/assets/fb0ab466-3f5f-431f-b0ae-8a5bacb6d9a8" />
+  <figure style="flex:1 1 48%;margin:0;">
+    <img src="https://github.com/user-attachments/assets/006805f4-55b3-4cf4-8aab-1e75c4f7172b" alt="User profile" style="width:100%;border-radius:6px;" />
+    <figcaption><strong>User Profile — oak (Desktop)</strong> — Activity stats (hours, posts), favorite game, and recent posts feed. (file: `image (5).jpg`)</figcaption>
+  </figure>
+</div>
 
-<img width="2559" height="1317" alt="image (9)" src="https://github.com/user-attachments/assets/4b6a244b-40f1-479b-abb8-a387b9aea8cc" />
+---
+
+### AI Assistant — RetroBot
+<figure>
+  <img src="https://github.com/user-attachments/assets/35fb0f3d-1251-4738-964e-139349ca6819" alt="RetroBot persona modal" style="width:420px;border-radius:6px;" />
+  <figcaption><strong>RetroBot Modal</strong> — Select an <em>In-Game</em> guide or persona (Retro Rick / Retro Rose) to start a focused AI session. (file: `image (6).png`)</figcaption>
+</figure>
+
+---
+
+> Tip: swap these image `src` URLs with local files or repo assets if you prefer to version-control screenshots directly in `frontend/assets`.
+
+### Snapshot summary
+- Each screenshot is paired with the UI area it demonstrates so contributors and evaluators can quickly find and test features.
+- Mobile-first and desktop views are both showcased for parity and usability checks.
+
+---
 
 ### 🔐 Authentication & Modern Stack
 Secure user accounts with JWT, built on React + Vite + Microservices, with PWA and Android support.
