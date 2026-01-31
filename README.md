@@ -16,24 +16,24 @@ Explore RetroHub through a curated visual walkthrough. Each image is captioned a
 ### Desktop highlights
 <div style="display:flex;flex-wrap:wrap;gap:16px;">
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/b4523acb-f302-47bc-b2fe-84979fbbf173" alt="Desktop homepage" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/b4523acb-f302-47bc-b2fe-84979fbbf173" alt="Desktop homepage" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>Homepage (Desktop)</strong> — Welcome banner, left-hand <em>Search Params</em> (filters for platform, year, and text), and a main grid of game cards. (file: `image (10).jpg`)</figcaption>
   </figure>
 
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/fb0ab466-3f5f-431f-b0ae-8a5bacb6d9a8" alt="Half-Life 2 details" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/fb0ab466-3f5f-431f-b0ae-8a5bacb6d9a8" alt="Half-Life 2 details" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>Game Details — Half-Life 2 (Desktop)</strong> — Large hero header, synopsis, action buttons, and focused sections for <em>Hack Tips</em> and <em>Popular Questions</em>. (file: `image (8).jpg`)</figcaption>
   </figure>
 </div>
 
 <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;">
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/2039367a-2a2f-4848-bc0c-bc5e40b99ce2" alt="Manage Games dashboard" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/2039367a-2a2f-4848-bc0c-bc5e40b99ce2" alt="Manage Games dashboard" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>Manage Games (Desktop)</strong> — Admin dashboard listing games with search and management actions. (file: `image (4).jpg`)</figcaption>
   </figure>
 
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/4b6a244b-40f1-479b-abb8-a387b9aea8cc" alt="Persona 4 details" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/4b6a244b-40f1-479b-abb8-a387b9aea8cc" alt="Persona 4 details" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>Game Details — Persona 4 (Desktop)</strong> — Themed layout with color accents, media gallery and structured tips/questions. (file: `image (9).jpg`)</figcaption>
   </figure>
 </div>
@@ -41,31 +41,38 @@ Explore RetroHub through a curated visual walkthrough. Each image is captioned a
 ---
 
 ### Mobile-first experience
-<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
-  <figure style="flex:0 0 320px;max-width:320px;margin:0;">
-    <img src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" alt="Metroid Prime mobile details" style="width:100%;height:auto;object-fit:cover;border-radius:6px;max-height:720px;box-shadow:0 6px 18px rgba(0,0,0,0.45);" />
-    <figcaption style="font-size:13px;margin-top:8px;"><strong>Game Details (Mobile)</strong> — Metroid Prime example: gameplay image, title, platform tags (GC, 2002), synopsis, and fast actions to <em>Launch AI</em> or <em>Open Community</em>. (file: `image.jpg`)</figcaption>
+
+<!-- Responsive gallery: 2-3 vertical mobile screenshots per row -->
+<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:flex-start;">
+  <figure style="width:180px;flex:0 0 180px;margin:0;text-align:center;">
+    <img src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" alt="Metroid Prime mobile details" style="width:100%;height:auto;border-radius:8px;display:block;" />
+    <figcaption style="font-size:12px;color:#333;margin-top:6px;"><strong>Game Details (Mobile)</strong> — Metroid Prime example: title, platform tags, synopsis, quick AI/community actions. (file: `image.jpg`)</figcaption>
   </figure>
 
-  <figure style="flex:0 0 320px;max-width:320px;margin:0;">
-    <img src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" alt="Mobile homepage" style="width:100%;height:auto;object-fit:cover;border-radius:6px;max-height:720px;box-shadow:0 6px 18px rgba(0,0,0,0.45);" />
-    <figcaption style="font-size:13px;margin-top:8px;"><strong>Homepage (Mobile)</strong> — Condensed welcome banner and an accessible <em>Search Params</em> panel for quick filtering on the go. (file: `image (1).png`)</figcaption>
+  <figure style="width:180px;flex:0 0 180px;margin:0;text-align:center;">
+    <img src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" alt="Mobile homepage" style="width:100%;height:auto;border-radius:8px;display:block;" />
+    <figcaption style="font-size:12px;color:#333;margin-top:6px;"><strong>Homepage (Mobile)</strong> — Condensed welcome banner and quick <em>Search Params</em> panel. (file: `image (1).png`)</figcaption>
   </figure>
 
-  <p style="width:100%;text-align:center;color:#666;margin-top:8px;font-size:13px;">Note: mobile screenshots are displayed as fixed-width preview cards (320px) to preserve their vertical aspect ratio and sit side-by-side where space allows; on narrow screens they will wrap naturally.</p>
+  <figure style="width:180px;flex:0 0 180px;margin:0;text-align:center;">
+    <img src="https://github.com/user-attachments/assets/29c35456-e301-4e80-9b06-70e5da3097b6" alt="Manage Games mobile" style="width:100%;height:auto;border-radius:8px;display:block;" />
+    <figcaption style="font-size:12px;color:#333;margin-top:6px;"><strong>Manage Games (Mobile)</strong> — Moderators can search, add, edit and delete entries from a compact UI. (file: `image (2).png`)</figcaption>
+  </figure>
 </div>
+
+<p style="text-align:center;color:#666;font-size:12px;margin-top:8px;">Note: images use fixed column widths (180px) and maintain aspect ratio; they will wrap to fit narrow viewports.</p>
 
 ---
 
 ### Admin & moderator tools (mobile + desktop)
 <div style="display:flex;flex-wrap:wrap;gap:16px;">
-  <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/29c35456-e301-4e80-9b06-70e5da3097b6" alt="Manage Games mobile" style="width:100%;border-radius:6px;" />
-    <figcaption><strong>Manage Games (Mobile)</strong> — Moderators can search, add, edit and delete entries right from a compact mobile UI. (file: `image (2).png`)</figcaption>
+  <figure style="width:180px;flex:0 0 180px;margin:0;text-align:center;">
+    <img src="https://github.com/user-attachments/assets/29c35456-e301-4e80-9b06-70e5da3097b6" alt="Manage Games mobile" style="width:100%;height:auto;border-radius:8px;display:block;" />
+    <figcaption style="font-size:12px;color:#333;margin-top:6px;"><strong>Manage Games (Mobile)</strong> — Moderators can search, add, edit and delete entries right from a compact mobile UI. (file: `image (2).png`)</figcaption>
   </figure>
 
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/ead3f501-394e-4efb-a0e2-5dc1c53196da" alt="Create Game form desktop" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/ead3f501-394e-4efb-a0e2-5dc1c53196da" alt="Create Game form desktop" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>Create / Edit Game (Desktop)</strong> — Full form: title, slug, platform, release year, version, media uploads, tips and FAQs. (file: `image (3).png`)</figcaption>
   </figure>
 </div>
@@ -75,12 +82,12 @@ Explore RetroHub through a curated visual walkthrough. Each image is captioned a
 ### Community & Media
 <div style="display:flex;flex-wrap:wrap;gap:16px;">
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/960f8e6a-f065-413e-97ae-025d223d5847" alt="Media gallery and chat" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/960f8e6a-f065-413e-97ae-025d223d5847" alt="Media gallery and chat" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>Media Gallery & Global Chat (Desktop)</strong> — Scrollable screenshots and a live global chat stream with moderation controls (delete, mark spoiler). (file: `image (7).jpg`)</figcaption>
   </figure>
 
   <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/006805f4-55b3-4cf4-8aab-1e75c4f7172b" alt="User profile" style="width:100%;border-radius:6px;" />
+    <img src="https://github.com/user-attachments/assets/006805f4-55b3-4cf4-8aab-1e75c4f7172b" alt="User profile" style="max-width:100%;height:auto;border-radius:6px;" />
     <figcaption><strong>User Profile — oak (Desktop)</strong> — Activity stats (hours, posts), favorite game, and recent posts feed. (file: `image (5).jpg`)</figcaption>
   </figure>
 </div>
