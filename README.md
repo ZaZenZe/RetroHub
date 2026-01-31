@@ -2,6 +2,8 @@
 
 > Modern retro gaming companion with AI assistance and community features
 
+### Check out the extensive documentation in /docs
+
 [![Node.js](https://img.shields.io/badge/Node.js-20+-43853d?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6-4ea94b?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
@@ -10,6 +12,22 @@
 ## 📸 Visual tour — Screenshots & Features
 
 Explore RetroHub through a curated visual walkthrough. Each image is captioned and paired with the feature it demonstrates so you can quickly get a sense of the app's UI across desktop and mobile.
+---
+
+## 📄 Documentation
+
+All project documentation is available in the `/docs` folder:
+
+| File | Description |
+|------|-------------|
+| `quick-summary.docx` | Executive overview — start here |
+| `conception.docx` | Project vision, goals & design philosophy |
+| `innovation.docx` | Technical architecture & key innovations |
+| `realization.docx` | Implementation phases & deployment |
+| `generative-ai.docx` | AI integration & Gemini setup |
+| `privacy-&-security.docx` | Security architecture & privacy practices |
+
+Please go through these documentation before using the application, for an in-depth understanding.
 
 ---
 
