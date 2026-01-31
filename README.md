@@ -9,12 +9,45 @@
 
 ## Features
 
-🎮 **Game Library** - Browse and track GBA, DS, and 3DS games  
-💬 **Community** - Share tips, strategies, and discussions  
-🤖 **AI Assistant** - Get hints and walkthroughs  
-👤 **User Profiles** - Track achievements and collections  
-🔐 **Authentication** - Secure user accounts with JWT  
-⚡ **Modern Stack** - React + Vite + Microservices
+### 🎮 Game Library
+Browse and track GBA, DS, and 3DS games with detailed pages, media galleries, and search filters.
+
+<img width="2559" height="1320" alt="image (10)" src="https://github.com/user-attachments/assets/b4523acb-f302-47bc-b2fe-84979fbbf173" />
+
+<img width="493" height="1039" alt="image" src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" />
+
+<img width="497" height="1081" alt="image (1)" src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" />
+
+### 💬 Community
+Share tips, strategies, and discussions with global chat streams, posts, replies, and moderation tools.
+
+<img width="2553" height="1305" alt="image (7)" src="https://github.com/user-attachments/assets/960f8e6a-f065-413e-97ae-025d223d5847" />
+
+### 🤖 AI Assistant
+Get hints and walkthroughs from AI-powered assistants, including in-game character personas.
+
+<img width="747" height="922" alt="image (6)" src="https://github.com/user-attachments/assets/35fb0f3d-1251-4738-964e-139349ca6819" />
+
+### 👤 User Profiles
+Track achievements and collections, view stats, and manage favorites.
+
+<img width="2559" height="1311" alt="image (5)" src="https://github.com/user-attachments/assets/006805f4-55b3-4cf4-8aab-1e75c4f7172b" />
+
+### 🔧 Admin/Moderator Panel
+Manage games with full CRUD operations, assign moderators, and oversee content.
+
+<img width="495" height="1043" alt="image (2)" src="https://github.com/user-attachments/assets/29c35456-e301-4e80-9b06-70e5da3097b6" />
+
+<img width="2559" height="1318" alt="image (3)" src="https://github.com/user-attachments/assets/ead3f501-394e-4efb-a0e2-5dc1c53196da" />
+
+<img width="2559" height="1302" alt="image (4)" src="https://github.com/user-attachments/assets/2039367a-2a2f-4848-bc0c-bc5e40b99ce2" />
+
+<img width="2546" height="1285" alt="image (8)" src="https://github.com/user-attachments/assets/fb0ab466-3f5f-431f-b0ae-8a5bacb6d9a8" />
+
+<img width="2559" height="1317" alt="image (9)" src="https://github.com/user-attachments/assets/4b6a244b-40f1-479b-abb8-a387b9aea8cc" />
+
+### 🔐 Authentication & Modern Stack
+Secure user accounts with JWT, built on React + Vite + Microservices, with PWA and Android support.
 
 ## Quick Start
 
