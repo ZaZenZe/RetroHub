@@ -41,16 +41,18 @@ Explore RetroHub through a curated visual walkthrough. Each image is captioned a
 ---
 
 ### Mobile-first experience
-<div style="display:flex;flex-wrap:wrap;gap:16px;">
-  <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" alt="Metroid Prime mobile details" style="width:100%;border-radius:6px;" />
-    <figcaption><strong>Game Details (Mobile)</strong> — Metroid Prime example: gameplay image, title, platform tags (GC, 2002), synopsis, and fast actions to <em>Launch AI</em> or <em>Open Community</em>. (file: `image.jpg`)</figcaption>
+<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
+  <figure style="flex:0 0 320px;max-width:320px;margin:0;">
+    <img src="https://github.com/user-attachments/assets/f32bce79-e53f-418b-9674-e389c3c988e0" alt="Metroid Prime mobile details" style="width:100%;height:auto;object-fit:cover;border-radius:6px;max-height:720px;box-shadow:0 6px 18px rgba(0,0,0,0.45);" />
+    <figcaption style="font-size:13px;margin-top:8px;"><strong>Game Details (Mobile)</strong> — Metroid Prime example: gameplay image, title, platform tags (GC, 2002), synopsis, and fast actions to <em>Launch AI</em> or <em>Open Community</em>. (file: `image.jpg`)</figcaption>
   </figure>
 
-  <figure style="flex:1 1 48%;margin:0;">
-    <img src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" alt="Mobile homepage" style="width:100%;border-radius:6px;" />
-    <figcaption><strong>Homepage (Mobile)</strong> — Condensed welcome banner and an accessible <em>Search Params</em> panel for quick filtering on the go. (file: `image (1).png`)</figcaption>
+  <figure style="flex:0 0 320px;max-width:320px;margin:0;">
+    <img src="https://github.com/user-attachments/assets/3b0e5b63-203e-4e9c-97f1-f6533d9aa057" alt="Mobile homepage" style="width:100%;height:auto;object-fit:cover;border-radius:6px;max-height:720px;box-shadow:0 6px 18px rgba(0,0,0,0.45);" />
+    <figcaption style="font-size:13px;margin-top:8px;"><strong>Homepage (Mobile)</strong> — Condensed welcome banner and an accessible <em>Search Params</em> panel for quick filtering on the go. (file: `image (1).png`)</figcaption>
   </figure>
+
+  <p style="width:100%;text-align:center;color:#666;margin-top:8px;font-size:13px;">Note: mobile screenshots are displayed as fixed-width preview cards (320px) to preserve their vertical aspect ratio and sit side-by-side where space allows; on narrow screens they will wrap naturally.</p>
 </div>
 
 ---
