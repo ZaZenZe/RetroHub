@@ -29,7 +29,10 @@ docker compose up
 # Access the app at http://localhost:5173
 ```
 
-**Demo accounts:** `admin@test.com` / `password123` (see [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md))
+**Demo accounts:** See [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md) for all seeded users, including:
+- Admin: `admin@retrohub.test` / `Admin@123`
+- Moderator: `mod@retrohub.test` / `Mod@123`
+- Users: `retroGamer88` / `RetroGamer@88`, `PixelMaster` / `PixelM@ster!`, and more
 
 ## Project Structure
 
@@ -39,7 +42,7 @@ RetroHub/
 │   ├── src/
 │   │   ├── components/    # Reusable UI components
 │   │   ├── pages/         # Route pages (Home, Profile, etc.)
-│   │   ├── admin/         # Admin panel (separate app)
+│   │   ├── admin/         # Admin/mod panel (games, mods, CRUD)
 │   │   ├── context/       # State management (Auth, Games, Theme)
 │   │   └── services/      # API client
 │   ├── assets/            # Images, pixel art
@@ -47,11 +50,11 @@ RetroHub/
 │
 ├── backend/               # Microservices
 │   ├── auth-service/      # Login, register, JWT (port 3001)
-│   ├── user-service/      # Profiles, stats (port 3002)
-│   ├── game-service/      # Game catalog, CRUD (port 3003)
-│   ├── community-service/ # Posts, comments (port 3004)
-│   ├── ai-service/        # AI chatbot (port 3005)
-│   └── shared/            # Database models, middleware
+│   ├── user-service/      # Profiles, stats, achievements (port 3002)
+│   ├── game-service/      # Game catalog, CRUD, tips, faqs, mod assignment (port 3003)
+│   ├── community-service/ # Posts, replies, votes, spoilers (port 3004)
+│   ├── ai-service/        # AI chatbot (Gemini, port 3005)
+│   └── shared/            # Database models, middleware, utils
 │
 ├── server.js              # API gateway (port 5173)
 ├── docker-compose.yml     # Full stack orchestration
@@ -76,76 +79,108 @@ npm run start:services
 # Terminal 2: React dev server (with hot reload)
 npm run dev:frontend
 
-# Terminal 3: Gateway
+# Terminal 3: Gateway (API + static frontend)
 npm start
 ```
 
 ### Docker Development
 
 ```bash
-# Start everything
+# Start everything (gateway, all services, MongoDB, seeding)
 docker compose up
 
-# Rebuild after code changes
+# Rebuild after code changes (gateway example)
 docker compose build gateway
 docker compose up gateway --force-recreate
 
-# View logs
+# View logs for gateway
 docker compose logs -f gateway
 
-# Clean restart
+# Clean restart (removes volumes)
 docker compose down -v
 docker compose up
 ```
 
-### Available Scripts
+### Available Scripts (root)
 
 ```bash
-npm start              # Start gateway server
-npm run dev:frontend   # Start React dev server (port 3000)
-npm run build:frontend # Build React for production
-npm run dev:full       # Start everything locally
-npm run lint           # Run ESLint
-npm run format         # Format with Prettier
+npm start                # Start gateway server (API + static frontend)
+npm run dev:frontend     # Start React dev server (frontend/src, port 5173)
+npm run build:frontend   # Build React for production
+npm run dev:full         # Start all backend services + frontend (dev)
+npm run lint             # Run ESLint on backend
+npm run format           # Format with Prettier
 ```
 
 ## Tech Stack
 
-**Frontend:** React 18, React Router 6, Context API, Vite 6  
-**Backend:** Node.js 20, Express 5, MongoDB 6, Mongoose, JWT  
+**Frontend:** React 18, React Router 6, Context API, Vite 5, Capacitor, PWA  
+**Backend:** Node.js 20, Express 5, MongoDB 6, Mongoose, JWT, Gemini AI  
 **DevOps:** Docker, Docker Compose, Multi-stage builds
 
 ## Architecture
 
-Microservices architecture with API gateway pattern:
-- Gateway (server.js) serves React app and proxies `/api/*` to backend services
-- Each microservice is independent with its own container
+
+**Architecture:**
+- API gateway (server.js) serves React app and proxies `/api/*` to backend services
+- Microservices: auth, user, game, community, ai (Gemini)
 - MongoDB with authentication and health checks
-- React uses Context API for state (Auth, Games, Theme)
+- React Context API for state (Auth, Games, Theme)
+- Admin/mod panel for game CRUD, mod assignment
 - Optimized production builds with code splitting
 
 ## Ports
 
-| Service          | Port | URL                          |
-|------------------|------|------------------------------|
-| Gateway (React)  | 5173 | http://localhost:5173        |
-| Auth Service     | 3001 | Internal only                |
-| User Service     | 3002 | Internal only                |
-| Game Service     | 3003 | Internal only                |
-| Community Service| 3004 | Internal only                |
-| AI Service       | 3005 | Internal only                |
-| MongoDB          | 27017| mongodb://localhost:27017    |
-| Mongo Express    | 8081 | http://localhost:8081        |
+| Service            | Port   | URL/Notes                       |
+|--------------------|--------|---------------------------------|
+| Gateway (API+UI)   | 5173   | http://localhost:5173           |
+| Auth Service       | 3001   | http://localhost:3001 (internal) |
+| User Service       | 3002   | http://localhost:3002 (internal) |
+| Game Service       | 3003   | http://localhost:3003 (internal) |
+| Community Service  | 3004   | http://localhost:3004 (internal) |
+| AI Service         | 3005   | http://localhost:3005 (internal) |
+| MongoDB            | 27017  | mongodb://localhost:27017        |
+| Mongo Express      | 8081   | http://localhost:8081            |
 
-## Demo Accounts
+## Seeded Accounts & Content
 
 After running `docker compose up`, the database is seeded with:
 
-- **Admin:** admin@test.com / password123
-- **Moderator:** mod@test.com / password123
-- **User:** user@test.com / password123
+- **Re-seeding manually:** `docker compose run --rm seed-db` (this runs `scripts/seed-database.js` and `scripts/seed-users-posts.js`)
 
-Full list in [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md)
+### Environment & Secrets
+
+- **JWT_SECRET** - JSON Web Token secret used by auth and services. Set in `.env` or Docker env `JWT_SECRET` (default in compose is `dev-secret-change-me`).
+- **MONGODB_URI / MONGO_INITDB_ROOT_USERNAME / MONGO_INITDB_ROOT_PASSWORD** - MongoDB connection credentials. See `docker-compose.yml` for defaults.
+- **GEMINI_API_KEY / GEMINI_MODEL** - Required for AI service to use Google Gemini models. If not set, AI endpoints return 503 and fallback behavior is used.
+- **CORS_ORIGIN** - Comma-separated allowed origins for services (defaults include `http://localhost` and `capacitor://localhost`).
+
+These env vars are referenced in each service's `Dockerfile` / `server.js` and `docker-compose.yml`. Ensure they are set for production deployments.
+
+After running `docker compose up`, the database is seeded with:
+
+- **Admin:** admin@retrohub.test / Admin@123
+- **Moderator:** mod@retrohub.test / Mod@123
+- **Users:** retroGamer88 / RetroGamer@88, PixelMaster / PixelM@ster!, ClassicFan / Classic@Fan99, SpeedRunner / SpeedRun@2024, NostalgiaKid / Nostalgia@90s, and more
+- **Extra:** mainadmin@example.com / Admin123!, mod1@example.com / Mod123!, user1@example.com / User123!
+
+See [docs/SEEDED_ACCOUNTS.md](docs/SEEDED_ACCOUNTS.md) for the full list.
+
+Seeded content includes:
+- Games: Fire Red, Emerald, Heart Gold, Platinum, Black 2, Y, and more
+- Tips, FAQs, and sample community posts/replies
+
+## Features
+
+- Game library: Browse, search, and filter by platform/year
+- Game detail: Tips, FAQs, screenshots, favorite, achievements
+- Community: Posts, replies, votes, spoilers, user stats
+- AI Assistant: Gemini-powered hints, walkthroughs, character selection
+- User profiles: Achievements, stats, collections, favorites
+- Authentication: JWT, secure sessions
+- Admin/mod panel: Game CRUD, assign moderators, manage tips/FAQs
+- Supported platforms: GBA, DS, 3DS, NES, SNES, GB, GBC, N64, GameCube, Dreamcast, Sega, PlayStation, PC, Arcade, and more
+- PWA & Android (Capacitor) support
 
 ## License
 
